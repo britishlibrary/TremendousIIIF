@@ -21,7 +21,7 @@ namespace Image.Tiff
         private bool headerOnly = false;
         private string RequestId;
         private ILogger Log;
-        private long TiffHeaderLength = 450;
+        private long TiffHeaderLength = 460800;
 
         public TiffSource(HttpClient httpClient, ILogger log, Uri imageUri, string requestId, bool headerOnly = false)
         {

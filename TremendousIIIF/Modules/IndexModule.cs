@@ -48,7 +48,8 @@ namespace TremendousIIIF.Modules
                     var processor = new ImageProcessing.ImageProcessing { HttpClient = httpClient, Log = log };
                     MemoryStream ms = await processor.ProcessImage(imageUri, request, conf.ImageQuality, allowSizeAboveFull);
                     string mimetype = MimeTypeMap.GetMimeType(parameters.format);
-                    return new StreamResponse(() => ms, mimetype);
+                    return new StreamResponse(() => ms, mimetype)
+                        .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()));
                 }
                 catch (FileNotFoundException e)
                 {
@@ -129,8 +130,7 @@ namespace TremendousIIIF.Modules
                     return await Negotiate
                         .WithAllowedMediaRange(new MediaRange("application/ld+json"))
                         .WithAllowedMediaRange(new MediaRange("application/json"))
-                        .WithMediaRangeModel(new MediaRange("application/ld+json"), info)
-                        .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", info.Profile.First()))
+                        .WithHeader("Link", null) // hide nancy automatic Link: rel="alternative"
                         .WithModel(info);
                 }
                 catch (FileNotFoundException e)

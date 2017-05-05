@@ -40,7 +40,7 @@ namespace Image.Tiff
             }
             else
             {
-                using (var stream = new TiffSource(httpClient, log, imageUri, requestId, true))
+                using (var stream = new TiffSource(httpClient, log, imageUri, requestId))
                 using (var tiff = T.Tiff.ClientOpen("custom", "r", null, stream))
                 {
                     return ReadMetadata(tiff, defaultTileWidth);

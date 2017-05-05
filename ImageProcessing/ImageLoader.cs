@@ -66,10 +66,17 @@ namespace ImageProcessing
                     headRequest.Headers.Add("X-Request-ID", requestId);
                     using (var response = await HttpClient.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead))
                     {
-                        response.EnsureSuccessStatusCode();
+                        switch (response.StatusCode)
+                        {
+                            case System.Net.HttpStatusCode.NotFound:
+                                throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
+                            case System.Net.HttpStatusCode.InternalServerError:
+                                throw new FileLoadException("Unable to load source image");
+                        }
+
                         if (!response.Content.Headers.TryGetValues("Content-Type", out IEnumerable<string> values))
                         {
-                            throw new Exception("Unable to determine source format");
+                            throw new FileLoadException("Unable to determine source format");
                         }
                         // remove any charset tags
                         var mime = values.First().Split(';').First();

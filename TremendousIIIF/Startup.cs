@@ -13,18 +13,14 @@ namespace TremendousIIIF
 {
     public class Startup
     {
-        private static HttpClient httpClient = new HttpClient(new HttpClientHandler { UseProxy = false });
+        private static HttpClient httpClient = new HttpClient(new HttpClientHandler { UseProxy = false, MaxConnectionsPerServer = 64  });
         private static ImageServer Conf = new ImageServer();
         private static ILogger Log;
 
 
         public void Configure(IApplicationBuilder app)
         {
-            //System.Net.ServicePointManager.DefaultConnectionLimit = 1024;
-            //System.Net.ServicePointManager.Expect100Continue = false;
-            //System.Net.ServicePointManager.ReusePort = true;
-            //System.Net.ServicePointManager.UseNagleAlgorithm = true;
-            //System.Net.ServicePointManager.MaxServicePointIdleTime = 2500;
+            System.Net.ServicePointManager.DefaultConnectionLimit = 1024;
             ConfigurationBinder.Bind(Configuration.GetSection("ImageServer"), Conf);
 
             app.UseOwin(buildFunc =>

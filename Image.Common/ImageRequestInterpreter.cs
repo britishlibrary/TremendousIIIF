@@ -18,8 +18,8 @@ namespace Image.Common
             float maxHscale = (float)request.MaxHeight / originalHeight;
 
 
-            wScale = allowSizeAboveFull ? Math.Min(requestedWscale, maxWscale) : Math.Min(requestedWscale, maxWscale);
-            hScale = allowSizeAboveFull ? Math.Min(requestedHscale, maxHscale) : Math.Min(requestedHscale, maxHscale);
+            wScale = allowSizeAboveFull ? Math.Min(requestedWscale, maxWscale) : Math.Min(requestedWscale, 1);
+            hScale = allowSizeAboveFull ? Math.Min(requestedHscale, maxHscale) : Math.Min(requestedHscale, 1);
 
             if (!allowSizeAboveFull && request.Size.Percent.HasValue)
             {

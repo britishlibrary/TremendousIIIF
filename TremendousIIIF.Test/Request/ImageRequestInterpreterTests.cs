@@ -231,7 +231,7 @@ namespace TremendousIIIF.Test.Request
                 ID = "",
                 Region = new ImageRegion { Mode = ImageRegionMode.Full, X = 0, Y = 0 },
                 Size = new ImageSize { Mode = ImageSizeMode.Exact, Percent = 1, Width = width * 2, Height= height * 2 },
-                Rotation = new ImageRotation { Mirror = false, Degrees = 90 },
+                Rotation = new ImageRotation { Mirror = false, Degrees = 0 },
                 Quality = ImageQuality.@default,
                 Format = ImageFormat.jpg
             };
@@ -357,8 +357,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
-            Assert.AreEqual(200, result.TileWidth);
-            Assert.AreEqual(300, result.TileHeight);
+            Assert.AreEqual(300, result.TileWidth);
+            Assert.AreEqual(200, result.TileHeight);
         }
 
         [TestMethod]

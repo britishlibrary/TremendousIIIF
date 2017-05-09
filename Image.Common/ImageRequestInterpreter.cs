@@ -7,8 +7,6 @@ namespace Image.Common
     {
         static public ProcessState GetInterpretedValues(ImageRequest request, int originalWidth, int originalHeight, bool allowSizeAboveFull)
         {
-            // TODO: deal with square region!
-
             bool maxUsed = false;
             float scalex, scaley, wScale, hScale;
 
@@ -48,6 +46,12 @@ namespace Image.Common
                     state.TileHeight = Convert.ToInt32(request.Region.Height);
                     wScale = request.Size.Width / (float)state.TileWidth;
                     hScale = request.Size.Height / (float)state.TileHeight;
+                    break;
+                case ImageRegionMode.Square:
+                    state.TileHeight = state.TileWidth = Math.Min(originalWidth, originalHeight);
+                    // pick the middle of the image
+                    state.StartX = state.TileWidth == originalWidth ? 0 : Convert.ToInt32(Math.Round((originalWidth - originalHeight) / 2f));
+                    state.StartY = state.TileHeight == originalHeight ? 0 : Convert.ToInt32(Math.Round((originalHeight - originalWidth) / 2f));
                     break;
             }
             // we can simplify this

@@ -26,10 +26,15 @@ namespace TremendousIIIF.Test
             var result = ImageRequestValidator.CalculateRegionCustom("fullish");
         }
         [TestMethod]
-        [ExpectedException(typeof(NotImplementedException))]
         public void CaluclateRegion_Square()
         {
             var result = ImageRequestValidator.CalculateRegionCustom("square");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageRegionMode.Square);
+            Assert.AreEqual(0f, result.X);
+            Assert.AreEqual(0f, result.Y);
+            Assert.AreEqual(0f, result.Width);
+            Assert.AreEqual(0f, result.Height);
         }
         [TestMethod]
         [ExpectedException(typeof(FormatException))]

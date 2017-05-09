@@ -55,7 +55,7 @@ namespace TremendousIIIF.Types
         public ServiceProfile(bool allowSizeAboveFull = false)
         {
             Qualities = new List<string> { "gray", "color", "bitonal" };
-            Support = new List<string> { "rotationArbitrary", "mirroring" };
+            Support = new List<string> { "rotationArbitrary", "mirroring", "regionSquare", "profileLinkHeader" };
 
             if (allowSizeAboveFull)
                 Support.Add("sizeAboveFull");

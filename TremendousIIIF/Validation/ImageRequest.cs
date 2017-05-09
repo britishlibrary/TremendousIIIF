@@ -93,7 +93,8 @@ namespace TremendousIIIF.Validation
                     if (region_string != "square")
                         InvalidRegion();
                     regionMode = ImageRegionMode.Square;
-                    throw new NotImplementedException("square not supported");
+                    //throw new NotImplementedException("square not supported");
+                    break;
                 case "pct:":
                     regionMode = ImageRegionMode.PercentageRegion;
                     region_string = region_string.Substring(4);

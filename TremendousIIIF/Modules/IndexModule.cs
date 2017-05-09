@@ -38,7 +38,7 @@ namespace TremendousIIIF.Modules
                                                                     conf.MaxHeight,
                                                                     conf.MaxArea);
                     request.RequestId = Context.GetOwinEnvironment()["RequestId"] as string;
-                    log.Debug("@{Request}", request);
+                    log.Debug("{@Request}", request);
                     // pipeline is
                     // validation -> extraction -> transformation
                     // Region THEN Size THEN Rotation THEN Quality THEN Format
@@ -125,7 +125,7 @@ namespace TremendousIIIF.Modules
                         MaxWidth = conf.MaxWidth == int.MaxValue ? default(int) : conf.MaxWidth,
                         MaxHeight = conf.MaxHeight == int.MaxValue ? default(int) : conf.MaxHeight
                     });
-                    log.Debug("@{ImageInfo}", info);
+                    log.Debug("{@ImageInfo}", info);
 
                     return await Negotiate
                         .WithAllowedMediaRange(new MediaRange("application/ld+json"))

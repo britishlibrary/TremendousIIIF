@@ -184,12 +184,14 @@ namespace Jpeg2000
                     extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
                     extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
                     var viewSize = extracted_dims.access_size();
-
+                    Log.Debug("add_ilayer extracted dimension: {@access_pos}, {@access_size}, {@is_empty}, {@scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                     compositor.add_ilayer(0, extracted_dims, extracted_dims);
 
-                    compositor.set_scale(false, false, false, 1, scale);
+                    //compositor.set_scale(false, false, false, 1, scale);
+                    compositor.set_scale(false, false, false,scale);
 
                     compositor.get_total_composition_dims(extracted_dims);
+                    Log.Debug("get_total_composition_dims extracted dimension: {@access_pos}, {@access_size}, {@is_empty}, {@scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                     // check if the access size is the expected size as floating point rounding errors 
                     // might occur
                     const float roundingValue = 0.0001f;
@@ -221,36 +223,37 @@ namespace Jpeg2000
                         compositor.get_total_composition_dims(extracted_dims);
                     }
                     viewSize = extracted_dims.access_size();
-
-
+                    Log.Debug("Extracted dimension: {@access_pos}, {@access_size}, {@is_empty}, {@scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
+                    // crash here with ark:/81055/vdc_0000000388E8.0x000008/2048,0,9,1024/3,/0/default.jpg
                     compositor.set_buffer_surface(extracted_dims);
-
-                    var compositorBuffer = compositor.GetCompositionBitmap(extracted_dims);
+                    //var actual_dims = compositor.GetCompositionBitmap(extracted_dims);
+                    //Log.Debug("Actual dimension: {@access_size}", actual_dims.get_rendering_region().access_size());
+                    
 
                     compositor.set_quality_limiting(limiter, quality.OutputDpi, quality.OutputDpi);
                     compositor.set_max_quality_layers(layers);
+                    var compositorBuffer = compositor.GetCompositionBitmap(extracted_dims);
 
-                    if (compositor.is_processing_complete())
-                    {
-                        return (state, SKImage.FromBitmap(compositorBuffer.AcquireBitmap()));
-                    }
                     using (Ckdu_dims newRegion = new Ckdu_dims())
                     {
                         // we're only interested in the final composited image
-                        while (compositor.process(0, newRegion)) ;
-
-                        var checkResult = compositor.check_invalid_scale_code();
-                        if (0 != checkResult)
+                        while (compositor.process(0, newRegion))
                         {
-                            using (var bmp = compositorBuffer.AcquireBitmap())
-                            {
-                                return (state, SKImage.FromBitmap(bmp));
-                            }
                         }
 
-                        var buffer = compositor.GetCompositionBitmap(newRegion);
-                        using (var bmp = buffer.AcquireBitmap())
+                        //var checkResult = compositor.check_invalid_scale_code();
+                        //if (0 != checkResult)
+                        //{
+                        //    using (var bmp = compositorBuffer.AcquireBitmap())
+                        //    {
+                        //        return (state, SKImage.FromBitmap(bmp));
+                        //    }
+                        //}
+
+                        //var buffer = compositor.GetCompositionBitmap(extracted_dims);
+                        using (var bmp = compositorBuffer.AcquireBitmap())
                         {
+                            //var bmp = compositorBuffer.AcquireBitmap();
                             return (state, SKImage.FromBitmap(bmp));
                         }
                     }

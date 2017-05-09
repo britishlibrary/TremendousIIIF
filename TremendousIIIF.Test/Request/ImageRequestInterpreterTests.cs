@@ -119,7 +119,7 @@ namespace TremendousIIIF.Test.Request
             Assert.AreEqual(100, result.TileHeight);
         }
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(ArgumentException))]
         public void CheckBounds_Width_Height()
         {
             var request = new Image.Common.ImageRequest
@@ -134,7 +134,7 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
         }
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(ArgumentException))]
         public void CheckBounds_StartX_StartY()
         {
             var request = new Image.Common.ImageRequest
@@ -149,7 +149,7 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
         }
         [TestMethod]
-        [ExpectedException(typeof(Exception))]
+        [ExpectedException(typeof(ArgumentException))]
         public void CheckBounds_InvalidRegion()
         {
             var request = new Image.Common.ImageRequest

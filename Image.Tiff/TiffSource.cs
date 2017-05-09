@@ -54,7 +54,7 @@ namespace Image.Tiff
 
         public override long Seek(object clientData, long offset, SeekOrigin origin)
         {
-            Log.Debug("Seek offset=@{offset} origin=@{origin}", offset, origin);
+            Log.Debug("Seek offset={@offset} origin={@origin}", offset, origin);
             Interlocked.Exchange(ref _offset, offset);
             return offset;
         }

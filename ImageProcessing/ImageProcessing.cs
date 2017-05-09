@@ -50,7 +50,7 @@ namespace ImageProcessing
             //    return EncodeImage(m, formatType, quality.GetOutputFormatQuality(request.Format));
             //}
             SKImage resized = null;
-            if (request.Size.Mode == ImageSizeMode.Exact && (state.Width == imageRegion.Width && state.Height == imageRegion.Height))
+            if (request.Size.Mode == ImageSizeMode.Exact && (state.Width != imageRegion.Width || state.Height != imageRegion.Height))
             {
                 resized = ResizeImage(imageRegion, request.Size, state);
             }
@@ -65,7 +65,7 @@ namespace ImageProcessing
                 rotate = RotateImage(mirrored ?? resized ?? imageRegion, request.Rotation);
             }
             SKImage qual = null;
-            if(request.Quality != ImageQuality.@default || request.Quality != ImageQuality.color)
+            if(!(request.Quality == ImageQuality.@default || request.Quality == ImageQuality.color))
             {
                 qual = AlterQuality(rotate??mirrored??resized??imageRegion, request.Quality);
             }

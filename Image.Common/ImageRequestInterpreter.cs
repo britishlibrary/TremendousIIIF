@@ -136,12 +136,12 @@ namespace Image.Common
                         if (state.TileWidth > 0)
                         {
                             state.OutputScale = (float)request.Size.Width / state.TileWidth;
-                            state.Height = state.Width;
+                            state.Height = Convert.ToInt32(state.TileHeight * state.OutputScale);
                         }
                         else
                         {
                             state.OutputScale = wScale;
-                            state.Width = state.Height;
+                            state.Width = Convert.ToInt32(state.TileWidth * state.OutputScale);
                         }
 
                         scaley = scalex = state.OutputScale;
@@ -194,8 +194,8 @@ namespace Image.Common
 
                     if (request.Region.Mode == ImageRegionMode.Full)
                     {
-                        state.TileHeight = int.Parse(Math.Round(originalHeight * state.OutputScale).ToString());
-                        state.TileWidth = int.Parse(Math.Round(originalWidth * state.OutputScale).ToString());
+                        state.TileHeight = Convert.ToInt32(Math.Round(originalHeight * state.OutputScale).ToString());
+                        state.TileWidth = Convert.ToInt32(Math.Round(originalWidth * state.OutputScale).ToString());
                     }
                     break;
             }
@@ -219,12 +219,12 @@ namespace Image.Common
         {
             if (state.TileHeight == 0 || state.TileWidth == 0)
             {
-                throw new Exception("");
+                throw new ArgumentException("Width or Height can not be 0");
             }
 
             if (state.StartX < 0 || state.StartY < 0)
             {
-                throw new Exception("");
+                throw new ArgumentException("X or Y can not be 0");
             }
         }
 

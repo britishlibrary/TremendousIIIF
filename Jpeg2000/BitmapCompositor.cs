@@ -1,16 +1,16 @@
 ﻿using kdu_mni;
-using System.Diagnostics;
+using System;
+using System.Collections.Generic;
 
 namespace Jpeg2000
 {
-    // TODO: replace this bad linked list implementation with a .net built in one
     public class BitmapCompositor : Ckdu_region_compositor
     {
-        private BitmapBuffer buffers; // Points to the head of a list of buffers
+        private LinkedList<BitmapBuffer> bufferList = new LinkedList<BitmapBuffer>();
         private bool disposed;
 
         public BitmapCompositor() : base()
-        { buffers = null; disposed = false; }
+        { disposed = false; }
 
         /// <summary>
         /// Use this function instead of the base object's `get_composition_buffer'
@@ -19,11 +19,24 @@ namespace Jpeg2000
         /// </summary>
         public BitmapBuffer GetCompositionBitmap(Ckdu_dims region)
         {
-            Ckdu_compositor_buf res = get_composition_buffer(region);
+            var res = get_composition_buffer(region);
             if (res == null)
                 return null;
-            Debug.Assert(buffers != null);
-            return buffers.Find(res);
+            return Find(res);
+        }
+
+        private BitmapBuffer Find(Ckdu_compositor_buf tgt)
+        {
+            int tgt_row_gap = 0;
+            IntPtr tgt_handle = tgt.get_buf(ref tgt_row_gap, true);
+            foreach (var buf in bufferList)
+            {
+                if(buf.buffer_handle == tgt_handle)
+                {
+                    return buf;
+                }
+            }
+            return null;
         }
 
         /// <summary>
@@ -38,7 +51,7 @@ namespace Jpeg2000
         {
             BitmapBuffer result = new BitmapBuffer(min_size);
             actual_size.assign(min_size);
-            buffers = result.Insert(buffers);
+            bufferList.AddFirst(result);
             return result;
         }
 
@@ -49,12 +62,16 @@ namespace Jpeg2000
         public override void delete_buffer(Ckdu_compositor_buf buf)
         {
             BitmapBuffer equiv = null;
-            if (buffers != null)
-                equiv = buffers.Find(buf);
-            //Debug.Assert(equiv != null);
-            if (equiv == null)
-                return;
-            buffers = equiv.Unlink();
+            if (bufferList.Count > 0)
+            {
+                var buffer = Find(buf);
+                if(buffer == null)
+                {
+                    return;
+                }
+                equiv = buffer;
+            }
+            bufferList.Remove(equiv);
             equiv.Dispose();
         }
 
@@ -69,7 +86,6 @@ namespace Jpeg2000
             {
                 disposed = true;
                 pre_destroy(); // This call should delete all the buffers
-                //Debug.Assert(buffers == null);
             }
             base.Dispose(in_dispose);
         }

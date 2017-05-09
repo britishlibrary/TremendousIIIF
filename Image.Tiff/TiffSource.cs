@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Threading;
-using TremendousIIIF.Common;
 using System.Net.Http;
 using Nito.AsyncEx;
 using System.Threading.Tasks;
@@ -11,7 +10,7 @@ using Serilog;
 
 namespace Image.Tiff
 {
-    public class TiffSource : TiffStream, IDisposable
+    public class TiffSource : TiffStream
     {
         private HttpClient httpClient;
         private Int64 _size = 0;
@@ -101,20 +100,9 @@ namespace Image.Tiff
                 }
             }
         }
-
         public override void Close(object clientData)
         {
-
-        }
-
-        private void Open()
-        {
-
-        }
-
-        public void Dispose()
-        {
-
+            
         }
     }
 }

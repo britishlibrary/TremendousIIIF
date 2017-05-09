@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 
 namespace Image.Common
 {

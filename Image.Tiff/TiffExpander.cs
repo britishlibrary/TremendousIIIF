@@ -21,7 +21,7 @@ namespace Image.Tiff
             }
             else
             {
-                using (var stream = new TiffSource(httpClient, log, imageUri, request.RequestId))
+                var stream = new TiffSource(httpClient, log, imageUri, request.RequestId);
                 using (var tiff = T.Tiff.ClientOpen("custom", "r", null, stream))
                 {
                     return ReadFullImage(tiff, request, allowSizeAboveFull);
@@ -40,7 +40,7 @@ namespace Image.Tiff
             }
             else
             {
-                using (var stream = new TiffSource(httpClient, log, imageUri, requestId))
+                var stream = new TiffSource(httpClient, log, imageUri, requestId);
                 using (var tiff = T.Tiff.ClientOpen("custom", "r", null, stream))
                 {
                     return ReadMetadata(tiff, defaultTileWidth);

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 namespace TremendousIIIF.Types
 {
-
     public class ImageInfo
     {
         [JsonConstructor]
@@ -30,15 +29,10 @@ namespace TremendousIIIF.Types
         [JsonProperty("profile", Order = 7, Required = Required.Always)]
         public List<object> Profile { get; set; }
 
-        //[JsonProperty("sizes", Order = 8, NullValueHandling = NullValueHandling.Ignore)]
-        //public List<ImageSizeObject> Sizes { get; set; }
-
         [JsonProperty("tiles", Order = 6, NullValueHandling = NullValueHandling.Ignore)]
         public List<Tile> Tiles { get; set; }
     }
 
-    //[JsonObject(ItemConverterType = typeof(ServiceProfileConverter))]
-    //[DataContract]
     public class ServiceProfile
     {
         [JsonProperty("maxArea", DefaultValueHandling = DefaultValueHandling.Ignore)]

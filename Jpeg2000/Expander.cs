@@ -119,6 +119,7 @@ namespace Jpeg2000
                             num_threads = nt;
                         }
                     }
+                    Log.Debug("Created {@num_threads} threads", num_threads);
                     family_src.Open(client, imageUri, false);
 
                     int success = wrapped_src.open(family_src, true);

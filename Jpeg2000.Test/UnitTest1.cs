@@ -3,9 +3,11 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using C=TremendousIIIF.Common.Configuration;
 using Serilog;
 using Image.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Jpeg2000.Test
 {
+    [ExcludeFromCodeCoverage]
     [TestClass]
     public class Jpeg2000Decoder
     {

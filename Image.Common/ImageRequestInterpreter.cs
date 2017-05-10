@@ -47,7 +47,7 @@ namespace Image.Common
                     hScale = request.Size.Height / (float)state.TileHeight;
                     break;
                 case ImageRegionMode.Square:
-                    state.TileHeight = state.TileWidth = Math.Min(originalWidth, originalHeight);
+                    state.Width = state.Height = state.TileHeight = state.TileWidth = Math.Min(originalWidth, originalHeight);
                     // pick the middle of the image
                     state.StartX = state.TileWidth == originalWidth ? 0 : Convert.ToInt32(Math.Round((originalWidth - originalHeight) / 2f));
                     state.StartY = state.TileHeight == originalHeight ? 0 : Convert.ToInt32(Math.Round((originalHeight - originalWidth) / 2f));
@@ -180,6 +180,11 @@ namespace Image.Common
 
                     break;
                 case ImageSizeMode.SpecifiedFit:
+                    if(request.Region.Mode == ImageRegionMode.Square)
+                    {
+                        state.Width = request.Size.Width == 0 ? request.Size.Height : request.Size.Width;
+                        state.Height = request.Size.Height == 0 ? request.Size.Width : request.Size.Height;
+                    }
                     if (state.TileWidth > 0)
                         scalex = (float)request.Size.Width / state.TileWidth;
                     else
@@ -195,11 +200,12 @@ namespace Image.Common
                     else
                         state.OutputScale = scaley;
 
-                    if (request.Region.Mode == ImageRegionMode.Full)
+                    if (request.Region.Mode == ImageRegionMode.Full )
                     {
                         state.TileHeight = Convert.ToInt32(Math.Round(originalHeight * state.OutputScale).ToString());
                         state.TileWidth = Convert.ToInt32(Math.Round(originalWidth * state.OutputScale).ToString());
                     }
+
                     break;
             }
 
@@ -227,7 +233,7 @@ namespace Image.Common
 
             if (state.StartX < 0 || state.StartY < 0)
             {
-                throw new ArgumentException("X or Y can not be 0");
+                throw new ArgumentException("X or Y must be unsigned");
             }
         }
 

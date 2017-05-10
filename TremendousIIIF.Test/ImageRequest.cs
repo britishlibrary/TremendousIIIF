@@ -2,9 +2,11 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TremendousIIIF.Validation;
 using Image.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TremendousIIIF.Test
 {
+    [ExcludeFromCodeCoverage]
     [TestClass]
     public class ImageRequest
     {

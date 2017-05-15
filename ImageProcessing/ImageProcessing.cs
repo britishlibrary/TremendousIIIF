@@ -50,7 +50,7 @@ namespace ImageProcessing
             //    return EncodeImage(m, formatType, quality.GetOutputFormatQuality(request.Format));
             //}
             SKImage resized = null;
-            if (request.Size.Mode == ImageSizeMode.Exact && (state.Width != imageRegion.Width || state.Height != imageRegion.Height))
+            if (request.Size.Mode == ImageSizeMode.Exact && ((state.Width >0 && state.Width != imageRegion.Width) || (state.Height > 0 && state.Height != imageRegion.Height)))
             {
                 resized = ResizeImage(imageRegion, request.Size, state);
             }

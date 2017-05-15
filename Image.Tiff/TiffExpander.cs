@@ -79,8 +79,8 @@ namespace Image.Tiff
             }
             using (var bmp = CreateBitmapFromPixels(raster, width, height))
             {
-                var desiredWidth = (int)Math.Round(state.TileWidth * state.ImageScale);
-                var desiredHeight = (int)Math.Round(state.TileHeight * state.ImageScale);
+                var desiredWidth = Math.Max(1, (int)Math.Round(state.TileWidth * state.ImageScale));
+                var desiredHeight = Math.Max(1, (int)Math.Round(state.TileHeight * state.ImageScale));
 
                 var regionWidth = (int)Math.Round((state.TileWidth / state.OutputScale) * state.ImageScale);
                 var regionHeight = (int)Math.Round((state.TileHeight / state.OutputScale) * state.ImageScale);

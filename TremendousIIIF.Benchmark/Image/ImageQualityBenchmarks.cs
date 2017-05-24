@@ -4,24 +4,21 @@ using BenchmarkDotNet.Attributes;
 using Image.Common;
 using BenchmarkDotNet.Attributes.Exporters;
 using TremendousIIIF.Common;
+using Serilog;
 
 namespace TremendousIIIF.Benchmark.Image
 {
     [HtmlExporter, CsvExporter, RPlotExporter]
-    [MemoryDiagnoser]
     public class ImageQualityBenchmarks
     {
-        SKBitmap _bmp;
-        private SKImage Imagecopy
-        {
-            get
-            {
-                return SKImage.FromBitmap(_bmp);
-            }
-        }
+        public SKImage Imagecopy { get; set; }
+    
         [Params(ImageQuality.bitonal, ImageQuality.gray)]
         public ImageQuality Quality { get; set; }
-        public ImageQualityBenchmarks()
+
+        public ILogger Log { get; set; }
+        [Setup]
+        public void Setup()
         {
             var file = new Uri("file:///C:/Source/TremendousIIIF/TremendousIIIF.Benchmark/TestData/RoyalMS.jp2");
             var request = new ImageRequest
@@ -39,16 +36,19 @@ namespace TremendousIIIF.Benchmark.Image
                 },
                 Format = ImageFormat.jpg,
                 Quality = ImageQuality.bitonal,
-                Rotation = new ImageRotation { Degrees = 0, Mirror = false }
+                Rotation = new ImageRotation { Degrees = 0, Mirror = false },
+                RequestId = string.Empty
             };
-            (var state, var img) = Jpeg2000.J2KExpander.ExpandRegion(null, null, file, request, false, new Common.Configuration.ImageQuality());
-            _bmp = SKBitmap.FromImage(img);
+            Log = new LoggerConfiguration().CreateLogger();
+            (var state, var img) = Jpeg2000.J2KExpander.ExpandRegion(null, Log, file, request, false, new Common.Configuration.ImageQuality());
+            Imagecopy = img;
+
         }
 
         [Benchmark]
-        public SKImage AlterColor() => ImageProcessing.ImageProcessing.AlterQuality(Imagecopy, Quality);
+        public SKImage HighContrast() => ImageProcessing.ImageProcessing.AlterQualityContrastFilter(Imagecopy, Quality);
 
         [Benchmark(Baseline =true)]
-        public SKImage Color() => ImageProcessing.ImageProcessing.AlterQuality(Imagecopy, ImageQuality.color);
+        public SKImage Matrix() => ImageProcessing.ImageProcessing.AlterQuality(Imagecopy, Quality);
     }
 }

@@ -28,7 +28,7 @@ namespace Jpeg2000
                     {
                         family_src.close();
                         wrapped_src.close();
-                        throw new FileLoadException("could not be read as JPEG2000", imageUri.ToString());
+                        throw new IOException("could not be read as JPEG2000");
                     }
 
                     jp2_source.open(family_src);
@@ -127,7 +127,7 @@ namespace Jpeg2000
                     {
                         family_src.close();
                         wrapped_src.close();
-                        throw new FileLoadException("could not be read as JPEG2000", imageUri.ToString());
+                        throw new IOException("could not be read as JPEG2000");
                     }
 
                     if (wrapped_src != null)
@@ -144,7 +144,7 @@ namespace Jpeg2000
 
                     if (wrapped_src == null)
                     {
-                        throw new FileLoadException("could not be read as JPEG2000", imageUri.ToString());
+                        throw new IOException("could not be read as JPEG2000");
                     }
                     codestream.create(wrapped_src.access_codestream(ref_component).open_stream());
                     codestream.set_fast();

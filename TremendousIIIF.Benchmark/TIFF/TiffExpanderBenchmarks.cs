@@ -7,6 +7,7 @@ using SkiaSharp;
 using System;
 using T = BitMiracle.LibTiff.Classic;
 using TremendousIIIF.Common;
+using System.IO;
 
 namespace TremendousIIIF.Benchmark.TIFF
 {
@@ -67,7 +68,7 @@ namespace TremendousIIIF.Benchmark.TIFF
                 var raster = new int[width * height];
                 if (!tiff.ReadRGBAImageOriented(width, height, raster, T.Orientation.TOPLEFT))
                 {
-                    throw new Exception("Unable to decode TIFF file");
+                    throw new IOException("Unable to decode TIFF file");
                 }
                 imageData = raster;
                 this.width = width;

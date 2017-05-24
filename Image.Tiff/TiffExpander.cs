@@ -5,6 +5,7 @@ using Image.Common;
 using System.Runtime.InteropServices;
 using System.Net.Http;
 using Serilog;
+using System.IO;
 
 namespace Image.Tiff
 {
@@ -75,12 +76,13 @@ namespace Image.Tiff
             var raster = new int[width * height];
             if (!tiff.ReadRGBAImageOriented(width, height, raster, T.Orientation.TOPLEFT))
             {
-                throw new Exception("Unable to decode TIFF file");
+                throw new IOException("Unable to decode TIFF file");
             }
             using (var bmp = CreateBitmapFromPixels(raster, width, height))
             {
                 var desiredWidth = Math.Max(1, (int)Math.Round(state.TileWidth * state.ImageScale));
                 var desiredHeight = Math.Max(1, (int)Math.Round(state.TileHeight * state.ImageScale));
+                Log.Debug("Desired size {@desiredWidth}, {@desiredHeight}", desiredWidth, desiredHeight);
 
                 var regionWidth = (int)Math.Round((state.TileWidth / state.OutputScale) * state.ImageScale);
                 var regionHeight = (int)Math.Round((state.TileHeight / state.OutputScale) * state.ImageScale);

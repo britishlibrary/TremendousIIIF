@@ -50,24 +50,25 @@ namespace ImageProcessing
             //    return EncodeImage(m, formatType, quality.GetOutputFormatQuality(request.Format));
             //}
             SKImage resized = null;
-            if (request.Size.Mode == ImageSizeMode.Exact && ((state.Width >0 && state.Width != imageRegion.Width) || (state.Height > 0 && state.Height != imageRegion.Height)))
+            if (request.Size.Mode == ImageSizeMode.Exact && ((state.Width > 0 && state.Width != imageRegion.Width) || (state.Height > 0 && state.Height != imageRegion.Height)))
             {
                 resized = ResizeImage(imageRegion, request.Size, state);
             }
             SKImage mirrored = null;
-            if(request.Rotation.Mirror)
+            if (request.Rotation.Mirror)
             {
                 mirrored = MirrorImage(resized ?? imageRegion, request.Rotation);
             }
             SKImage rotate = null;
-            if(request.Rotation.Degrees > 0 && request.Rotation.Degrees < 360)
+            if (request.Rotation.Degrees > 0 && request.Rotation.Degrees < 360)
             {
                 rotate = RotateImage(mirrored ?? resized ?? imageRegion, request.Rotation);
             }
             SKImage qual = null;
-            if(!(request.Quality == ImageQuality.@default || request.Quality == ImageQuality.color))
+            if (!(request.Quality == ImageQuality.@default || request.Quality == ImageQuality.color))
             {
-                qual = AlterQuality(rotate??mirrored??resized??imageRegion, request.Quality);
+                qual = AlterQuality(rotate ?? mirrored ?? resized ?? imageRegion, request.Quality);
+                //qual = AlterQualityContrastFilter(rotate ?? mirrored ?? resized ?? imageRegion, request.Quality);
             }
 
             var result = EncodeImage(qual ?? rotate ?? mirrored ?? resized ?? imageRegion, formatType, quality.GetOutputFormatQuality(request.Format));
@@ -203,19 +204,36 @@ namespace ImageProcessing
                     using (var binaryMatrix = SKColorFilter.CreateColorMatrix(CreateThresholdMatrix(180)))
                     using (var binaryFilter = SKImageFilter.CreateColorFilter(binaryMatrix))
                     using (var bitonalFilter = SKImageFilter.CreateCompose(greyFilter, binaryFilter))
-                    using (var bitonal = ApplyFilter(image, bitonalFilter))
-                    using (var surface = SKSurface.Create(width: image.Width, height: image.Height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Opaque))
                     {
-                        var canvas = surface.Canvas;
-
-                        canvas.DrawImage(bitonal, 0, 0);
-                        canvas.Flush();
-                        return surface.Snapshot();
+                        return ApplyFilter(image, bitonalFilter);
                     }
                 case ImageQuality.@default:
                 case ImageQuality.color:
                 default:
                     return image;
+            }
+        }
+        // was hoping SKHighContrastFilter would be faster than the matrix concat version above...
+        // it is better quality i think, but is also way slower
+        public static SKImage AlterQualityContrastFilter(SKImage image, ImageQuality quality)
+        {
+            switch (quality)
+            {
+                case ImageQuality.@default:
+                case ImageQuality.color:
+                default:
+                    return image;
+                case ImageQuality.gray:
+                case ImageQuality.bitonal:
+                    var contrast = quality == ImageQuality.gray ? 0.1f : 1f;
+                    using (var surface = SKSurface.Create(width: image.Width, height: image.Height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Opaque))
+                    using (var cf = SKColorFilter.CreateHighContrast(true, SKHighContrastConfigInvertStyle.NoInvert, contrast))
+                    using (var paint = new SKPaint())
+                    {
+                        paint.ColorFilter = cf;
+                        surface.Canvas.DrawImage(image, 0, 0, paint);
+                        return surface.Snapshot();
+                    }
             }
         }
 

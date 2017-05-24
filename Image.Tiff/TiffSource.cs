@@ -81,7 +81,7 @@ namespace Image.Tiff
                                 throw new FileNotFoundException("Unable to load source image", _imageUri.ToString());
                             default:
                             case System.Net.HttpStatusCode.InternalServerError:
-                                throw new FileLoadException("Unable to load source image");
+                                throw new IOException("Unable to load source image");
                         }
                     }
                 }

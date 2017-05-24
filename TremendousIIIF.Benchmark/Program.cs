@@ -11,8 +11,8 @@ using BenchmarkDotNet.Attributes.Jobs;
 
 namespace TremendousIIIF.Benchmark
 {
-    //[SimpleJob(launchCount: 1, warmupCount: 1, targetCount: 1, invocationCount: 1, id: "QuickJob")]
-    //[ShortRunJob]
+    [SimpleJob(launchCount: 1, warmupCount: 1, targetCount: 1, invocationCount: 1, id: "QuickJob")]
+    [ShortRunJob]
     class Program
     {
 

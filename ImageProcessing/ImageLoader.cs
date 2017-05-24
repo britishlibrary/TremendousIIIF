@@ -38,7 +38,7 @@ namespace ImageProcessing
                 case ImageFormat.tif:
                     return TiffExpander.ExpandRegion(HttpClient, Log, imageUri, request, allowSizeAboveFull);
                 default:
-                    throw new FileLoadException("Unsupported source format");
+                    throw new IOException("Unsupported source format");
             }
         }
         public async Task<Metadata> GetMetadata(Uri imageUri, int defaultTileWidth, string requestId)
@@ -51,7 +51,7 @@ namespace ImageProcessing
                 case ImageFormat.tif:
                     return TiffExpander.GetMetadata(HttpClient, Log, imageUri, defaultTileWidth, requestId);
                 default:
-                    throw new FileLoadException("Unsupported source format");
+                    throw new IOException("Unsupported source format");
             }
         }
 
@@ -71,7 +71,7 @@ namespace ImageProcessing
                             case System.Net.HttpStatusCode.NotFound:
                                 throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
                             case System.Net.HttpStatusCode.InternalServerError:
-                                throw new FileLoadException("Unable to load source image");
+                                throw new IOException("Unable to load source image");
                         }
 
                         if (!response.Content.Headers.TryGetValues("Content-Type", out IEnumerable<string> values))
@@ -111,7 +111,7 @@ namespace ImageProcessing
                     return CompareMagicBytes(fileBytes);
                 }
             }
-            throw new Exception("Unsupported scheme");
+            throw new IOException("Unsupported scheme");
         }
 
         private static ImageFormat CompareMagicBytes(byte[] fileBytes)
@@ -126,7 +126,7 @@ namespace ImageProcessing
                     return mb.Value;
                 }
             }
-            throw new Exception("Unable to determine source format");
+            throw new IOException("Unable to determine source format");
         }
 
         private static ImageFormat GetFormatFromMimeType(string mimeType)
@@ -149,7 +149,7 @@ namespace ImageProcessing
                 case "application/x-tiff":
                     return ImageFormat.tif;
                 default:
-                    throw new FileLoadException("Unsupported source image format type");
+                    throw new IOException("Unsupported source image format type");
             }
         }
     }

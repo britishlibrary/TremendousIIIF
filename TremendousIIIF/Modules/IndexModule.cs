@@ -9,8 +9,6 @@ using Nancy.Owin;
 using Nancy.Responses;
 using Serilog;
 using System.Collections.Generic;
-using Image.Common;
-using Microsoft.Extensions.Configuration;
 using TremendousIIIF.Common.Configuration;
 using System.Linq;
 using Nancy.Responses.Negotiation;

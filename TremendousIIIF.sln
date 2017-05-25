@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26403.7
+VisualStudioVersion = 15.0.26430.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jpeg2000", "Jpeg2000\Jpeg2000.csproj", "{9F8B1BA4-043D-4D9A-8112-1AB543677571}"
 EndProject
@@ -20,6 +20,11 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF.Benchmark", "TremendousIIIF.Benchmark\TremendousIIIF.Benchmark.csproj", "{56DEC1FB-576D-496C-B322-A5063AE9C638}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF", "TremendousIIIF\TremendousIIIF.csproj", "{1E0F8702-316F-4F48-9162-6568F5D6B96E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEE43449-5EEE-4F27-8D3C-50319C6ED6F6}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

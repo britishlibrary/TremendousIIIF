@@ -18,7 +18,6 @@ namespace ImageProcessing
         private static Dictionary<ImageFormat, SKEncodedImageFormat> FormatLookup = new Dictionary<ImageFormat, SKEncodedImageFormat> {
             { ImageFormat.jpg, SKEncodedImageFormat.Jpeg },
             { ImageFormat.png, SKEncodedImageFormat.Png },
-            //{ ImageFormat.gif, SKEncodedImageFormat.Gif },
             { ImageFormat.webp, SKEncodedImageFormat.Webp }
         };
 
@@ -68,7 +67,6 @@ namespace ImageProcessing
             if (!(request.Quality == ImageQuality.@default || request.Quality == ImageQuality.color))
             {
                 qual = AlterQuality(rotate ?? mirrored ?? resized ?? imageRegion, request.Quality);
-                //qual = AlterQualityContrastFilter(rotate ?? mirrored ?? resized ?? imageRegion, request.Quality);
             }
 
             var result = EncodeImage(qual ?? rotate ?? mirrored ?? resized ?? imageRegion, formatType, quality.GetOutputFormatQuality(request.Format));
@@ -214,7 +212,7 @@ namespace ImageProcessing
             }
         }
         // was hoping SKHighContrastFilter would be faster than the matrix concat version above...
-        // it is better quality i think, but is also way slower
+        // unfortunately it's waaay slower
         public static SKImage AlterQualityContrastFilter(SKImage image, ImageQuality quality)
         {
             switch (quality)
@@ -228,11 +226,13 @@ namespace ImageProcessing
                     var contrast = quality == ImageQuality.gray ? 0.1f : 1f;
                     using (var surface = SKSurface.Create(width: image.Width, height: image.Height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Opaque))
                     using (var cf = SKColorFilter.CreateHighContrast(true, SKHighContrastConfigInvertStyle.NoInvert, contrast))
-                    using (var paint = new SKPaint())
+                        using (var imf = SKImageFilter.CreateColorFilter(cf))
+                    //using (var paint = new SKPaint())
                     {
-                        paint.ColorFilter = cf;
-                        surface.Canvas.DrawImage(image, 0, 0, paint);
-                        return surface.Snapshot();
+                        return ApplyFilter(image, imf);
+                        //paint.ColorFilter = cf;
+                        //surface.Canvas.DrawImage(image, 0, 0, paint);
+                        //return surface.Snapshot();
                     }
             }
         }

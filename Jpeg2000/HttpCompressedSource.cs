@@ -49,11 +49,15 @@ namespace Jpeg2000
 
         public override int get_capabilities()
         {
-            return Ckdu_global.KDU_SOURCE_CAP_SEQUENTIAL | Ckdu_global.KDU_SOURCE_CAP_SEEKABLE;
+            return Ckdu_global.KDU_SOURCE_CAP_SEQUENTIAL| Ckdu_global.KDU_SOURCE_CAP_SEEKABLE;
         }
 
         public override bool seek(long offset)
         {
+            if (offset > ReadData().Result.Length)
+            {
+                return false;
+            }
             Interlocked.Exchange(ref _offset, offset);
             return true;
         }

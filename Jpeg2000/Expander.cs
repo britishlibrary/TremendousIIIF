@@ -21,7 +21,7 @@ namespace Jpeg2000
                 using (var wrapped_src = new Cjpx_source())
                 using (var jp2_source = new Cjp2_source())
                 {
-                    family_src.Open(client, imageUri, true);
+                    family_src.Open(client, imageUri, false);
 
                     int success = wrapped_src.open(family_src, true);
                     if (success < 1)

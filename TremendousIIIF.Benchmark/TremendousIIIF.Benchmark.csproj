@@ -170,6 +170,7 @@
     <Compile Include="JPEG2000\Metadata.cs" />
     <Compile Include="Parsing\RegionBenchmarks.cs" />
     <Compile Include="Parsing\SizeBenchmarks.cs" />
+    <Compile Include="PipelineBenchmarks.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TIFF\TiffExpanderBenchmarks.cs" />

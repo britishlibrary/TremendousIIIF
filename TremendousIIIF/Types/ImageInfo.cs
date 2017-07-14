@@ -45,6 +45,8 @@ namespace TremendousIIIF.Types
         public List<string> Qualities { get; set; }
         [JsonProperty("supports")]
         public List<string> Support { get; set; }
+        [JsonProperty("formats", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public List<string> Formats { get; set; }
 
         public ServiceProfile(bool allowSizeAboveFull = false)
         {

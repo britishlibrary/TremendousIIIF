@@ -7,9 +7,18 @@ using Image.Common;
 using TremendousIIIF.Common;
 using System.Net.Http;
 using Serilog;
+using RotationCoords = System.ValueTuple<float, float, float, int, int>;
 
 namespace ImageProcessing
 {
+    enum EncodingStrategy
+    {
+        Unknown,
+        Skia,
+        PDF,
+        Kakadu,
+        Tifflib
+    }
     public class ImageProcessing
     {
         public HttpClient HttpClient { get; set; }
@@ -18,8 +27,33 @@ namespace ImageProcessing
         private static Dictionary<ImageFormat, SKEncodedImageFormat> FormatLookup = new Dictionary<ImageFormat, SKEncodedImageFormat> {
             { ImageFormat.jpg, SKEncodedImageFormat.Jpeg },
             { ImageFormat.png, SKEncodedImageFormat.Png },
-            { ImageFormat.webp, SKEncodedImageFormat.Webp }
+            { ImageFormat.webp, SKEncodedImageFormat.Webp },
+            // GIF appears to be unsupported on Windows in Skia currently
+            // { ImageFormat.gif, SKEncodedImageFormat.Gif }
         };
+
+        private EncodingStrategy GetEncodingStrategy(ImageFormat format)
+        {
+            if (FormatLookup.ContainsKey(format))
+            {
+                return EncodingStrategy.Skia;
+            }
+            if(ImageFormat.pdf == format)
+            {
+                return EncodingStrategy.PDF;
+            }
+            if(ImageFormat.jp2 == format)
+            {
+                return EncodingStrategy.Kakadu;
+            }
+            if(ImageFormat.tif == format)
+            {
+                return EncodingStrategy.Tifflib;
+            }
+
+            return EncodingStrategy.Unknown;
+
+        }
 
         private static readonly float[] GreyMatrixData = new float[] {
                 0.213f, 0.715f, 0.072f, 0, 0,
@@ -31,77 +65,126 @@ namespace ImageProcessing
         // Region THEN Size THEN Rotation THEN Quality THEN Format
         public async Task<Stream> ProcessImage(Uri imageUri, ImageRequest request, TremendousIIIF.Common.Configuration.ImageQuality quality, bool allowSizeAboveFull)
         {
-            if (!FormatLookup.TryGetValue(request.Format, out SKEncodedImageFormat formatType))
+            var encodingStrategy = GetEncodingStrategy(request.Format);
+            if(encodingStrategy == EncodingStrategy.Unknown)
             {
                 throw new ArgumentException("Unsupported format", "format");
             }
+
             var loader = new ImageLoader { HttpClient = HttpClient, Log = Log };
             (var state, var imageRegion) = await loader.ExtractRegion(imageUri, request, allowSizeAboveFull, quality);
-            // There is a bug in SkiaSharp, https://github.com/mono/SkiaSharp/issues/209
-            // until that's fixed, stick to this ugly call chaining
 
-            //using (imageRegion)
-            //using (var j = ResizeImage(imageRegion, request.Size, state))
-            //using (var k = MirrorImage(j, request.Rotation))
-            //using (var l = RotateImage(k, request.Rotation))
-            //using (var m = AlterQuality(l, request.Quality))
-            //{
-            //    return EncodeImage(m, formatType, quality.GetOutputFormatQuality(request.Format));
-            //}
-            SKImage resized = null;
-            if (request.Size.Mode == ImageSizeMode.Exact && ((state.Width > 0 && state.Width != imageRegion.Width) || (state.Height > 0 && state.Height != imageRegion.Height)))
+            using (imageRegion)
             {
-                resized = ResizeImage(imageRegion, request.Size, state);
-            }
-            SKImage mirrored = null;
-            if (request.Rotation.Mirror)
-            {
-                mirrored = MirrorImage(resized ?? imageRegion, request.Rotation);
-            }
-            SKImage rotate = null;
-            if (request.Rotation.Degrees > 0 && request.Rotation.Degrees < 360)
-            {
-                rotate = RotateImage(mirrored ?? resized ?? imageRegion, request.Rotation);
-            }
-            SKImage qual = null;
-            if (!(request.Quality == ImageQuality.@default || request.Quality == ImageQuality.color))
-            {
-                qual = AlterQuality(rotate ?? mirrored ?? resized ?? imageRegion, request.Quality);
-            }
+                var expectedWidth = request.Size.Mode == ImageSizeMode.Exact ? state.Width : state.TileWidth;
+                var expectedHeight = request.Size.Mode == ImageSizeMode.Exact ? state.Height : state.TileHeight;
+                var alphaType = request.Quality == ImageQuality.bitonal ? SKAlphaType.Opaque : SKAlphaType.Premul;
 
-            var result = EncodeImage(qual ?? rotate ?? mirrored ?? resized ?? imageRegion, formatType, quality.GetOutputFormatQuality(request.Format));
-            if (qual != null)
-                qual.Dispose();
-            if (rotate != null)
-                rotate.Dispose();
-            if (mirrored != null)
-                mirrored.Dispose();
-            if (resized != null)
-                resized.Dispose();
-            if (imageRegion != null)
-                imageRegion.Dispose();
-            return result;
+                (float angle, float originX, float originY, int newImgWidth, int newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
+
+                using (var surface = SKSurface.Create(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType))
+                using (var canvas = surface.Canvas)
+                {
+                    if (request.Rotation.Mirror)
+                    {
+                        canvas.Translate(newImgWidth, 0);
+                        canvas.Scale(-1, 1);
+                    }
+
+                    canvas.Translate(originX, originY);
+                    canvas.RotateDegrees(angle, 0, 0);
+
+                    // reset clip rects to rotated boundaries
+                    var region = new SKRegion();
+                    var tr = request.Rotation.Mirror ? 1 : -1;
+                    region.SetRect(new SKRectI(0 - (int)originX, 0 - (int)originY, newImgWidth, newImgHeight));
+                    canvas.ClipRegion(region);
+
+                    // quality
+                    if (request.Quality == ImageQuality.gray || request.Quality == ImageQuality.bitonal)
+                    {
+                        var contrast = request.Quality == ImageQuality.gray ? 0.1f : 1f;
+                        using (var cf = SKColorFilter.CreateHighContrast(true, SKHighContrastConfigInvertStyle.NoInvert, contrast))
+                        using (var paint = new SKPaint())
+                        {
+                            paint.FilterQuality = SKFilterQuality.High;
+                            paint.ColorFilter = cf;
+
+                            canvas.DrawImage(imageRegion, new SKRect(0, 0, expectedWidth, expectedHeight), paint);
+                        }
+                    }
+                    else
+                    {
+                        using (var paint = new SKPaint())
+                        {
+                            paint.FilterQuality = SKFilterQuality.High;
+                            canvas.DrawImage(imageRegion, new SKRect(0, 0, expectedWidth, expectedHeight), paint);
+                        }
+                    }
+
+                    return Encode(surface, expectedWidth, expectedHeight, encodingStrategy, request.Format, quality.GetOutputFormatQuality(request.Format));
+                    
+                }
+            }
         }
 
-        private static SKImage ResizeImage(SKImage image, ImageSize size, ProcessState state)
+        private static Stream Encode(SKSurface surface, int width, int height, EncodingStrategy encodingStrategy, ImageFormat format, int q)
         {
-            if (size.Mode != ImageSizeMode.Exact)
+            switch (encodingStrategy)
             {
-                return image;
+                case EncodingStrategy.Skia:
+                    FormatLookup.TryGetValue(format, out SKEncodedImageFormat formatType);
+                    return EncodeImage(surface.Snapshot(), formatType, q);
+                case EncodingStrategy.PDF:
+                    return EncodePdf(surface, width, height, q);
+                case EncodingStrategy.Kakadu:
+                    return Jpeg2000.Compressor.Compress(surface.Snapshot());
+                case EncodingStrategy.Tifflib:
+                    return Image.Tiff.TiffEncoder.Encode(surface.Snapshot());
+                default:
+                    throw new ArgumentException("Unsupported format");
             }
-            // if width and height are already correct, also NOOP
-            if (state.Width == image.Width && state.Height == image.Height)
+        }
+
+        private static RotationCoords Rotate(int width, int height, float degrees)
+        {
+            if (degrees == 0 || degrees == 360)
             {
-                return image;
+                return (0, 0, 0, width, height);
             }
-            // stretch output tile to requested dimension
-            using (var surface = SKSurface.Create(width: state.Width, height: state.Height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul))
+
+            var angle = degrees % 360;
+            if (angle > 180)
+                angle -= 360;
+            float sin = (float)Math.Abs(Math.Sin(angle * Math.PI / 180.0)); // this function takes radians
+            float cos = (float)Math.Abs(Math.Cos(angle * Math.PI / 180.0)); // this one too
+            float newImgWidth = sin * height + cos * width;
+            float newImgHeight = sin * width + cos * height;
+            float originX = 0f;
+            float originY = 0f;
+
+            if (angle > 0)
             {
-                var canvas = surface.Canvas;
-                canvas.DrawImage(image, new SKRect(0, 0, state.Width, state.Height));
-                canvas.Flush();
-                return surface.Snapshot();
+                if (angle <= 90)
+                    originX = sin * height;
+                else
+                {
+                    originX = newImgWidth;
+                    originY = newImgHeight - sin * width;
+                }
             }
+            else
+            {
+                if (angle >= -90)
+                    originY = sin * width;
+                else
+                {
+                    originX = newImgWidth - sin * height;
+                    originY = newImgHeight;
+                }
+            }
+
+            return (angle, originX, originY, (int)newImgWidth, (int)newImgHeight);
         }
 
         public static Stream EncodeImage(SKImage image, SKEncodedImageFormat format, int q)
@@ -115,74 +198,25 @@ namespace ImageProcessing
             return output;
         }
 
-        public static SKImage MirrorImage(SKImage image, ImageRotation rotation)
+        public static Stream EncodePdf(SKSurface surface, int width, int height, int q)
         {
-            if (!rotation.Mirror)
+            // have to encode to JPEG then paint the encoded bytes, otherwise you get full JP2 quality
+            var output = new MemoryStream();
+            using (var skstream = new SKManagedWStream(output))
+            using (var writer = SKDocument.CreatePdf(skstream))
+            using (var snapshot = surface.Snapshot())
+            using (var data = snapshot.Encode(SKEncodedImageFormat.Jpeg, q))
+            using (var image = SKImage.FromEncodedData(data))
             {
-                return image;
-            }
-
-            using (var surface = SKSurface.Create(width: image.Width, height: image.Height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul))
-            {
-                var canvas = surface.Canvas;
-                canvas.Translate(image.Width, 0);
-                canvas.Scale(-1, 1);
-                canvas.DrawImage(image, 0, 0);
-                canvas.Flush();
-                return surface.Snapshot();
-            }
-        }
-
-        public static SKImage RotateImage(SKImage image, ImageRotation rotation)
-        {
-            var degrees = rotation.Degrees;
-            if (degrees == 0 || degrees == 360)
-            {
-                return image;
-            }
-
-            var angle = degrees % 360;
-            if (angle > 180)
-                angle -= 360;
-            float sin = (float)Math.Abs(Math.Sin(angle * Math.PI / 180.0)); // this function takes radians
-            float cos = (float)Math.Abs(Math.Cos(angle * Math.PI / 180.0)); // this one too
-            float newImgWidth = sin * image.Height + cos * image.Width;
-            float newImgHeight = sin * image.Width + cos * image.Height;
-            float originX = 0f;
-            float originY = 0f;
-
-            if (angle > 0)
-            {
-                if (angle <= 90)
-                    originX = sin * image.Height;
-                else
+                using (var canvas = writer.BeginPage(width, height))
                 {
-                    originX = newImgWidth;
-                    originY = newImgHeight - sin * image.Width;
+                    canvas.DrawImage(image, 0, 0);
+                    writer.EndPage();
                 }
+                writer.Close();
             }
-            else
-            {
-                if (angle >= -90)
-                    originY = sin * image.Width;
-                else
-                {
-                    originX = newImgWidth - sin * image.Height;
-                    originY = newImgHeight;
-                }
-            }
-
-            using (var surface = SKSurface.Create(width: Convert.ToInt32(newImgWidth), height: Convert.ToInt32(newImgHeight), colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul))
-            {
-                var canvas = surface.Canvas;
-
-                canvas.Translate(originX, originY);
-                canvas.RotateDegrees(angle, 0, 0);
-
-                canvas.DrawImage(image, 0, 0);
-                canvas.Flush();
-                return surface.Snapshot();
-            }
+            output.Seek(0, SeekOrigin.Begin);
+            return output;
         }
 
         public static SKImage AlterQuality(SKImage image, ImageQuality quality)
@@ -209,31 +243,6 @@ namespace ImageProcessing
                 case ImageQuality.color:
                 default:
                     return image;
-            }
-        }
-        // was hoping SKHighContrastFilter would be faster than the matrix concat version above...
-        // unfortunately it's waaay slower
-        public static SKImage AlterQualityContrastFilter(SKImage image, ImageQuality quality)
-        {
-            switch (quality)
-            {
-                case ImageQuality.@default:
-                case ImageQuality.color:
-                default:
-                    return image;
-                case ImageQuality.gray:
-                case ImageQuality.bitonal:
-                    var contrast = quality == ImageQuality.gray ? 0.1f : 1f;
-                    using (var surface = SKSurface.Create(width: image.Width, height: image.Height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Opaque))
-                    using (var cf = SKColorFilter.CreateHighContrast(true, SKHighContrastConfigInvertStyle.NoInvert, contrast))
-                        using (var imf = SKImageFilter.CreateColorFilter(cf))
-                    //using (var paint = new SKPaint())
-                    {
-                        return ApplyFilter(image, imf);
-                        //paint.ColorFilter = cf;
-                        //surface.Canvas.DrawImage(image, 0, 0, paint);
-                        //return surface.Snapshot();
-                    }
             }
         }
 

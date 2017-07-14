@@ -165,10 +165,12 @@
     <Compile Include="BitmapBuffer.cs" />
     <Compile Include="BitmapCompositor.cs" />
     <Compile Include="CompressedSource.cs" />
+    <Compile Include="Compressor.cs" />
     <Compile Include="Expander.cs" />
     <Compile Include="HttpCompressedSource.cs" />
     <Compile Include="JPEG2000Source.cs" />
     <Compile Include="kdu_constants.cs" />
+    <Compile Include="MemoryTarget.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

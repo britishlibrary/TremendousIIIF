@@ -24,7 +24,8 @@ namespace TremendousIIIF.Benchmark
                 typeof(ImageRotationBenchmarks),
                 typeof(ImageEncodingBenchmarks),
                 typeof(RegionBenchmarks),
-                typeof(SizeBenchmarks)
+                typeof(SizeBenchmarks),
+                typeof(PipelineBenchmarks)
                 //typeof(TiffExpanderBenchmarks)
             });
             switcher.Run(args);

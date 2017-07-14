@@ -11,21 +11,7 @@ namespace TremendousIIIF.Validation
 {
     public static class ImageRequestValidator
     {
-        #region Regex
-        private const string qualityFormatPattern = @"(?<quality>(native|color|grey|bitonal))(\.(?<format>(jpg|gif|png|jp2)))?";
-        private static readonly Regex rQualityFormat = new Regex(qualityFormatPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private const string regionPattern = @"full|square|" +
-                        @"(pct:(?<px>\d+\.?\d*),(?<py>\d+\.?\d*),(?<pw>\d+\.?\d*),(?<ph>\d+\.?\d*))|" +
-                        @"(?<x>\d+),(?<y>\d+),(?<w>\d+),(?<h>\d+)";
-
-        private static readonly Regex rRegion = new Regex(regionPattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private const string sizePattern = @"(?<full>full|max)$|(?<width>\d+),(?<height>\d+)|(?<width>\d+),|,(?<height>\d+)|" +
-                    @"(pct:(?<pct>\d+(\.\d+)?))|" +
-                    @"(!?<exact>(?<width>\d+),(?<height>\d+))";
-        private static readonly Regex rSize = new Regex(sizePattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        #endregion
-
-        public static ImageRequest Validate(string identifier, string region, string size, string rotation, string quality, string format, int maxWidth, int maxHeight, int maxArea)
+        public static ImageRequest Validate(string identifier, string region, string size, string rotation, string quality, string format, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
         {
 
             return new ImageRequest
@@ -35,7 +21,7 @@ namespace TremendousIIIF.Validation
                 Rotation = ParseRotation(rotation),
                 Size = CalculateSizeCustom(size),
                 Quality = ParseQuality(quality),
-                Format = ParseFormat(format),
+                Format = ParseFormat(format, supportedFormats),
                 MaxArea = maxArea,
                 MaxWidth = maxWidth,
                 MaxHeight = maxHeight
@@ -56,12 +42,19 @@ namespace TremendousIIIF.Validation
             };
         }
 
-        public static ImageFormat ParseFormat(string formatString)
+        public static ImageFormat ParseFormat(string formatString, List<ImageFormat> supportedFormats)
         {
+            // first check it's permitted by the Image API specification
             if (!Enum.TryParse(formatString, out ImageFormat format))
             {
                 throw new ArgumentException("Unsupported format", "format");
             }
+            // then check we either support it at our compliance level, or that we have explicitly enabled support for it
+            if(!supportedFormats.Contains(format))
+            {
+                throw new ArgumentException("Unsupported format", "format");
+            }
+
             return format;
         }
 
@@ -124,49 +117,6 @@ namespace TremendousIIIF.Validation
                 default:
                     return new ImageRegion { Mode = regionMode, X = 0f, Y = 0f, Width = 0f, Height = 0f };
             }
-        }
-        public static ImageRegion CalculateRegion(string region_string)
-        {
-            ImageRegionMode regionMode;
-            Match regionMatch = rRegion.Match(region_string);
-            switch (region_string.Substring(0, 4))
-            {
-                case "full":
-                    regionMode = ImageRegionMode.Full;
-                    break;
-                case "squa":
-                    regionMode = ImageRegionMode.Square;
-                    throw new NotImplementedException("square not supported");
-                case "pct:":
-                    regionMode = ImageRegionMode.PercentageRegion;
-                    break;
-                default:
-                    regionMode = ImageRegionMode.Region;
-                    break;
-            }
-
-            Func<string, string, string, string, ImageRegion> blah = (x, y, w, h) =>
-            {
-                return new ImageRegion
-                {
-                    Mode = regionMode,
-                    X = Single.Parse(x),
-                    Y = Single.Parse(y),
-                    Width = Single.Parse(w),
-                    Height = Single.Parse(h)
-                };
-            };
-
-            switch (regionMode)
-            {
-                case ImageRegionMode.PercentageRegion:
-                    return blah(regionMatch.Groups["px"].Value, regionMatch.Groups["py"].Value, regionMatch.Groups["pw"].Value, regionMatch.Groups["ph"].Value);
-                case ImageRegionMode.Region:
-                    return blah(regionMatch.Groups["x"].Value, regionMatch.Groups["y"].Value, regionMatch.Groups["w"].Value, regionMatch.Groups["h"].Value);
-                default:
-                    return new ImageRegion { Mode = regionMode, X = 0f, Y = 0f, Width = 0f, Height = 0f };
-            }
-
         }
 
         public static ImageSize CalculateSizeCustom(string size_string)
@@ -234,65 +184,6 @@ namespace TremendousIIIF.Validation
                 Percent = percentage
             };
         }
-
-        public static ImageSize CalculateSize(string size_string)
-        {
-
-            Match m = rSize.Match(size_string);
-            var mode = ImageSizeMode.Max;
-            var percentage = 1f;
-            int width = 0;
-            int height = 0;
-
-            if (m.Success)
-            {
-                if (m.Groups["full"].Success)
-                {
-                    mode = ImageSizeMode.Max;
-                }
-                else
-                {
-                    if (m.Groups["scale"].Success)
-                    {
-                        mode = ImageSizeMode.SpecifiedFit;
-                    }
-                    else if (m.Groups["pct"].Success)
-                    {
-                        mode = ImageSizeMode.PercentageScaled;
-                        if (m.Groups["pct"].Success)
-                        {
-                            percentage = Convert.ToSingle(m.Groups["pct"].Value) / 100;
-                        }
-                    }
-                    else
-                    {
-                        mode = ImageSizeMode.Exact;
-                    }
-
-
-                    if (mode != ImageSizeMode.PercentageScaled)
-                    {
-                        if (m.Groups["width"].Success)
-                            width = Convert.ToInt32(m.Groups["width"].Value);
-
-                        if (m.Groups["height"].Success)
-                            height = Convert.ToInt32(m.Groups["height"].Value);
-                    }
-                }
-            }
-            else
-            {
-                throw new ArgumentException("Size not correctly specified");
-            }
-
-            return new ImageSize
-            {
-                Width = width,
-                Height = height,
-                Mode = mode,
-                Percent = percentage
-            };
-        }
-
+             
     }
 }

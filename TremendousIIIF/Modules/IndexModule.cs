@@ -34,7 +34,8 @@ namespace TremendousIIIF.Modules
                                                                     parameters.format,
                                                                     conf.MaxWidth,
                                                                     conf.MaxHeight,
-                                                                    conf.MaxArea);
+                                                                    conf.MaxArea,
+                                                                    conf.SupportedFormats());
                     request.RequestId = Context.GetOwinEnvironment()["RequestId"] as string;
                     log.Debug("{@Request}", request);
                     // pipeline is
@@ -121,7 +122,8 @@ namespace TremendousIIIF.Modules
                     info.Profile.Add(new ServiceProfile(conf.AllowSizeAboveFull)
                     {
                         MaxWidth = conf.MaxWidth == int.MaxValue ? default(int) : conf.MaxWidth,
-                        MaxHeight = conf.MaxHeight == int.MaxValue ? default(int) : conf.MaxHeight
+                        MaxHeight = conf.MaxHeight == int.MaxValue ? default(int) : conf.MaxHeight,
+                        Formats = conf.AdditionalOutputFormats.Count == 0 ? null : conf.AdditionalOutputFormats
                     });
                     log.Debug("{@ImageInfo}", info);
 

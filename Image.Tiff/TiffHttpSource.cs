@@ -10,7 +10,7 @@ using Serilog;
 
 namespace Image.Tiff
 {
-    public class TiffSource : TiffStream
+    public class TiffHttpSource : TiffStream
     {
         private HttpClient httpClient;
         private Int64 _size = 0;
@@ -22,7 +22,7 @@ namespace Image.Tiff
         private ILogger Log;
         private long TiffHeaderLength = 460800;
 
-        public TiffSource(HttpClient httpClient, ILogger log, Uri imageUri, string requestId, bool headerOnly = false)
+        public TiffHttpSource(HttpClient httpClient, ILogger log, Uri imageUri, string requestId, bool headerOnly = false)
         {
             Log = log;
             this.headerOnly = headerOnly;

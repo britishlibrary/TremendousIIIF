@@ -142,8 +142,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TiffEncoder.cs" />
     <Compile Include="TiffExpander.cs" />
-    <Compile Include="TiffSource.cs" />
+    <Compile Include="TiffHttpSource.cs" />
+    <Compile Include="TiffMemorySource.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -26,7 +26,7 @@ namespace ImageProcessing
         };
 
         // Region THEN Size THEN Rotation THEN Quality THEN Format
-        public async Task<Stream> ProcessImage(Uri imageUri, ImageRequest request, TremendousIIIF.Common.Configuration.ImageQuality quality, bool allowSizeAboveFull, Conf.PdfMetadata pdfMetadata)
+        public async Task<Stream> ProcessImage(Uri imageUri, ImageRequest request, Conf.ImageQuality quality, bool allowSizeAboveFull, Conf.PdfMetadata pdfMetadata)
         {
             var encodingStrategy = GetEncodingStrategy(request.Format);
             if (encodingStrategy == EncodingStrategy.Unknown)
@@ -84,7 +84,13 @@ namespace ImageProcessing
                         }
                     }
 
-                    return Encode(surface, expectedWidth, expectedHeight, encodingStrategy, request.Format, quality.GetOutputFormatQuality(request.Format), pdfMetadata);
+                    return Encode(surface,
+                                    expectedWidth,
+                                    expectedHeight,
+                                    encodingStrategy,
+                                    request.Format,
+                                    quality.GetOutputFormatQuality(request.Format),
+                                    pdfMetadata);
                 }
             }
         }
@@ -185,7 +191,7 @@ namespace ImageProcessing
                 using (var canvas = writer.BeginPage(width, height))
                 {
                     paint.FilterQuality = SKFilterQuality.High;
-                    canvas.DrawImage(image, 0, 0, paint);
+                    canvas.DrawImage(image, new SKRect(0, 0, width, height), paint);
                     writer.EndPage();
                 }
                 writer.Close();

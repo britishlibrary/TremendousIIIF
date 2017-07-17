@@ -51,6 +51,9 @@ namespace Image.Tiff
             }
             return _offset;
         }
-
+        public override void Close(object clientData)
+        {
+            
+        }
     }
 }

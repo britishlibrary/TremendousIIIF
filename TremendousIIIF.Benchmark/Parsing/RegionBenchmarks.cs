@@ -17,19 +17,6 @@ namespace TremendousIIIF.Benchmark.Parsing
         [Params("full", "square", "pct:10,10,10,10", "pct:25.5,45.7,65.5,10.2", "pct:25.0,10,10,15.0", "256,256,256,256")]
         public string RegionString;
 
-        [Benchmark(Baseline = true)]
-        public ImageRegion BaseLineRegex()
-        {
-            try
-            {
-                return ImageRequestValidator.CalculateRegion(RegionString);
-            }
-            catch (Exception)
-
-            {
-                return new ImageRegion();
-            }
-        }
 
         [Benchmark]
         public ImageRegion Custom()

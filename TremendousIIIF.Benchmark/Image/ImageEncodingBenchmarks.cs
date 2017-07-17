@@ -13,7 +13,7 @@ namespace TremendousIIIF.Benchmark.Image
         public static SKImage Image { get; set; }
         [Params(SKEncodedImageFormat.Jpeg)]
         public SKEncodedImageFormat Format { get; set; }
-        [Setup]
+        [GlobalSetup]
         public static void SetUp()
         {
             if (Image == null)

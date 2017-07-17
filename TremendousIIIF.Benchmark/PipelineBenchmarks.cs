@@ -21,7 +21,7 @@ namespace TremendousIIIF.Benchmark
         public Common.Configuration.ImageQuality Quality { get; set; }
 
         public bool AllowSizeAboveFull { get; set; }
-        [Setup]
+        [GlobalSetup]
         public void Setup()
         {
             IP = new ImageProcessing.ImageProcessing { Log = new LoggerConfiguration().CreateLogger() };
@@ -49,13 +49,13 @@ namespace TremendousIIIF.Benchmark
         [Benchmark]
         public Task<Stream> ProcessImageOld()
         {
-            return IP.ProcessImage(ImageUri, Request, Quality, AllowSizeAboveFull);
+            return IP.ProcessImage(ImageUri, Request, Quality, AllowSizeAboveFull, null);
         }
 
         [Benchmark]
         public Task<Stream> ProcessImage()
         {
-            return IP.ProcessImage(ImageUri, Request, Quality, AllowSizeAboveFull);
+            return IP.ProcessImage(ImageUri, Request, Quality, AllowSizeAboveFull, null);
         }
     }
 }

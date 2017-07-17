@@ -40,7 +40,7 @@ namespace TremendousIIIF.Benchmark.TIFF
             }
         }
 
-        [Setup]
+        [GlobalSetup]
         public void Setup()
         {
             var request = new ImageRequest

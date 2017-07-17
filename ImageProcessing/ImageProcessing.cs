@@ -167,7 +167,7 @@ namespace ImageProcessing
             var metadata = new SKDocumentPdfMetadata()
             {
                 Creation = DateTime.Now,
-                
+
             };
 
             if (null != pdfMetadata)
@@ -180,10 +180,12 @@ namespace ImageProcessing
             using (var snapshot = surface.Snapshot())
             using (var data = snapshot.Encode(SKEncodedImageFormat.Jpeg, q))
             using (var image = SKImage.FromEncodedData(data))
+            using (var paint = new SKPaint())
             {
                 using (var canvas = writer.BeginPage(width, height))
                 {
-                    canvas.DrawImage(image, 0, 0);
+                    paint.FilterQuality = SKFilterQuality.High;
+                    canvas.DrawImage(image, 0, 0, paint);
                     writer.EndPage();
                 }
                 writer.Close();

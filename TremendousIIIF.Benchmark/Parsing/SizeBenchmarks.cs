@@ -17,20 +17,6 @@ namespace TremendousIIIF.Benchmark.Parsing
         [Params("full", "max", "pct:10", "pct:25.5444712736684", "256,256", "!256,256", "256,", ",256")]
         public string RegionString;
 
-        [Benchmark(Baseline = true)]
-        public ImageSize BaseLineRegex()
-        {
-            try
-            {
-                return ImageRequestValidator.CalculateSize(RegionString);
-            }
-            catch (Exception)
-
-            {
-                return new ImageSize();
-            }
-        }
-
         [Benchmark]
         public ImageSize Custom()
         {

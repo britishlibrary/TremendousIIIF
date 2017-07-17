@@ -19,9 +19,6 @@ namespace TremendousIIIF.Benchmark
         static void Main(string[] args)
         {
             var switcher = new BenchmarkSwitcher(new[] {
-                typeof(ImageQualityBenchmarks),
-                typeof(ImageMirrorBenchmarks),
-                typeof(ImageRotationBenchmarks),
                 typeof(ImageEncodingBenchmarks),
                 typeof(RegionBenchmarks),
                 typeof(SizeBenchmarks),

@@ -45,7 +45,7 @@ namespace TremendousIIIF.Modules
                     var quality = conf.ImageQuality.GetOutputFormatQuality(request.Format);
                     var allowSizeAboveFull = conf.AllowSizeAboveFull;
                     var processor = new ImageProcessing.ImageProcessing { HttpClient = httpClient, Log = log };
-                    MemoryStream ms = await processor.ProcessImage(imageUri, request, conf.ImageQuality, allowSizeAboveFull);
+                    MemoryStream ms = await processor.ProcessImage(imageUri, request, conf.ImageQuality, allowSizeAboveFull, conf.PdfMetadata);
                     string mimetype = MimeTypeMap.GetMimeType(parameters.format);
                     return new StreamResponse(() => ms, mimetype)
                         .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()));

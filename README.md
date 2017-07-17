@@ -14,7 +14,7 @@ A bigly good IIIF image server.
 - Access source images directly over HTTP, or via file system
 - Uses the Skia library for image manipulation (as used in Chrome, and is very fast)
 - Configuration lets you control things like `sizeAboveFull`, `maxArea`, `maxWidth` or `maxHeight`
-
+- supports jpg, png, webp, pdf output natively, experimental tif and jp2 output (everything above jpg & png configurable)
 ## Dependencies
 Kakdu 7.9.1, x64 version against MSVC2015 runtime. kdu_a79R.dll and kdu_v79R.dll should be in `C:\Windows\System32`
 
@@ -37,4 +37,4 @@ TremendousIIIF is written from scratch, but based on the accumulated knowledge o
 
 ## Future
 
-We aim to move this fully to dotnet core and run on linux in the near future.
+We aim to move this fully to dotnet core and run on linux in the near future, with Kakdu being the current blocker there.

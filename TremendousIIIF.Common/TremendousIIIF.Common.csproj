@@ -44,6 +44,7 @@
   <ItemGroup>
     <Compile Include="Configuration\ImageQuality.cs" />
     <Compile Include="Configuration\ImageServer.cs" />
+    <Compile Include="Configuration\PdfMetadata.cs" />
     <Compile Include="Exceptions\GeneralServiceErrorException.cs" />
     <Compile Include="Exceptions\HttpServiceError.cs" />
     <Compile Include="Exceptions\HttpServiceErrorDefinition.cs" />

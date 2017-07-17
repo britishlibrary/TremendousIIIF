@@ -26,7 +26,7 @@ namespace TremendousIIIF.Common.Configuration
         public int MaxHeight { get; set; }
         public Uri BaseUri { get; set; }
         // Image API 2.1 supports these formats - as we are complicant with level 2
-        // we support jpg & png.
+        // we support jpg & png by default
         // Syntax 	Level 0 	Level 1 	Level 2
         // jpg      required    required    required
         // png      optional    optional    required
@@ -40,6 +40,8 @@ namespace TremendousIIIF.Common.Configuration
         // Not all are currently supported though!
         private List<ImageFormat> RequiredFormats = new List<ImageFormat> { ImageFormat.jpg, ImageFormat.png };
         public List<string> AdditionalOutputFormats { get; set; }
+
+        public PdfMetadata PdfMetadata { get; set; }
 
         public List<ImageFormat> SupportedFormats()
         {

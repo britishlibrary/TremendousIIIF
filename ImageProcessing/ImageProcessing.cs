@@ -7,18 +7,11 @@ using Image.Common;
 using TremendousIIIF.Common;
 using System.Net.Http;
 using Serilog;
+using Conf = TremendousIIIF.Common.Configuration;
 using RotationCoords = System.ValueTuple<float, float, float, int, int>;
 
 namespace ImageProcessing
 {
-    enum EncodingStrategy
-    {
-        Unknown,
-        Skia,
-        PDF,
-        Kakadu,
-        Tifflib
-    }
     public class ImageProcessing
     {
         public HttpClient HttpClient { get; set; }
@@ -32,41 +25,11 @@ namespace ImageProcessing
             // { ImageFormat.gif, SKEncodedImageFormat.Gif }
         };
 
-        private EncodingStrategy GetEncodingStrategy(ImageFormat format)
-        {
-            if (FormatLookup.ContainsKey(format))
-            {
-                return EncodingStrategy.Skia;
-            }
-            if(ImageFormat.pdf == format)
-            {
-                return EncodingStrategy.PDF;
-            }
-            if(ImageFormat.jp2 == format)
-            {
-                return EncodingStrategy.Kakadu;
-            }
-            if(ImageFormat.tif == format)
-            {
-                return EncodingStrategy.Tifflib;
-            }
-
-            return EncodingStrategy.Unknown;
-
-        }
-
-        private static readonly float[] GreyMatrixData = new float[] {
-                0.213f, 0.715f, 0.072f, 0, 0,
-                0.213f, 0.715f, 0.072f, 0, 0,
-                0.213f, 0.715f, 0.072f, 0, 0,
-                0,     0,     0,        1, 0
-            };
-
         // Region THEN Size THEN Rotation THEN Quality THEN Format
-        public async Task<Stream> ProcessImage(Uri imageUri, ImageRequest request, TremendousIIIF.Common.Configuration.ImageQuality quality, bool allowSizeAboveFull)
+        public async Task<Stream> ProcessImage(Uri imageUri, ImageRequest request, TremendousIIIF.Common.Configuration.ImageQuality quality, bool allowSizeAboveFull, Conf.PdfMetadata pdfMetadata)
         {
             var encodingStrategy = GetEncodingStrategy(request.Format);
-            if(encodingStrategy == EncodingStrategy.Unknown)
+            if (encodingStrategy == EncodingStrategy.Unknown)
             {
                 throw new ArgumentException("Unsupported format", "format");
             }
@@ -84,6 +47,7 @@ namespace ImageProcessing
 
                 using (var surface = SKSurface.Create(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType))
                 using (var canvas = surface.Canvas)
+                using (var region = new SKRegion())
                 {
                     if (request.Rotation.Mirror)
                     {
@@ -95,8 +59,6 @@ namespace ImageProcessing
                     canvas.RotateDegrees(angle, 0, 0);
 
                     // reset clip rects to rotated boundaries
-                    var region = new SKRegion();
-                    var tr = request.Rotation.Mirror ? 1 : -1;
                     region.SetRect(new SKRectI(0 - (int)originX, 0 - (int)originY, newImgWidth, newImgHeight));
                     canvas.ClipRegion(region);
 
@@ -122,27 +84,26 @@ namespace ImageProcessing
                         }
                     }
 
-                    return Encode(surface, expectedWidth, expectedHeight, encodingStrategy, request.Format, quality.GetOutputFormatQuality(request.Format));
-                    
+                    return Encode(surface, expectedWidth, expectedHeight, encodingStrategy, request.Format, quality.GetOutputFormatQuality(request.Format), pdfMetadata);
                 }
             }
         }
 
-        private static Stream Encode(SKSurface surface, int width, int height, EncodingStrategy encodingStrategy, ImageFormat format, int q)
+        private static Stream Encode(SKSurface surface, int width, int height, EncodingStrategy encodingStrategy, ImageFormat format, int q, Conf.PdfMetadata pdfMetadata)
         {
             switch (encodingStrategy)
             {
                 case EncodingStrategy.Skia:
                     FormatLookup.TryGetValue(format, out SKEncodedImageFormat formatType);
-                    return EncodeImage(surface.Snapshot(), formatType, q);
+                    return EncodeSkiaImage(surface.Snapshot(), formatType, q);
                 case EncodingStrategy.PDF:
-                    return EncodePdf(surface, width, height, q);
+                    return EncodePdf(surface, width, height, q, pdfMetadata);
                 case EncodingStrategy.Kakadu:
                     return Jpeg2000.Compressor.Compress(surface.Snapshot());
                 case EncodingStrategy.Tifflib:
                     return Image.Tiff.TiffEncoder.Encode(surface.Snapshot());
                 default:
-                    throw new ArgumentException("Unsupported format");
+                    throw new ArgumentException("Unsupported format", "format");
             }
         }
 
@@ -187,7 +148,7 @@ namespace ImageProcessing
             return (angle, originX, originY, (int)newImgWidth, (int)newImgHeight);
         }
 
-        public static Stream EncodeImage(SKImage image, SKEncodedImageFormat format, int q)
+        public static Stream EncodeSkiaImage(SKImage image, SKEncodedImageFormat format, int q)
         {
             var output = new MemoryStream();
             using (var data = image.Encode(format, q))
@@ -198,12 +159,24 @@ namespace ImageProcessing
             return output;
         }
 
-        public static Stream EncodePdf(SKSurface surface, int width, int height, int q)
+        public static Stream EncodePdf(SKSurface surface, int width, int height, int q, Conf.PdfMetadata pdfMetadata)
         {
             // have to encode to JPEG then paint the encoded bytes, otherwise you get full JP2 quality
             var output = new MemoryStream();
+
+            var metadata = new SKDocumentPdfMetadata()
+            {
+                Creation = DateTime.Now,
+                
+            };
+
+            if (null != pdfMetadata)
+            {
+                metadata.Author = pdfMetadata.Author;
+            }
+
             using (var skstream = new SKManagedWStream(output))
-            using (var writer = SKDocument.CreatePdf(skstream))
+            using (var writer = SKDocument.CreatePdf(skstream, metadata))
             using (var snapshot = surface.Snapshot())
             using (var data = snapshot.Encode(SKEncodedImageFormat.Jpeg, q))
             using (var image = SKImage.FromEncodedData(data))
@@ -219,55 +192,41 @@ namespace ImageProcessing
             return output;
         }
 
-        public static SKImage AlterQuality(SKImage image, ImageQuality quality)
-        {
-            switch (quality)
-            {
-                case ImageQuality.gray:
-                    using (var greyMatrix = SKColorFilter.CreateColorMatrix(GreyMatrixData))
-                    using (var greyFilter = SKImageFilter.CreateColorFilter(greyMatrix))
-                    {
-                        return ApplyFilter(image, greyFilter);
-                    }
-
-                case ImageQuality.bitonal:
-                    using (var greyMatrix = SKColorFilter.CreateColorMatrix(GreyMatrixData))
-                    using (var greyFilter = SKImageFilter.CreateColorFilter(greyMatrix))
-                    using (var binaryMatrix = SKColorFilter.CreateColorMatrix(CreateThresholdMatrix(180)))
-                    using (var binaryFilter = SKImageFilter.CreateColorFilter(binaryMatrix))
-                    using (var bitonalFilter = SKImageFilter.CreateCompose(greyFilter, binaryFilter))
-                    {
-                        return ApplyFilter(image, bitonalFilter);
-                    }
-                case ImageQuality.@default:
-                case ImageQuality.color:
-                default:
-                    return image;
-            }
-        }
-
-        private static SKImage ApplyFilter(SKImage image, SKImageFilter imageFilter)
-        {
-            var rect = new SKRectI(0, 0, image.Width, image.Height);
-            var subset = new SKRectI();
-            var offset = new SKPoint();
-            return image.ApplyImageFilter(imageFilter, rect, rect, out subset, out offset);
-        }
-
-        private static float[] CreateThresholdMatrix(int threshold)
-        {
-            return new float[] {
-                85f, 85f, 85f, 0f, -255f * threshold,
-                85f, 85f, 85f, 0f, -255f * threshold,
-                85f, 85f, 85f, 0f, -255f * threshold,
-                0f, 0f, 0f, 1f, 0f
-            };
-        }
-
         public async Task<Metadata> GetImageInfo(Uri imageUri, int defaultTileWidth, string requestId)
         {
             var loader = new ImageLoader { HttpClient = HttpClient, Log = Log };
             return await loader.GetMetadata(imageUri, defaultTileWidth, requestId);
+        }
+
+        private static EncodingStrategy GetEncodingStrategy(ImageFormat format)
+        {
+            if (FormatLookup.ContainsKey(format))
+            {
+                return EncodingStrategy.Skia;
+            }
+            if (ImageFormat.pdf == format)
+            {
+                return EncodingStrategy.PDF;
+            }
+            if (ImageFormat.jp2 == format)
+            {
+                return EncodingStrategy.Kakadu;
+            }
+            if (ImageFormat.tif == format)
+            {
+                return EncodingStrategy.Tifflib;
+            }
+
+            return EncodingStrategy.Unknown;
+        }
+
+        enum EncodingStrategy
+        {
+            Unknown,
+            Skia,
+            PDF,
+            Kakadu,
+            Tifflib
         }
     }
 }

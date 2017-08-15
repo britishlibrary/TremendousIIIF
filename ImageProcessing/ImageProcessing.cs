@@ -42,7 +42,7 @@ namespace ImageProcessing
                 var expectedWidth = request.Size.Mode == ImageSizeMode.Exact ? state.Width : state.TileWidth;
                 var expectedHeight = request.Size.Mode == ImageSizeMode.Exact ? state.Height : state.TileHeight;
                 var alphaType = request.Quality == ImageQuality.bitonal ? SKAlphaType.Opaque : SKAlphaType.Premul;
-
+                
                 (float angle, float originX, float originY, int newImgWidth, int newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
 
                 using (var surface = SKSurface.Create(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType))

@@ -35,7 +35,7 @@ namespace Jpeg2000
             }
         }
 
-        public override void close()
+        public new void close()
         {
             if (compSrc != null)
             {

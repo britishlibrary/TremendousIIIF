@@ -82,7 +82,7 @@ namespace Image.Tiff
             {
                 var desiredWidth = Math.Max(1, (int)Math.Round(state.TileWidth * state.ImageScale));
                 var desiredHeight = Math.Max(1, (int)Math.Round(state.TileHeight * state.ImageScale));
-                Log.Debug("Desired size {@desiredWidth}, {@desiredHeight}", desiredWidth, desiredHeight);
+                Log.Debug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
 
                 var regionWidth = (int)Math.Round((state.TileWidth / state.OutputScale) * state.ImageScale);
                 var regionHeight = (int)Math.Round((state.TileHeight / state.OutputScale) * state.ImageScale);

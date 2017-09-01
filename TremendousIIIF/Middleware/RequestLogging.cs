@@ -14,7 +14,7 @@ namespace TremendousIIIF.Middleware
                 var owinContext = new OwinContext(env);
                 log.Information("Incoming Request: {@Method}, {@Path}, {@Header}", owinContext.Request.Method, owinContext.Request.Path, owinContext.Request.Headers);
                 await next(env);
-                log.Information("Outgoing Response: {@StatusCode), {@Headers}, {@ContentType}, {@ContentLength}", owinContext.Response.StatusCode, owinContext.Response.Headers, owinContext.Response.ContentType, owinContext.Response.ContentLength);
+                log.Information("Outgoing Response: {@StatusCode}, {@Headers}, {@ContentType}, {@ContentLength}", owinContext.Response.StatusCode, owinContext.Response.Headers, owinContext.Response.ContentType, owinContext.Response.ContentLength);
             };
         }
     }

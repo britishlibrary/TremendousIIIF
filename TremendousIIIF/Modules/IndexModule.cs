@@ -58,26 +58,17 @@ namespace TremendousIIIF.Modules
                 catch (NotImplementedException e)
                 {
                     log.Information(e, "Un-implemented feature requested");
-                    var response = (Response)e.Message;
-                    response.ContentType = "application/json";
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                    return response;
+                    return Response.AsJson(e.Message, HttpStatusCode.BadRequest);
                 }
                 catch (ArgumentException e)
                 {
                     log.Error(e, "Error parsing argument");
-                    var response = (Response)e.Message;
-                    response.ContentType = "application/json";
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                    return response;
+                    return Response.AsJson(e.Message, HttpStatusCode.BadRequest);
                 }
                 catch (FormatException e)
                 {
                     log.Error(e, "Error parsing argument");
-                    var response = (Response)e.Message;
-                    response.ContentType = "application/json";
-                    response.StatusCode = HttpStatusCode.BadRequest;
-                    return response;
+                    return Response.AsJson(e.Message, HttpStatusCode.BadRequest);
                 }
                 catch (Exception e)
                 {
@@ -162,5 +153,7 @@ namespace TremendousIIIF.Modules
             });
 
         }
+
     }
+
 }

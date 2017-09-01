@@ -23,16 +23,16 @@ namespace TremendousIIIF.Middleware
             this.healthCheck = healthCheck;
         }
 
-        public Task Invoke(IDictionary<string, object> env)
+        public Task InvokeAsync(IDictionary<string, object> env)
         {
             var context = new OwinContext(env);
             if (context.Request.Path.StartsWithSegments(monitorPath))
-                return HandleMonitorEndpoint(context);
+                return HandleMonitorEndpointAsync(context);
             else
                 return next(env);
         }
 
-        private Task HandleMonitorEndpoint(OwinContext context)
+        private Task HandleMonitorEndpointAsync(OwinContext context)
         {
             if (context.Request.Path.StartsWithSegments(monitorShallowPath))
                 return ShallowEndpointAsync(context);

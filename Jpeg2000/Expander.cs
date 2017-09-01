@@ -119,7 +119,7 @@ namespace Jpeg2000
                             num_threads = nt;
                         }
                     }
-                    Log.Debug("Created {@num_threads} threads", num_threads);
+                    Log.Debug("Created {@NumThreads} threads", num_threads);
                     family_src.Open(client, imageUri, false);
 
                     int success = wrapped_src.open(family_src, true);
@@ -185,14 +185,14 @@ namespace Jpeg2000
                     extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
                     extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
                     var viewSize = extracted_dims.access_size();
-                    Log.Debug("add_ilayer extracted dimension: {@access_pos}, {@access_size}, {@is_empty}, {@scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
+                    Log.Debug("add_ilayer extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                     compositor.add_ilayer(0, extracted_dims, extracted_dims);
 
                     //compositor.set_scale(false, false, false, 1, scale);
                     compositor.set_scale(false, false, false,scale);
 
                     compositor.get_total_composition_dims(extracted_dims);
-                    Log.Debug("get_total_composition_dims extracted dimension: {@access_pos}, {@access_size}, {@is_empty}, {@scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
+                    Log.Debug("get_total_composition_dims extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                     // check if the access size is the expected size as floating point rounding errors 
                     // might occur
                     const float roundingValue = 0.0001f;
@@ -224,7 +224,7 @@ namespace Jpeg2000
                         compositor.get_total_composition_dims(extracted_dims);
                     }
                     viewSize = extracted_dims.access_size();
-                    Log.Debug("Extracted dimension: {@access_pos}, {@access_size}, {@is_empty}, {@scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
+                    Log.Debug("Extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                     // crash here with ark:/81055/vdc_0000000388E8.0x000008/2048,0,9,1024/3,/0/default.jpg
                     compositor.set_buffer_surface(extracted_dims);
                     //var actual_dims = compositor.GetCompositionBitmap(extracted_dims);

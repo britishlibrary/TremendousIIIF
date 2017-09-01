@@ -28,7 +28,7 @@ namespace TremendousIIIF
                 buildFunc(next => RequestId.Middleware(next));
                 buildFunc(next => RequestLogging.Middleware(next, Log));
                 buildFunc(next => PerformanceLogging.Middleware(next, Log));
-                buildFunc(next => new MonitoringMiddleware(next, HealthCheck).Invoke);
+                buildFunc(next => new MonitoringMiddleware(next, HealthCheckAsync).InvokeAsync);
                 buildFunc.UseNancy(opt => opt.Bootstrapper = new Bootstrapper(Conf, Log, httpClient));
             });
         }
@@ -54,7 +54,7 @@ namespace TremendousIIIF
                 .CreateLogger();
         }
 
-        public async Task<bool> HealthCheck()
+        public async Task<bool> HealthCheckAsync()
         {
             var testImage = new Uri(new Uri(Conf.Location), Conf.HealthcheckIdentifier);
             try

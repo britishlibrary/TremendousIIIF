@@ -194,7 +194,6 @@ namespace ImageProcessing
                     canvas.DrawImage(image, new SKRect(0, 0, width, height), paint);
                     writer.EndPage();
                 }
-                writer.Close();
             }
             output.Seek(0, SeekOrigin.Begin);
             return output;

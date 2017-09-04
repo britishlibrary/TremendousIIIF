@@ -16,13 +16,15 @@ A bigly good IIIF image server.
 - Configuration lets you control things like `sizeAboveFull`, `maxArea`, `maxWidth` or `maxHeight`
 - supports jpg, png, webp, pdf output natively, experimental tif and jp2 output (everything above jpg & png configurable)
 ## Dependencies
-Kakdu 7.9.1, x64 version against MSVC2015 runtime. kdu_a79R.dll and kdu_v79R.dll should be in `C:\Windows\System32`
+
+.NET 4.6.2
+Kakadu 7.10.1, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the runtime directory.
 
 *If you do not have a Kakadu licence, this will not work*
 
 ## A note on TIFF support
 
-We don't have any pyramidal tiff as image sources, we almost exclusively use JPEG200. However, we have a small number of tiff files which are not optimised for delivery at all...
+We don't have any pyramidal tiff as image sources, we almost exclusively use JPEG2000. However, we have a small number of tiff files which are not optimised for delivery at all...
 
 Given how infrequently they are accessed, and the small number of them, it's less effort to simply treat them as though they were. 
 

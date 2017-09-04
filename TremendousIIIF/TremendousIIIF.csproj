@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net462</TargetFramework>
+    <TargetFrameworks>net462;netstandard2.0;netcoreapp2.0</TargetFrameworks>
     <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
     <PostBuildEvent></PostBuildEvent>
-    <PreBuildEvent>echo F | xcopy "C:\Source\TremendousIIIF\packages\BitMiracle.LibTiff.NET.2.4.583\lib\net40\BitMiracle.LibTiff.NET.dll" "BitMiracle.LibTiff.NET40.dll" /Y</PreBuildEvent>
+    
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -26,7 +26,6 @@
     <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.0" />
     <PackageReference Include="Nancy" Version="2.0.0-clinteastwood" />
-    <PackageReference Include="Nancy.Owin" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Nancy.Serialization.JsonNet" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Serilog" Version="2.5.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="2.1.2" />

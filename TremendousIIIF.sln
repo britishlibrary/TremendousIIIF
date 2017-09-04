@@ -1,25 +1,25 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.6
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jpeg2000", "Jpeg2000\Jpeg2000.csproj", "{9F8B1BA4-043D-4D9A-8112-1AB543677571}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jpeg2000", "Jpeg2000\Jpeg2000.csproj", "{9F8B1BA4-043D-4D9A-8112-1AB543677571}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jpeg2000.Test", "Jpeg2000.Test\Jpeg2000.Test.csproj", "{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageProcessing", "ImageProcessing\ImageProcessing.csproj", "{8F14A3ED-1FCA-4D6A-A545-B65FBEB1839D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageProcessing", "ImageProcessing\ImageProcessing.csproj", "{8F14A3ED-1FCA-4D6A-A545-B65FBEB1839D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image.Common", "Image.Common\Image.Common.csproj", "{60C783B2-EAAD-43C9-AD0B-8BEA95E6E054}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image.Common", "Image.Common\Image.Common.csproj", "{60C783B2-EAAD-43C9-AD0B-8BEA95E6E054}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF.Test", "TremendousIIIF.Test\TremendousIIIF.Test.csproj", "{EFB03C8A-FAF8-4B75-B990-2CABB82E3545}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF.Common", "TremendousIIIF.Common\TremendousIIIF.Common.csproj", "{AEDB7099-8BF0-4CAE-A531-048188297A4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TremendousIIIF.Common", "TremendousIIIF.Common\TremendousIIIF.Common.csproj", "{AEDB7099-8BF0-4CAE-A531-048188297A4E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image.Tiff", "Image.Tiff\Image.Tiff.csproj", "{0F0EBE5B-791C-458E-823F-29E73D1BA244}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image.Tiff", "Image.Tiff\Image.Tiff.csproj", "{0F0EBE5B-791C-458E-823F-29E73D1BA244}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF.Benchmark", "TremendousIIIF.Benchmark\TremendousIIIF.Benchmark.csproj", "{56DEC1FB-576D-496C-B322-A5063AE9C638}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF", "TremendousIIIF\TremendousIIIF.csproj", "{1E0F8702-316F-4F48-9162-6568F5D6B96E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TremendousIIIF", "TremendousIIIF\TremendousIIIF.csproj", "{1E0F8702-316F-4F48-9162-6568F5D6B96E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BEE43449-5EEE-4F27-8D3C-50319C6ED6F6}"
 	ProjectSection(SolutionItems) = preProject
@@ -36,12 +36,12 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Debug|x64.ActiveCfg = Debug|x64
-		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Debug|x64.Build.0 = Debug|x64
+		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Debug|x64.Build.0 = Debug|Any CPU
 		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Release|x64.ActiveCfg = Release|x64
-		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Release|x64.Build.0 = Release|x64
+		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Release|x64.ActiveCfg = Release|Any CPU
+		{9F8B1BA4-043D-4D9A-8112-1AB543677571}.Release|x64.Build.0 = Release|Any CPU
 		{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -109,6 +109,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {96B5061B-94A6-4644-B6C0-8EFB2E7187F4}
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

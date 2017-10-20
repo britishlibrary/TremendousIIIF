@@ -39,4 +39,4 @@ TremendousIIIF is written from scratch, but based on the accumulated knowledge o
 
 ## Future
 
-We aim to move this fully to dotnet core and run on linux in the near future, with Kakdu being the current blocker there.
+Currently builds net462/netstandard2.0/netcoreapp2.0, but not all dependecies are fully compatable (yet)

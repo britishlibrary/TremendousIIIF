@@ -48,7 +48,12 @@ namespace TremendousIIIF.Modules
                     MemoryStream ms = await processor.ProcessImage(imageUri, request, conf.ImageQuality, allowSizeAboveFull, conf.PdfMetadata);
                     string mimetype = MimeTypeMap.GetMimeType(parameters.format);
                     return new StreamResponse(() => ms, mimetype)
-                        .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()));
+                        .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()))
+#if !DEBUG
+                        .AsAttachment(string.Format("{0}.{1}", (string)parameters.id, (string)parameters.format));
+#else
+                    ;
+#endif
                 }
                 catch (FileNotFoundException e)
                 {

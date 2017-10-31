@@ -13,7 +13,6 @@
         public int TileWidth { get; set; }
         public int StartX { get; set; }
         public int StartY { get; set; }
-        public bool MaxUsed { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
     }

@@ -39,8 +39,8 @@ namespace ImageProcessing
 
             using (imageRegion)
             {
-                var expectedWidth = request.Size.Mode == ImageSizeMode.Exact ? state.Width : state.TileWidth;
-                var expectedHeight = request.Size.Mode == ImageSizeMode.Exact ? state.Height : state.TileHeight;
+                var expectedWidth = request.Size.Mode == ImageSizeMode.Distort ? state.Width : state.TileWidth;
+                var expectedHeight = request.Size.Mode == ImageSizeMode.Distort ? state.Height : state.TileHeight;
                 var alphaType = request.Quality == ImageQuality.bitonal ? SKAlphaType.Opaque : SKAlphaType.Premul;
                 
                 (float angle, float originX, float originY, int newImgWidth, int newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);

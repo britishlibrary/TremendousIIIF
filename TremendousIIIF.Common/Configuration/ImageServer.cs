@@ -6,6 +6,8 @@ namespace TremendousIIIF.Common.Configuration
 {
     public class ImageServer
     {
+        private int _maxWidth;
+        private int _maxHeight;
         public ImageServer()
         {
             AllowSizeAboveFull = false;
@@ -22,8 +24,36 @@ namespace TremendousIIIF.Common.Configuration
         public int DefaultTileWidth { get; set; }
         public bool AllowSizeAboveFull { get; set; }
         public int MaxArea { get; set; }
-        public int MaxWidth { get; set; }
-        public int MaxHeight { get; set; }
+        public int MaxWidth
+        {
+            get
+            {
+                if (_maxWidth == int.MaxValue && _maxWidth != int.MaxValue)
+                {
+                    return MaxHeight;
+                }
+                return _maxWidth;
+            }
+            set
+            {
+                _maxWidth = value;
+            }
+        }
+        public int MaxHeight
+        {
+            get
+            {
+                if (_maxHeight == int.MaxValue && _maxWidth != int.MaxValue)
+                {
+                    return MaxWidth;
+                }
+                return _maxHeight;
+            }
+            set
+            {
+                _maxHeight = value;
+            }
+        }
         public Uri BaseUri { get; set; }
         // Image API 2.1 supports these formats - as we are complicant with level 2
         // we support jpg & png by default

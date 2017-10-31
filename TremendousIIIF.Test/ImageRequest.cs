@@ -101,9 +101,22 @@ namespace TremendousIIIF.Test
         {
             var result = ImageRequestValidator.CalculateSizeCustom("pct:50f");
         }
+
+        [TestMethod]
         public void CalculateSize_Pct_Valid_Float()
         {
             var result = ImageRequestValidator.CalculateSizeCustom("pct:50.0");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.PercentageScaled);
+            Assert.AreEqual(0f, result.Width);
+            Assert.AreEqual(0f, result.Height);
+            Assert.AreEqual(0.5f, result.Percent);
+        }
+
+        [TestMethod]
+        public void CalculateSize_Pct_Valid_Big_Float()
+        {
+            var result = ImageRequestValidator.CalculateSizeCustom("pct:50.0000000000000000000000000000000000000000000000000001");
             Assert.IsNotNull(result);
             Assert.AreEqual(result.Mode, ImageSizeMode.PercentageScaled);
             Assert.AreEqual(0f, result.Width);
@@ -134,7 +147,7 @@ namespace TremendousIIIF.Test
         {
             var result = ImageRequestValidator.CalculateSizeCustom("256,");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.Mode, ImageSizeMode.Exact);
+            Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
             Assert.AreEqual(256, result.Width);
             Assert.AreEqual(0, result.Height);
         }
@@ -143,7 +156,7 @@ namespace TremendousIIIF.Test
         {
             var result = ImageRequestValidator.CalculateSizeCustom(",256");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.Mode, ImageSizeMode.Exact);
+            Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
             Assert.AreEqual(0, result.Width);
             Assert.AreEqual(256, result.Height);
         }
@@ -153,7 +166,7 @@ namespace TremendousIIIF.Test
         {
             var result = ImageRequestValidator.CalculateSizeCustom("256,512");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.Mode, ImageSizeMode.Exact);
+            Assert.AreEqual(result.Mode, ImageSizeMode.Distort);
             Assert.AreEqual(256, result.Width);
             Assert.AreEqual(512, result.Height);
         }
@@ -169,7 +182,18 @@ namespace TremendousIIIF.Test
         {
             var result = ImageRequestValidator.CalculateSizeCustom("!256,100");
             Assert.IsNotNull(result);
-            Assert.AreEqual(result.Mode, ImageSizeMode.SpecifiedFit);
+            Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
+            Assert.AreEqual(256, result.Width);
+            Assert.AreEqual(100, result.Height);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(FormatException))]
+        public void CalculateSize_Invalid()
+        {
+            var result = ImageRequestValidator.CalculateSizeCustom("!256,a");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
             Assert.AreEqual(256, result.Width);
             Assert.AreEqual(100, result.Height);
         }

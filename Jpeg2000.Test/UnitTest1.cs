@@ -48,7 +48,7 @@ namespace Jpeg2000.Test
                 Size = new ImageSize
                 {
                     Height = 0,
-                    Mode = ImageSizeMode.Exact,
+                    Mode = ImageSizeMode.Distort,
                     Percent = 1f,
                     Width = 3
                 }

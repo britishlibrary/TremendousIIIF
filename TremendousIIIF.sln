@@ -1,17 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jpeg2000", "Jpeg2000\Jpeg2000.csproj", "{9F8B1BA4-043D-4D9A-8112-1AB543677571}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Jpeg2000.Test", "Jpeg2000.Test\Jpeg2000.Test.csproj", "{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jpeg2000.Test", "Jpeg2000.Test\Jpeg2000.Test.csproj", "{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageProcessing", "ImageProcessing\ImageProcessing.csproj", "{8F14A3ED-1FCA-4D6A-A545-B65FBEB1839D}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image.Common", "Image.Common\Image.Common.csproj", "{60C783B2-EAAD-43C9-AD0B-8BEA95E6E054}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF.Test", "TremendousIIIF.Test\TremendousIIIF.Test.csproj", "{EFB03C8A-FAF8-4B75-B990-2CABB82E3545}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TremendousIIIF.Test", "TremendousIIIF.Test\TremendousIIIF.Test.csproj", "{EFB03C8A-FAF8-4B75-B990-2CABB82E3545}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TremendousIIIF.Common", "TremendousIIIF.Common\TremendousIIIF.Common.csproj", "{AEDB7099-8BF0-4CAE-A531-048188297A4E}"
 EndProject
@@ -49,7 +49,6 @@ Global
 		{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}.Release|x64.ActiveCfg = Release|Any CPU
-		{70A7FC46-C993-4AC9-8BD6-AAB0D5ACCBEB}.Release|x64.Build.0 = Release|Any CPU
 		{8F14A3ED-1FCA-4D6A-A545-B65FBEB1839D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8F14A3ED-1FCA-4D6A-A545-B65FBEB1839D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F14A3ED-1FCA-4D6A-A545-B65FBEB1839D}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -73,7 +72,6 @@ Global
 		{EFB03C8A-FAF8-4B75-B990-2CABB82E3545}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFB03C8A-FAF8-4B75-B990-2CABB82E3545}.Release|Any CPU.Build.0 = Release|Any CPU
 		{EFB03C8A-FAF8-4B75-B990-2CABB82E3545}.Release|x64.ActiveCfg = Release|Any CPU
-		{EFB03C8A-FAF8-4B75-B990-2CABB82E3545}.Release|x64.Build.0 = Release|Any CPU
 		{AEDB7099-8BF0-4CAE-A531-048188297A4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AEDB7099-8BF0-4CAE-A531-048188297A4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AEDB7099-8BF0-4CAE-A531-048188297A4E}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -93,7 +91,6 @@ Global
 		{56DEC1FB-576D-496C-B322-A5063AE9C638}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{56DEC1FB-576D-496C-B322-A5063AE9C638}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{56DEC1FB-576D-496C-B322-A5063AE9C638}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{56DEC1FB-576D-496C-B322-A5063AE9C638}.Debug|x64.Build.0 = Debug|Any CPU
 		{56DEC1FB-576D-496C-B322-A5063AE9C638}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{56DEC1FB-576D-496C-B322-A5063AE9C638}.Release|Any CPU.Build.0 = Release|Any CPU
 		{56DEC1FB-576D-496C-B322-A5063AE9C638}.Release|x64.ActiveCfg = Release|Any CPU

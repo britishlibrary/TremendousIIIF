@@ -1,10 +1,7 @@
 ﻿using Image.Common;
-using ImageProcessing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
-using System.Web;
 using TremendousIIIF.Common;
 
 namespace TremendousIIIF.Validation
@@ -13,7 +10,6 @@ namespace TremendousIIIF.Validation
     {
         public static ImageRequest Validate(string identifier, string region, string size, string rotation, string quality, string format, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
         {
-
             return new ImageRequest
             {
                 ID = identifier,
@@ -50,7 +46,7 @@ namespace TremendousIIIF.Validation
                 throw new ArgumentException("Unsupported format", "format");
             }
             // then check we either support it at our compliance level, or that we have explicitly enabled support for it
-            if(!supportedFormats.Contains(format))
+            if (!supportedFormats.Contains(format))
             {
                 throw new ArgumentException("Unsupported format", "format");
             }
@@ -86,7 +82,6 @@ namespace TremendousIIIF.Validation
                     if (region_string != "square")
                         InvalidRegion();
                     regionMode = ImageRegionMode.Square;
-                    //throw new NotImplementedException("square not supported");
                     break;
                 case "pct:":
                     regionMode = ImageRegionMode.PercentageRegion;
@@ -140,12 +135,12 @@ namespace TremendousIIIF.Validation
                     if (size_string.StartsWith("!"))
                     {
 
-                        sizeMode = ImageSizeMode.SpecifiedFit;
+                        sizeMode = ImageSizeMode.MaintainAspectRatio;
                         size_string = size_string.Substring(1);
                     }
                     else if (size_string.Contains(","))
                     {
-                        sizeMode = ImageSizeMode.Exact;
+                        sizeMode = ImageSizeMode.Distort;
                     }
                     else
                     {
@@ -157,8 +152,8 @@ namespace TremendousIIIF.Validation
             switch (sizeMode)
             {
 
-                case ImageSizeMode.SpecifiedFit:
-                case ImageSizeMode.Exact:
+                case ImageSizeMode.MaintainAspectRatio:
+                case ImageSizeMode.Distort:
                     var sizes = size_string.Split(',');
                     if (sizes.Length != 2 || sizes.All(s => s.Length == 0))
                     {
@@ -172,8 +167,11 @@ namespace TremendousIIIF.Validation
                     {
                         height = Int32.Parse(sizes[1]);
                     }
+                    if (sizes.Where(s=>s != string.Empty).Count() == 1)
+                    {
+                        sizeMode = ImageSizeMode.MaintainAspectRatio;
+                    }
                     break;
-
             }
 
             return new ImageSize
@@ -184,6 +182,6 @@ namespace TremendousIIIF.Validation
                 Percent = percentage
             };
         }
-             
+
     }
 }

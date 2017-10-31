@@ -168,13 +168,14 @@ namespace Jpeg2000
 
 
                     var state = ImageRequestInterpreter.GetInterpretedValues(request, originalWidth, originalHeight, allowSizeAboveFull);
+                    Log.Debug("Image request {@Request}", state);
                     var scale = state.OutputScale;
                     var scaleDiff = 0f;
                     imageScale = state.ImageScale;
 
                     // needs to be able to handle regions 
-                    imageSize.x = Convert.ToInt32(Math.Round(state.TileWidth / scale));
-                    imageSize.y = Convert.ToInt32(Math.Round(state.TileHeight / scale));
+                    imageSize.x = state.TileWidth;
+                    imageSize.y = state.TileHeight;
 
                     imagePosition.x = state.StartX;
                     imagePosition.y = state.StartY;

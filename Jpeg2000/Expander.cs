@@ -163,9 +163,10 @@ namespace Jpeg2000
                     var kt = codestream.open_tile(new Ckdu_coords(0, 0), null);
                     var quality_layers = codestream.get_max_tile_layers();
                     var layers = quality.MaxQualityLayers;
-                    if (layers < 0) layers = quality_layers;
-                    else if (layers == 0) layers = Convert.ToInt32(Math.Ceiling(quality_layers / 2.0));
-
+                    if (layers < 0)
+                        layers = quality_layers;
+                    else if (layers == 0)
+                        layers = Convert.ToInt32(Math.Ceiling(quality_layers / 2.0));
 
                     var state = ImageRequestInterpreter.GetInterpretedValues(request, originalWidth, originalHeight, allowSizeAboveFull);
                     Log.Debug("Image request {@Request}", state);
@@ -174,8 +175,8 @@ namespace Jpeg2000
                     imageScale = state.ImageScale;
 
                     // needs to be able to handle regions 
-                    imageSize.x = state.TileWidth;
-                    imageSize.y = state.TileHeight;
+                    imageSize.x = Convert.ToInt32(Math.Round(state.RegionWidth / scale));
+                    imageSize.y = Convert.ToInt32(Math.Round(state.RegionHeight / scale));
 
                     imagePosition.x = state.StartX;
                     imagePosition.y = state.StartY;
@@ -189,8 +190,7 @@ namespace Jpeg2000
                     Log.Debug("add_ilayer extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                     compositor.add_ilayer(0, extracted_dims, extracted_dims);
 
-                    //compositor.set_scale(false, false, false, 1, scale);
-                    compositor.set_scale(false, false, false,scale);
+                    compositor.set_scale(false, false, false, scale);
 
                     compositor.get_total_composition_dims(extracted_dims);
                     Log.Debug("get_total_composition_dims extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
@@ -214,7 +214,7 @@ namespace Jpeg2000
                     if (0 != checkScale)
                     {
                         // we've come up with a scale factor which is (probably) way too small
-                        // ask Kakdu to come up with a valid one that's close
+                        // ask Kakadu to come up with a valid one that's close
                         var minScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? scale : 0;
                         var maxScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_LARGE == checkScale ? scale : 1;
 
@@ -226,12 +226,7 @@ namespace Jpeg2000
                     }
                     viewSize = extracted_dims.access_size();
                     Log.Debug("Extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
-                    // crash here with ark:/81055/vdc_0000000388E8.0x000008/2048,0,9,1024/3,/0/default.jpg
                     compositor.set_buffer_surface(extracted_dims);
-                    //var actual_dims = compositor.GetCompositionBitmap(extracted_dims);
-                    //Log.Debug("Actual dimension: {@access_size}", actual_dims.get_rendering_region().access_size());
-                    
-
                     compositor.set_quality_limiting(limiter, quality.OutputDpi, quality.OutputDpi);
                     compositor.set_max_quality_layers(layers);
                     var compositorBuffer = compositor.GetCompositionBitmap(extracted_dims);
@@ -243,19 +238,8 @@ namespace Jpeg2000
                         {
                         }
 
-                        //var checkResult = compositor.check_invalid_scale_code();
-                        //if (0 != checkResult)
-                        //{
-                        //    using (var bmp = compositorBuffer.AcquireBitmap())
-                        //    {
-                        //        return (state, SKImage.FromBitmap(bmp));
-                        //    }
-                        //}
-
-                        //var buffer = compositor.GetCompositionBitmap(extracted_dims);
                         using (var bmp = compositorBuffer.AcquireBitmap())
                         {
-                            //var bmp = compositorBuffer.AcquireBitmap();
                             return (state, SKImage.FromBitmap(bmp));
                         }
                     }

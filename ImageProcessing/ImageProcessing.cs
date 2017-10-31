@@ -25,7 +25,16 @@ namespace ImageProcessing
             // { ImageFormat.gif, SKEncodedImageFormat.Gif }
         };
 
-        // Region THEN Size THEN Rotation THEN Quality THEN Format
+        /// <summary>
+        /// Process image pipeline
+        /// <para>Region THEN Size THEN Rotation THEN Quality THEN Format</para>
+        /// </summary>
+        /// <param name="imageUri">The <see cref="Uri"/> of the source image</param>
+        /// <param name="request">The parsed and validated IIIF Image API request</param>
+        /// <param name="quality">Image output encoding quality settings</param>
+        /// <param name="allowSizeAboveFull">Allow output image dimensions to exceed that of the source image</param>
+        /// <param name="pdfMetadata">Optional PDF metadata fields</param>
+        /// <returns></returns>
         public async Task<Stream> ProcessImage(Uri imageUri, ImageRequest request, Conf.ImageQuality quality, bool allowSizeAboveFull, Conf.PdfMetadata pdfMetadata)
         {
             var encodingStrategy = GetEncodingStrategy(request.Format);
@@ -39,16 +48,17 @@ namespace ImageProcessing
 
             using (imageRegion)
             {
-                var expectedWidth = request.Size.Mode == ImageSizeMode.Distort ? state.Width : state.TileWidth;
-                var expectedHeight = request.Size.Mode == ImageSizeMode.Distort ? state.Height : state.TileHeight;
+                var expectedWidth = state.OutputWidth;
+                var expectedHeight = state.OutputHeight;
                 var alphaType = request.Quality == ImageQuality.bitonal ? SKAlphaType.Opaque : SKAlphaType.Premul;
-                
-                (float angle, float originX, float originY, int newImgWidth, int newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
+
+                (var angle, var originX, var originY, var newImgWidth, var newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
 
                 using (var surface = SKSurface.Create(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType))
                 using (var canvas = surface.Canvas)
                 using (var region = new SKRegion())
                 {
+                    // If the rotation parameter includes mirroring ("!"), the mirroring is applied before the rotation.
                     if (request.Rotation.Mirror)
                     {
                         canvas.Translate(newImgWidth, 0);
@@ -85,12 +95,12 @@ namespace ImageProcessing
                     }
 
                     return Encode(surface,
-                                    expectedWidth,
-                                    expectedHeight,
-                                    encodingStrategy,
-                                    request.Format,
-                                    quality.GetOutputFormatQuality(request.Format),
-                                    pdfMetadata);
+                        expectedWidth,
+                        expectedHeight,
+                        encodingStrategy,
+                        request.Format,
+                        quality.GetOutputFormatQuality(request.Format),
+                        pdfMetadata);
                 }
             }
         }
@@ -104,7 +114,7 @@ namespace ImageProcessing
                     return EncodeSkiaImage(surface.Snapshot(), formatType, q);
                 case EncodingStrategy.PDF:
                     return EncodePdf(surface, width, height, q, pdfMetadata);
-                case EncodingStrategy.Kakadu:
+                case EncodingStrategy.JPEG2000:
                     return Jpeg2000.Compressor.Compress(surface.Snapshot());
                 case EncodingStrategy.Tifflib:
                     return Image.Tiff.TiffEncoder.Encode(surface.Snapshot());
@@ -112,9 +122,16 @@ namespace ImageProcessing
                     throw new ArgumentException("Unsupported format", "format");
             }
         }
-
+        /// <summary>
+        /// Rotate an image by arbitary degrees, to fit within supplied bounding box.
+        /// </summary>
+        /// <param name="width">Target width (pixels) of output image</param>
+        /// <param name="height">Target height (pixels) of output image</param>
+        /// <param name="degrees">arbitary precision degrees of rotation</param>
+        /// <returns></returns>
         private static RotationCoords Rotate(int width, int height, float degrees)
         {
+            // make it a NOOP for most common requests
             if (degrees == 0 || degrees == 360)
             {
                 return (0, 0, 0, width, height);
@@ -165,6 +182,15 @@ namespace ImageProcessing
             return output;
         }
 
+        /// <summary>
+        /// Encode output image as PDF
+        /// </summary>
+        /// <param name="surface"></param>
+        /// <param name="width">Requested output width (pixels)</param>
+        /// <param name="height">Requested output height (pixels)</param>
+        /// <param name="q">Image quality (percentage)</param>
+        /// <param name="pdfMetadata">Optional metadata to include in the PDF</param>
+        /// <returns></returns>
         public static Stream EncodePdf(SKSurface surface, int width, int height, int q, Conf.PdfMetadata pdfMetadata)
         {
             // have to encode to JPEG then paint the encoded bytes, otherwise you get full JP2 quality
@@ -199,12 +225,24 @@ namespace ImageProcessing
             return output;
         }
 
+        /// <summary>
+        /// Load source image and extract enough Metadata to create an info.json
+        /// </summary>
+        /// <param name="imageUri">The <see cref="Uri"/> of the source image</param>
+        /// <param name="defaultTileWidth">The default tile width (pixels) to use for the source image, if source is not natively tiled</param>
+        /// <param name="requestId">The <code>X-RequestId</code> value to include on any subsequent HTTP calls</param>
+        /// <returns></returns>
         public async Task<Metadata> GetImageInfo(Uri imageUri, int defaultTileWidth, string requestId)
         {
             var loader = new ImageLoader { HttpClient = HttpClient, Log = Log };
             return await loader.GetMetadata(imageUri, defaultTileWidth, requestId);
         }
 
+        /// <summary>
+        /// Determines output encoding strategy based on supplied <paramref name="format"/>
+        /// </summary>
+        /// <param name="format">Requested output format type</param>
+        /// <returns><see cref="EncodingStrategy"/></returns>
         private static EncodingStrategy GetEncodingStrategy(ImageFormat format)
         {
             if (FormatLookup.ContainsKey(format))
@@ -217,7 +255,7 @@ namespace ImageProcessing
             }
             if (ImageFormat.jp2 == format)
             {
-                return EncodingStrategy.Kakadu;
+                return EncodingStrategy.JPEG2000;
             }
             if (ImageFormat.tif == format)
             {
@@ -232,7 +270,7 @@ namespace ImageProcessing
             Unknown,
             Skia,
             PDF,
-            Kakadu,
+            JPEG2000,
             Tifflib
         }
     }

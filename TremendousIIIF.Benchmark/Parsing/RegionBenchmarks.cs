@@ -23,7 +23,7 @@ namespace TremendousIIIF.Benchmark.Parsing
         {
             try
             {
-                return ImageRequestValidator.CalculateRegionCustom(RegionString);
+                return ImageRequestValidator.CalculateRegion(RegionString);
             }
             catch (Exception)
 

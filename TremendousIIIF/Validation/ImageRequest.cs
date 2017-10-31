@@ -13,9 +13,9 @@ namespace TremendousIIIF.Validation
             return new ImageRequest
             {
                 ID = identifier,
-                Region = CalculateRegionCustom(region),
+                Region = CalculateRegion(region),
                 Rotation = ParseRotation(rotation),
-                Size = CalculateSizeCustom(size),
+                Size = CalculateSize(size),
                 Quality = ParseQuality(quality),
                 Format = ParseFormat(format, supportedFormats),
                 MaxArea = maxArea,
@@ -37,7 +37,12 @@ namespace TremendousIIIF.Validation
                 Mirror = rotation.StartsWith("!")
             };
         }
-
+        /// <summary>
+        /// Validates requested format first against those supported by IIIF Image API 2.1, then against those <paramref name="supportedFormats"/> enabled in configuration
+        /// </summary>
+        /// <param name="formatString">The raw format string (jpg,png,webm,etc)</param>
+        /// <param name="supportedFormats"></param>
+        /// <returns></returns>
         public static ImageFormat ParseFormat(string formatString, List<ImageFormat> supportedFormats)
         {
             // first check it's permitted by the Image API specification
@@ -67,7 +72,7 @@ namespace TremendousIIIF.Validation
         {
             throw new FormatException("Invalid region parameter");
         }
-        public static ImageRegion CalculateRegionCustom(string region_string)
+        public static ImageRegion CalculateRegion(string region_string)
         {
             char[] Delimiter = new[] { ',' };
             ImageRegionMode regionMode;
@@ -114,7 +119,7 @@ namespace TremendousIIIF.Validation
             }
         }
 
-        public static ImageSize CalculateSizeCustom(string size_string)
+        public static ImageSize CalculateSize(string size_string)
         {
             ImageSizeMode sizeMode;
             var percentage = 1f;
@@ -151,13 +156,12 @@ namespace TremendousIIIF.Validation
 
             switch (sizeMode)
             {
-
                 case ImageSizeMode.MaintainAspectRatio:
                 case ImageSizeMode.Distort:
                     var sizes = size_string.Split(',');
                     if (sizes.Length != 2 || sizes.All(s => s.Length == 0))
                     {
-                        throw new FormatException("invald size format specified");
+                        throw new FormatException("Invald size format specified");
                     }
                     if (sizes[0] != string.Empty)
                     {
@@ -167,7 +171,7 @@ namespace TremendousIIIF.Validation
                     {
                         height = Int32.Parse(sizes[1]);
                     }
-                    if (sizes.Where(s=>s != string.Empty).Count() == 1)
+                    if (sizes.Where(s => s != string.Empty).Count() == 1)
                     {
                         sizeMode = ImageSizeMode.MaintainAspectRatio;
                     }

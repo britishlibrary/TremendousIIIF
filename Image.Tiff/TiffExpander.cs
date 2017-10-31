@@ -80,12 +80,12 @@ namespace Image.Tiff
             }
             using (var bmp = CreateBitmapFromPixels(raster, width, height))
             {
-                var desiredWidth = Math.Max(1, (int)Math.Round(state.TileWidth * state.ImageScale));
-                var desiredHeight = Math.Max(1, (int)Math.Round(state.TileHeight * state.ImageScale));
+                var desiredWidth = Math.Max(1, (int)Math.Round(state.RegionWidth * state.ImageScale));
+                var desiredHeight = Math.Max(1, (int)Math.Round(state.RegionHeight * state.ImageScale));
                 Log.Debug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
 
-                var regionWidth = (int)Math.Round((state.TileWidth / state.OutputScale) * state.ImageScale);
-                var regionHeight = (int)Math.Round((state.TileHeight / state.OutputScale) * state.ImageScale);
+                var regionWidth = (int)Math.Round((state.RegionWidth / state.OutputScale) * state.ImageScale);
+                var regionHeight = (int)Math.Round((state.RegionHeight / state.OutputScale) * state.ImageScale);
 
                 var srcRegion = SKRectI.Create(state.StartX, state.StartY, regionWidth, regionHeight);
                 return (state, CopyImageRegion2(bmp, desiredWidth, desiredHeight, srcRegion));

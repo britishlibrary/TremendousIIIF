@@ -119,21 +119,7 @@ namespace Image.Tiff
             }
         }
 
-        public static SKImage CopyBitmapRegionPixels(SKBitmap bmp, int width, int height, SKRectI srcRegion)
-        {
-            using (var output = new SKBitmap(width, height))
-            {
-                bmp.ExtractSubset(output, srcRegion);
-                output.LockPixels();
-                //var data = SKData.CreateCopy(output.GetPixels(), (ulong)output.ByteCount);
-                var img = SKImage.FromPixelCopy(output.Info, output.GetPixels());
-                output.UnlockPixels();
-                return img;
-                //var img = SKImage.FromBitmap(output);
-                //return SKImage.FromBitmap(SKBitmap.FromImage(img));
-            }
-        }
-
+ 
         // Benchmarking indicates using SKBitmap.ExtractSubset() -> SKImage -> SKBitmap -> SKImage (basically a copy) is faster
         public static SKImage CopyImageRegion(SKImage srcImage, int width, int height, SKRectI srcRegion)
         {

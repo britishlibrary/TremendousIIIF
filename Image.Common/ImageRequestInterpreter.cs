@@ -20,7 +20,6 @@ namespace Image.Common
 
             state.StartX = state.StartY = state.RegionHeight = state.RegionWidth = 0;
             state.OutputScale = state.ImageScale = 1;
-            //state.OutputScale = request.Size.Percent.Value > maxWscale || request.Size.Percent.Value > maxHscale ? Math.Min(maxWscale, maxHscale) : request.Size.Percent.Value;
             switch (request.Region.Mode)
             {
                 case ImageRegionMode.PercentageRegion:
@@ -104,25 +103,14 @@ namespace Image.Common
                     }
                     else
                     {
-
-
                         var originalScale = originalWidth / (float)originalHeight;
-
                         var scale = Math.Min((request.Size.Height / (float)state.RegionHeight), (request.Size.Width / (float)state.RegionWidth));
-                        //var scaley = request.Size.Width / (float)state.RegionWidth;
-
                         state.OutputWidth = Convert.ToInt32(state.RegionWidth * scale);
                         state.OutputHeight = Convert.ToInt32(state.RegionHeight * scale);
-                        //if (scalex < scaley)
-                        //    state.OutputScale = scalex;
-                        //else
                         state.OutputScale = scale;
 
                         if (request.Region.Mode != ImageRegionMode.Full)
                         {
-                            //if (scalex < scaley)
-                            //    state.ImageScale = scalex;
-                            //else
                             state.ImageScale = scale;
                         }
                     }
@@ -135,11 +123,11 @@ namespace Image.Common
                 = ScaleOutput(request.MaxWidth, request.MaxHeight, state.OutputWidth, state.OutputHeight, allowSizeAboveFull);
             state.OutputScale = Math.Min(max_scale, state.ImageScale);
 
-
             state.CheckBounds();
 
             return state;
         }
+
         /// <summary>
         /// Scale final output to be within the <paramref name="maxWidth"/> or <paramref name="maxHeight"/>
         /// </summary>
@@ -158,7 +146,7 @@ namespace Image.Common
             var requestedScale = (requestedWidth == 0 ? requestedHeight : requestedWidth) / (requestedHeight == 0 ? requestedWidth : requestedHeight);
             float scale = 1f;
 
-            if (requestedScale > maxWscale)
+            if (requestedScale > maxWscale && ((maxWscale * requestedHeight) < maxHeight))
             {
                 scale = maxWidth / (float)requestedWidth;
             }
@@ -215,7 +203,10 @@ namespace Image.Common
                     }
                     break;
                 case ImageSizeMode.MaintainAspectRatio:
-
+                    if (req.Size.Width == 0 && req.Size.Height == 0)
+                    {
+                        throw new ArgumentException("Width and Height can not both be 0");
+                    }
                     break;
                 default:
                     break;

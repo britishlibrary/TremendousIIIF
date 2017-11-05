@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Image.Tiff.Test
 {
-    #region Mock Helpers
+    [ExcludeFromCodeCoverage]
     public class MockHttpHandler : HttpMessageHandler
     {
         public virtual HttpResponseMessage Send(HttpRequestMessage request)
@@ -17,5 +18,4 @@ namespace Image.Tiff.Test
             return await Task.FromResult(Send(request));
         }
     }
-    #endregion
 }

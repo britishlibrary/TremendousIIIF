@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace TremendousIIIF.Common
 {
+    [ExcludeFromCodeCoverage]
     [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
     public sealed class ImageFormatMetadataAttribute : Attribute
     {

@@ -556,7 +556,7 @@ namespace TremendousIIIF.Test.Request
             Assert.AreEqual(0, result.StartY);
             Assert.AreEqual(width, result.RegionWidth, "Expected width does not match calculated width");
             Assert.AreEqual(height, result.RegionHeight, "Expected height does not match calculated height");
-            Assert.AreEqual(500, result.OutputWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(450, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(300, result.OutputHeight, "Expected height does not match calculated height");
         }
 

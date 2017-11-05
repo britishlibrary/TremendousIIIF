@@ -10,6 +10,9 @@ using Serilog;
 
 namespace Jpeg2000
 {
+    /// <summary>
+    /// Naive HTTP source for Kakadu
+    /// </summary>
     public class HttpCompressedSource : Ckdu_compressed_source_nonnative
     {
         private Uri _imageUri;
@@ -21,6 +24,14 @@ namespace Jpeg2000
         private HttpClient _client;
         private ILogger Log;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="client">Shared <see cref="HttpClient"/> to use for HTTP requests</param>
+        /// <param name="log">Shared <see cref="ILogger"/> instance to use for logging</param>
+        /// <param name="imageUri">The <see cref="Uri"/> of the remote image</param>
+        /// <param name="requestId">The correlation ID to include on subsequent HTTP requests</param>
+        /// <param name="headerOnly">Attempt to retrieve heade bytes only for metadata requests</param>
         public HttpCompressedSource(HttpClient client, ILogger log, Uri imageUri, string requestId, bool headerOnly = false)
         {
             _imageUri = imageUri;

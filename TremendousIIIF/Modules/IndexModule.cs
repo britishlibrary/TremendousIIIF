@@ -96,7 +96,8 @@ namespace TremendousIIIF.Modules
                     var tile = new Tile()
                     {
                         Width = metadata.TileWidth,
-                        Height = metadata.TileHeight
+                        Height = metadata.TileHeight,
+                        ScaleFactors = new List<int>()
                     };
                     for (int i = 0; i < metadata.ScalingLevels; i++)
                     {

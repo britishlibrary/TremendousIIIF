@@ -18,7 +18,7 @@ A bigly good IIIF image server.
 ## Dependencies
 
 .NET 4.6.2
-Kakadu 7.10.1, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the runtime directory.
+Kakadu 7.10.1, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the *runtime* directory (this is a change in dotnet core 2).
 
 *If you do not have a Kakadu licence, this will not work*
 

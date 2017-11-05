@@ -11,7 +11,7 @@ namespace Image.Common
         /// <param name="request"></param>
         /// <param name="originalWidth">Original width (pixels) of the source image</param>
         /// <param name="originalHeight">Original height (pixels) of the source image</param>
-        /// <param name="allowSizeAboveFull">Allow output image dimensions to exceed that of the source image</param>
+        /// <param name="allowSizeAboveFull">Allow output image dimensions to exceed that of the source image, but constrained by <see cref="ImageRequest.MaxWidth"/>,<see cref="ImageRequest.MaxHeight"/>,<see cref="ImageRequest.MaxArea"/></param>
         /// <returns></returns>
         static public ProcessState GetInterpretedValues(ImageRequest request, int originalWidth, int originalHeight, bool allowSizeAboveFull)
         {
@@ -63,9 +63,9 @@ namespace Image.Common
                     break;
                 case ImageSizeMode.Distort:
                     float scaledx, scaledy = 1f;
-                    
-                        scaledy = request.Size.Height / (float)state.RegionHeight;
-                        scaledx = request.Size.Width / (float)state.RegionWidth;
+
+                    scaledy = request.Size.Height / (float)state.RegionHeight;
+                    scaledx = request.Size.Width / (float)state.RegionWidth;
 
                     state.OutputWidth = Convert.ToInt32(state.RegionWidth * scaledx);
                     state.OutputHeight = Convert.ToInt32(state.RegionHeight * scaledy);
@@ -104,11 +104,11 @@ namespace Image.Common
                     }
                     else
                     {
-                        
+
 
                         var originalScale = originalWidth / (float)originalHeight;
 
-                        var scale = Math.Min( (request.Size.Height / (float)state.RegionHeight), (request.Size.Width / (float)state.RegionWidth));
+                        var scale = Math.Min((request.Size.Height / (float)state.RegionHeight), (request.Size.Width / (float)state.RegionWidth));
                         //var scaley = request.Size.Width / (float)state.RegionWidth;
 
                         state.OutputWidth = Convert.ToInt32(state.RegionWidth * scale);
@@ -116,14 +116,14 @@ namespace Image.Common
                         //if (scalex < scaley)
                         //    state.OutputScale = scalex;
                         //else
-                            state.OutputScale = scale;
+                        state.OutputScale = scale;
 
                         if (request.Region.Mode != ImageRegionMode.Full)
                         {
                             //if (scalex < scaley)
                             //    state.ImageScale = scalex;
                             //else
-                                state.ImageScale = scale;
+                            state.ImageScale = scale;
                         }
                     }
                     break;
@@ -134,7 +134,7 @@ namespace Image.Common
             (state.OutputWidth, state.OutputHeight, max_scale)
                 = ScaleOutput(request.MaxWidth, request.MaxHeight, state.OutputWidth, state.OutputHeight, allowSizeAboveFull);
             state.OutputScale = Math.Min(max_scale, state.ImageScale);
-            
+
 
             state.CheckBounds();
 
@@ -171,6 +171,8 @@ namespace Image.Common
             {
                 scale = Math.Min(scale, 1);
             }
+            // TODO: make this configurable. spec recommends using maxWidth/maxHeight/maxArea with sizeAboveFull but you don't have to,
+            // so still need some DoS protection!
             else
             {
                 if (scale > 10)

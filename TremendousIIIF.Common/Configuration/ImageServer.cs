@@ -55,20 +55,24 @@ namespace TremendousIIIF.Common.Configuration
             }
         }
         public Uri BaseUri { get; set; }
-        // Image API 2.1 supports these formats - as we are complicant with level 2
-        // we support jpg & png by default
-        // Syntax 	Level 0 	Level 1 	Level 2
-        // jpg      required    required    required
-        // png      optional    optional    required
-        // tif      optional    optional    optional
-        // gif      optional    optional    optional
-        // pdf      optional    optional    optional
-        // jp2      optional    optional    optional
-        // webp     optional    optional    optional
-        //
-        // However, we also have support for others which can be controlled with configuration
-        // Not all are currently supported though!
+
+        /// <summary>
+        /// <para>Image API 2.1 supports these formats - as we are complicant with level 2, we support jpg & png by default</para>
+        /// Syntax Level 0 	Level 1 	Level 2
+        /// jpg required    required required
+        /// png optional    optional required
+        /// tif optional    optional optional
+        /// gif optional    optional optional
+        /// pdf optional    optional optional
+        /// jp2 optional    optional optional
+        /// webp optional    optional optional
+        /// <para>However, we also have support for others which can be controlled with configuration</para>
+        /// <para>Not all are currently supported though!</para>
+        /// </summary>
         private List<ImageFormat> RequiredFormats = new List<ImageFormat> { ImageFormat.jpg, ImageFormat.png };
+        /// <summary>
+        /// Blah
+        /// </summary>
         public List<string> AdditionalOutputFormats { get; set; }
 
         public PdfMetadata PdfMetadata { get; set; }

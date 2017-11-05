@@ -70,6 +70,6 @@ namespace TremendousIIIF.Types
         public int Height { get; set; }
 
         [JsonProperty("scaleFactors")]
-        public List<int> ScaleFactors { get; set; } = new List<int>();
+        public List<int> ScaleFactors { get; set; }
     }
 }

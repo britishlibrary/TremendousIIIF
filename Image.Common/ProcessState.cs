@@ -10,8 +10,13 @@
         /// The identifier for this resource
         /// </summary>
         public string ID { get; set; }
-
+        /// <summary>
+        /// The scale of the output image
+        /// </summary>
         public float OutputScale { get; set; }
+        /// <summary>
+        /// The scale needed to transform <see cref="RegionWidth"/> and <see cref="RegionHeight"/> to <see cref="OutputWidth"/> and <see cref="OutputHeight"/>
+        /// </summary>
         public float ImageScale { get; set; }
         /// <summary>
         /// The height (in pixels) of the source region

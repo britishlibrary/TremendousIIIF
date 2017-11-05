@@ -30,8 +30,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX, "Expected x offset does not match calculated x offset");
             Assert.AreEqual(0, result.StartY, "Expected y offset does not match calculated y offset");
-            Assert.AreEqual(width, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
         }
 
         [TestMethod]
@@ -50,8 +50,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(50, result.StartX, "Expected x offset does not match calculated x offset");
             Assert.AreEqual(0, result.StartY, "Expected y offset does not match calculated y offset");
-            Assert.AreEqual(height, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(height, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(height, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(height, result.OutputHeight, "Expected height does not match calculated width");
         }
@@ -72,8 +72,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(50, result.StartX, "Expected x offset does not match calculated x offset");
             Assert.AreEqual(0, result.StartY, "Expected y offset does not match calculated y offset");
-            Assert.AreEqual(200, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(200, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(200, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(200, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(100, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(100, result.OutputHeight, "Expected height does not match calculated width");
         }
@@ -116,8 +116,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(50, result.StartX, "Expected x position does not match calculated x position");
             Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
-            Assert.AreEqual(height, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(height, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(100, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(100, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -139,8 +139,8 @@ namespace TremendousIIIF.Test.Request
 
             Assert.AreEqual(50, result.StartX, "Expected x position does not match calculated x position");
             Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
-            Assert.AreEqual(200, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(200, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(200, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(200, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(50, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(50, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -161,8 +161,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(50, result.StartX, "Expected x position does not match calculated x position");
             Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
-            Assert.AreEqual(200, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(200, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(200, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(200, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(150, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(50, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -183,8 +183,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX, "Expected x position does not match calculated x position");
             Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
-            Assert.AreEqual(width, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(150, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(100, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -204,8 +204,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX, "Expected x position does not match calculated x position");
             Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
-            Assert.AreEqual(width, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(225, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(150, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -246,8 +246,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX, "Expected x position does not match calculated x position");
             Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
-            Assert.AreEqual(width, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(225, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(100, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -267,8 +267,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX, "Expected x position does not match calculated x position");
             Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
-            Assert.AreEqual(width, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(150, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(100, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -422,8 +422,8 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, true);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
-            Assert.AreEqual(width, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
             Assert.AreEqual(width * 2, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(height * 2, result.OutputHeight, "Expected height does not match calculated height");
         }
@@ -464,20 +464,21 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
-            Assert.AreEqual(width, result.RegionWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(height, result.RegionHeight, "Expected tile height does not match calculated tile height");
-            Assert.AreEqual(10, result.OutputWidth, "Expected tile width does not match calculated tile width");
-            Assert.AreEqual(7, result.OutputHeight, "Expected tile height does not match calculated tile height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
+            Assert.AreEqual(10, result.OutputWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(7, result.OutputHeight, "Expected region height does not match calculated region height");
         }
 
         [TestMethod]
+        [Description("/full/,2000/0/default.jpg maxWidth = 1000, maxHeight = 1000, sizeAboveFull = false")]
         public void Full_Max_MaxWidth_MaxHeight_Exact()
         {
             var request = new Image.Common.ImageRequest
             {
                 ID = "",
                 Region = new ImageRegion { Mode = ImageRegionMode.Full, X = 0, Y = 0 },
-                Size = new ImageSize { Mode = ImageSizeMode.Distort, Percent = 1, Height=2000 },
+                Size = new ImageSize { Mode = ImageSizeMode.MaintainAspectRatio, Percent = 1, Height=2000 },
                 Rotation = new ImageRotation { Mirror = false, Degrees = 0 },
                 Quality = ImageQuality.@default,
                 Format = ImageFormat.jpg,
@@ -487,8 +488,10 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, 6640, 4007, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
-            Assert.AreEqual(1000, result.RegionWidth, "Expected width does not match calculated width");
-            Assert.AreEqual(603, result.RegionHeight, "Expected height does not match calculated height");
+            Assert.AreEqual(6640, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(4007, result.RegionHeight, "Expected region height does not match calculated region height");
+            Assert.AreEqual(1000, result.OutputWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(604, result.OutputHeight, "Expected region height does not match calculated region height");
         }
 
         [TestMethod]
@@ -520,7 +523,7 @@ namespace TremendousIIIF.Test.Request
                 ID = "",
                 Region = new ImageRegion { Mode = ImageRegionMode.PercentageRegion, X = 0, Y = 0, Width=100, Height=100 },
                 Size = new ImageSize { Mode = ImageSizeMode.Max, Percent = 1 },
-                Rotation = new ImageRotation { Mirror = false, Degrees = 90 },
+                Rotation = new ImageRotation { Mirror = false, Degrees = 0 },
                 Quality = ImageQuality.@default,
                 Format = ImageFormat.jpg,
                 MaxWidth = 150
@@ -528,8 +531,10 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
-            Assert.AreEqual(150, result.RegionWidth, "Expected width does not match calculated width");
-            Assert.AreEqual(100, result.RegionHeight, "Expected height does not match calculated height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected height does not match calculated height");
+            Assert.AreEqual(150, result.OutputWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(100, result.OutputHeight, "Expected height does not match calculated height");
         }
 
         [TestMethod]
@@ -549,8 +554,10 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, true);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
-            Assert.AreEqual(500, result.RegionWidth);
-            Assert.AreEqual(300, result.RegionHeight);
+            Assert.AreEqual(width, result.RegionWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected height does not match calculated height");
+            Assert.AreEqual(500, result.OutputWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(300, result.OutputHeight, "Expected height does not match calculated height");
         }
 
         [TestMethod]
@@ -571,7 +578,7 @@ namespace TremendousIIIF.Test.Request
             Assert.AreEqual(0, result.StartY);
             Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated width");
             Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated height");
-            Assert.AreEqual(300, result.OutputWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(225, result.OutputWidth, "Expected width does not match calculated width");
             Assert.AreEqual(300, result.OutputHeight, "Expected height does not match calculated height");
         }
 
@@ -583,7 +590,7 @@ namespace TremendousIIIF.Test.Request
             {
                 ID = "",
                 Region = new ImageRegion { Mode = ImageRegionMode.Full, X = 0, Y = 0 },
-                Size = new ImageSize { Mode = ImageSizeMode.Distort, Percent = 1, Width = width, Height = height },
+                Size = new ImageSize { Mode = ImageSizeMode.MaintainAspectRatio, Percent = 1, Width = width, Height = height },
                 Rotation = new ImageRotation { Mirror = false, Degrees = 90 },
                 Quality = ImageQuality.@default,
                 Format = ImageFormat.jpg,
@@ -592,8 +599,10 @@ namespace TremendousIIIF.Test.Request
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
-            Assert.AreEqual(200, result.RegionWidth, "Expected width does not match calculated width");
-            Assert.AreEqual(133, result.RegionHeight, "Expected height does not match calculated height");
+            Assert.AreEqual(width, result.RegionWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected height does not match calculated height");
+            Assert.AreEqual(200, result.OutputWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(133, result.OutputHeight, "Expected height does not match calculated height");
         }
 
         [TestMethod]

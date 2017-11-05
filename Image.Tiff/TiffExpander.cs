@@ -34,6 +34,10 @@ namespace Image.Tiff
         {
             if (imageUri.IsFile)
             {
+                if (!File.Exists(imageUri.LocalPath))
+                {
+                    throw new FileNotFoundException();
+                }
                 using (var tiff = T.Tiff.Open(imageUri.LocalPath, "r"))
                 {
                     return ReadMetadata(tiff, defaultTileWidth);
@@ -51,6 +55,7 @@ namespace Image.Tiff
 
         private static Metadata ReadMetadata(T.Tiff tiff, int defaultTileWidth)
         {
+            var x = tiff.GetField(T.TiffTag.IMAGEWIDTH);
             int width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
             int height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
             var twtag = tiff.GetField(T.TiffTag.TILEWIDTH);
@@ -84,8 +89,8 @@ namespace Image.Tiff
                 var desiredHeight = Math.Max(1, (int)Math.Round(state.RegionHeight * state.ImageScale));
                 Log.Debug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
 
-                var regionWidth = (int)Math.Round((state.RegionWidth / state.OutputScale) * state.ImageScale);
-                var regionHeight = (int)Math.Round((state.RegionHeight / state.OutputScale) * state.ImageScale);
+                var regionWidth = state.RegionWidth;
+                var regionHeight = state.RegionHeight;
 
                 var srcRegion = SKRectI.Create(state.StartX, state.StartY, regionWidth, regionHeight);
                 return (state, CopyImageRegion2(bmp, desiredWidth, desiredHeight, srcRegion));
@@ -146,10 +151,12 @@ namespace Image.Tiff
         {
             using (var surface = SKSurface.Create(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul))
             using (var output = new SKBitmap(width, height))
+            using (var paint = new SKPaint())
             {
+                paint.FilterQuality = SKFilterQuality.High;
                 var canvas = surface.Canvas;
                 srcImage.ExtractSubset(output, srcRegion);
-                canvas.DrawBitmap(output, new SKRect(0, 0, output.Width, output.Height), new SKRect(0, 0, width, height));
+                canvas.DrawBitmap(output, new SKRect(0, 0, output.Width, output.Height), new SKRect(0, 0, width, height), paint);
                 return surface.Snapshot();
             }
         }

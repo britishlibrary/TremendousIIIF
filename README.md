@@ -7,7 +7,7 @@ A bigly good IIIF image server.
 (or, why another image server)
 
 - Complies with IIIF Image API 2.1, level 2
-- Supports additional features from IIIF Image API 2.1 above level 2, such as `square` region, `sizeAboveFull`, `arbitrary` rotaion, `mirroring`
+- Supports additional features from IIIF Image API 2.1 above level 2, such as `square` region, `sizeAboveFull`, `arbitrary` rotation, `mirroring`
 - Supports JPG, PNG or WEBP output encoding
 - Supports JPEG2000 source, using the Kakadu library 
 - Supports TIFF source as a last resort (not recomended)
@@ -18,6 +18,7 @@ A bigly good IIIF image server.
 ## Dependencies
 
 .NET 4.6.2
+
 Kakadu 7.10.1, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the *runtime* directory (this is a change in dotnet core 2).
 
 *If you do not have a Kakadu licence, this will not work*

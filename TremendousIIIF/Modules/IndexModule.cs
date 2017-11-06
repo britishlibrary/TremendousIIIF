@@ -2,21 +2,32 @@
 using System.IO;
 using TremendousIIIF.Types;
 using TremendousIIIF.Validation;
-using MimeTypes;
 using System;
 using System.Net.Http;
 using Nancy.Owin;
 using Nancy.Responses;
 using Serilog;
-using System.Collections.Generic;
 using TremendousIIIF.Common.Configuration;
 using System.Linq;
 using Nancy.Responses.Negotiation;
+using System.Collections.Generic;
 
 namespace TremendousIIIF.Modules
 {
+
     public class IIIFImageService : NancyModule
     {
+        private static Dictionary<string, string> MimeTypeLookup = new Dictionary<string, string>()
+        {
+            {"jpg", "image/jpeg" },
+            {"png", "image/png" },
+            {"gif", "image/gif" },
+            {"tif", "image/tiff" },
+            {"jp2", "image/jp2" },
+            {"pdf", "application/pdf" },
+            {"webp", "image/webp" }
+        };
+
         public IIIFImageService(HttpClient httpClient, ILogger log, ImageServer conf)
         {
             Get("/ark:/{naan}/{id}/{region}/{size}/{rotation}/{quality}.{format}", async (parameters, token) =>
@@ -50,7 +61,7 @@ namespace TremendousIIIF.Modules
                     var allowSizeAboveFull = conf.AllowSizeAboveFull;
                     var processor = new ImageProcessing.ImageProcessing { HttpClient = httpClient, Log = log };
                     MemoryStream ms = await processor.ProcessImage(imageUri, request, conf.ImageQuality, allowSizeAboveFull, conf.PdfMetadata);
-                    string mimetype = MimeTypeMap.GetMimeType(parameters.format);
+                    MimeTypeLookup.TryGetValue(parameters.format, out string mimetype);
                     return new StreamResponse(() => ms, mimetype)
                         .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()))
 #if !DEBUG
@@ -106,7 +117,7 @@ namespace TremendousIIIF.Modules
                     {
                         ID = full_id,
                     };
-                    
+
                     log.Debug("{@ImageInfo}", info);
 
                     return await Negotiate

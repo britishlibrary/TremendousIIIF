@@ -19,7 +19,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LibOwin" Version="1.0.0" />
-    <PackageReference Include="MediaTypeMap" Version="2.1.0" />
     <PackageReference Include="Microsoft.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.0.0" />

@@ -17,7 +17,6 @@ namespace TremendousIIIF.Modules
 {
     public class IIIFImageService : NancyModule
     {
-
         public IIIFImageService(HttpClient httpClient, ILogger log, ImageServer conf)
         {
             Get("/ark:/{naan}/{id}/{region}/{size}/{rotation}/{quality}.{format}", async (parameters, token) =>
@@ -26,17 +25,22 @@ namespace TremendousIIIF.Modules
                 {
                     var filename = parameters.id;
                     var identifier = string.Format("ark:/{0}/{1}", parameters.naan, parameters.id);
+
+                    (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(conf);
+
+
                     var request = ImageRequestValidator.Validate(identifier,
                                                                     parameters.region,
                                                                     parameters.size,
                                                                     parameters.rotation,
                                                                     parameters.quality,
                                                                     parameters.format,
-                                                                    conf.MaxWidth,
-                                                                    conf.MaxHeight,
-                                                                    conf.MaxArea,
+                                                                    maxWidth,
+                                                                    maxHeight,
+                                                                    maxArea,
                                                                     conf.SupportedFormats());
                     request.RequestId = Context.GetOwinEnvironment()["RequestId"] as string;
+
                     log.Debug("{@Request}", request);
                     // pipeline is
                     // validation -> extraction -> transformation
@@ -90,43 +94,24 @@ namespace TremendousIIIF.Modules
                     var identifier = string.Format("ark:/{0}/{1}", parameters.naan, parameters.id);
                     var imageUri = new Uri(new Uri(conf.Location), filename);
                     var requestId = Context.GetOwinEnvironment()["RequestId"] as string;
+                    (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(conf);
                     var processor = new ImageProcessing.ImageProcessing { HttpClient = httpClient, Log = log };
                     var metadata = await processor.GetImageInfo(imageUri, conf.DefaultTileWidth, requestId);
-
-                    var tile = new Tile()
-                    {
-                        Width = metadata.TileWidth,
-                        Height = metadata.TileHeight,
-                        ScaleFactors = new List<int>()
-                    };
-                    for (int i = 0; i < metadata.ScalingLevels; i++)
-                    {
-                        tile.ScaleFactors.Add(Convert.ToInt32(Math.Pow(2, i)));
-                    }
 
                     var full_id = conf.BaseUri == null ?
                         Request.Url.ToString().Replace("/info.json", "") :
                         string.Format("{0}ark:/{1}/{2}", conf.BaseUri.ToString(), parameters.naan, parameters.id);
 
-                    var info = new ImageInfo
+                    var info = new ImageInfo(metadata, conf, maxWidth, maxHeight, maxArea)
                     {
-                        Height = metadata.Height,
-                        Width = metadata.Width,
-
                         ID = full_id,
-                        Tiles = new List<Tile> { tile }
                     };
-                    info.Profile.Add(new ServiceProfile(conf.AllowSizeAboveFull)
-                    {
-                        MaxWidth = conf.MaxWidth == int.MaxValue ? default(int) : conf.MaxWidth,
-                        MaxHeight = conf.MaxHeight == int.MaxValue ? default(int) : conf.MaxHeight,
-                        Formats = conf.AdditionalOutputFormats.Count == 0 ? null : conf.AdditionalOutputFormats
-                    });
+                    
                     log.Debug("{@ImageInfo}", info);
 
                     return await Negotiate
-                        .WithAllowedMediaRange(new MediaRange("application/ld+json"))
                         .WithAllowedMediaRange(new MediaRange("application/json"))
+                        .WithAllowedMediaRange(new MediaRange("application/ld+json"))
                         .WithHeader("Link", null) // hide nancy automatic Link: rel="alternative"
                         .WithModel(info);
                 }
@@ -157,9 +142,16 @@ namespace TremendousIIIF.Modules
                 var newLocation = string.Format("{0}/info.json", Context.Request.Url.ToString());
                 return new RedirectResponse(newLocation, RedirectResponse.RedirectType.SeeOther);
             });
-
         }
 
+        public (int, int, int) GetSizeConstraints(ImageServer conf)
+        {
+            var maxWidth = Context.GetOwinEnvironment().Where(t => t.Key == "maxWidth").Select(t => t.Value as int?).SingleOrDefault();
+            var maxHeight = Context.GetOwinEnvironment().Where(t => t.Key == "maxHeight").Select(t => t.Value as int?).SingleOrDefault();
+            var maxArea = Context.GetOwinEnvironment().Where(t => t.Key == "maxArea").Select(t => t.Value as int?).SingleOrDefault();
+
+            return (maxWidth ?? conf.MaxWidth, maxHeight ?? conf.MaxHeight, maxArea ?? conf.MaxArea);
+        }
     }
 
 }

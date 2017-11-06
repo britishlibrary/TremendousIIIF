@@ -17,7 +17,6 @@ namespace TremendousIIIF
         private static ImageServer Conf = new ImageServer();
         private static ILogger Log;
 
-
         public void Configure(IApplicationBuilder app)
         {
             System.Net.ServicePointManager.DefaultConnectionLimit = 1024;
@@ -26,6 +25,7 @@ namespace TremendousIIIF
             app.UseOwin(buildFunc =>
             {
                 buildFunc(next => RequestId.Middleware(next));
+                buildFunc(next => SizeConstraints.Middleware(next));
                 buildFunc(next => RequestLogging.Middleware(next, Log));
                 buildFunc(next => PerformanceLogging.Middleware(next, Log));
                 buildFunc(next => new MonitoringMiddleware(next, HealthCheckAsync).InvokeAsync);

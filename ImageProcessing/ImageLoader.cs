@@ -99,7 +99,7 @@ namespace ImageProcessing
 
                         if(!response.IsSuccessStatusCode)
                         {
-                            Log.Error("{ImageUri} {StatusCode} {ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
+                            Log.Error("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
                             throw new IOException("Unable to load source image");
                         }
 

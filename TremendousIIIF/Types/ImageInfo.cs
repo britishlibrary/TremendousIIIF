@@ -1,5 +1,9 @@
-﻿using Newtonsoft.Json;
+﻿using Image.Common;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using TremendousIIIF.Common.Configuration;
+
 namespace TremendousIIIF.Types
 {
     public class ImageInfo
@@ -10,6 +14,32 @@ namespace TremendousIIIF.Types
             Context = "http://iiif.io/api/image/2/context.json";
             Protocol = "http://iiif.io/api/image";
             Profile = new List<object> { "http://iiif.io/api/image/2/level2.json" };
+        }
+
+        public ImageInfo(Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea) : this()
+        {
+            Height = metadata.Height;
+            Width = metadata.Width;
+
+            var tile = new Tile()
+            {
+                Width = metadata.TileWidth,
+                Height = metadata.TileHeight,
+                ScaleFactors = new List<int>()
+            };
+            for (int i = 0; i < metadata.ScalingLevels; i++)
+            {
+                tile.ScaleFactors.Add(Convert.ToInt32(Math.Pow(2, i)));
+            }
+            Tiles = new List<Tile> { tile };
+
+            Profile.Add(new ServiceProfile(conf.AllowSizeAboveFull)
+            {
+                MaxWidth = maxWidth == int.MaxValue ? default(int) : maxWidth,
+                MaxHeight = maxHeight == int.MaxValue ? default(int) : maxHeight,
+                MaxArea = maxArea == int.MaxValue ? default(int) : maxArea,
+                Formats = conf.AdditionalOutputFormats.Count == 0 ? null : conf.AdditionalOutputFormats
+            });
         }
         [JsonProperty("@context", Order = 1, Required = Required.Always)]
         public string Context { get; set; }

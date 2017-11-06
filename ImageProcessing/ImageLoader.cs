@@ -90,12 +90,17 @@ namespace ImageProcessing
                     headRequest.Headers.Add("X-Request-ID", requestId);
                     using (var response = await HttpClient.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead))
                     {
+                        // Some failures we want to handle differently
                         switch (response.StatusCode)
                         {
                             case System.Net.HttpStatusCode.NotFound:
                                 throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
-                            case System.Net.HttpStatusCode.InternalServerError:
-                                throw new IOException("Unable to load source image");
+                        }
+
+                        if(!response.IsSuccessStatusCode)
+                        {
+                            Log.Error("{ImageUri} {StatusCode} {ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
+                            throw new IOException("Unable to load source image");
                         }
 
                         if (!response.Content.Headers.TryGetValues("Content-Type", out IEnumerable<string> values))

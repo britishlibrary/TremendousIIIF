@@ -90,7 +90,6 @@ namespace Image.Common
                         var scale = request.Size.Width / (float)state.RegionWidth;
                         state.OutputWidth = Convert.ToInt32(state.RegionWidth * scale);
                         state.OutputHeight = Convert.ToInt32(state.RegionHeight * scale);
-                        //if(request.Region.Mode == ImageRegionMode.Full)
                         state.OutputScale = scale;
                     }
                     else if (request.Size.Width == 0 && request.Size.Height != 0)
@@ -98,7 +97,6 @@ namespace Image.Common
                         var scale = request.Size.Height / (float)state.RegionHeight;
                         state.OutputWidth = Convert.ToInt32(state.RegionWidth * scale);
                         state.OutputHeight = Convert.ToInt32(state.RegionHeight * scale);
-                        //state.OutputScale = scale;
                         state.OutputScale = scale;
                     }
                     else

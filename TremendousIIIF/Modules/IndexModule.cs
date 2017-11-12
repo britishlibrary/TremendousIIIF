@@ -10,24 +10,12 @@ using Serilog;
 using TremendousIIIF.Common.Configuration;
 using System.Linq;
 using Nancy.Responses.Negotiation;
-using System.Collections.Generic;
+using TremendousIIIF.Common;
 
 namespace TremendousIIIF.Modules
 {
-
     public class IIIFImageService : NancyModule
     {
-        private static Dictionary<string, string> MimeTypeLookup = new Dictionary<string, string>()
-        {
-            {"jpg", "image/jpeg" },
-            {"png", "image/png" },
-            {"gif", "image/gif" },
-            {"tif", "image/tiff" },
-            {"jp2", "image/jp2" },
-            {"pdf", "application/pdf" },
-            {"webp", "image/webp" }
-        };
-
         public IIIFImageService(HttpClient httpClient, ILogger log, ImageServer conf)
         {
             Get("/ark:/{naan}/{id}/{region}/{size}/{rotation}/{quality}.{format}", async (parameters, token) =>
@@ -36,9 +24,7 @@ namespace TremendousIIIF.Modules
                 {
                     var filename = parameters.id;
                     var identifier = string.Format("ark:/{0}/{1}", parameters.naan, parameters.id);
-
                     (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(conf);
-
 
                     var request = ImageRequestValidator.Validate(identifier,
                                                                     parameters.region,
@@ -53,15 +39,11 @@ namespace TremendousIIIF.Modules
                     request.RequestId = Context.GetOwinEnvironment()["RequestId"] as string;
 
                     log.Debug("{@Request}", request);
-                    // pipeline is
-                    // validation -> extraction -> transformation
-                    // Region THEN Size THEN Rotation THEN Quality THEN Format
                     var imageUri = new Uri(new Uri(conf.Location), filename);
-                    var quality = conf.ImageQuality.GetOutputFormatQuality(request.Format);
                     var allowSizeAboveFull = conf.AllowSizeAboveFull;
                     var processor = new ImageProcessing.ImageProcessing { HttpClient = httpClient, Log = log };
                     MemoryStream ms = await processor.ProcessImage(imageUri, request, conf.ImageQuality, allowSizeAboveFull, conf.PdfMetadata);
-                    MimeTypeLookup.TryGetValue(parameters.format, out string mimetype);
+                    string mimetype = request.Format.GetAttribute<ImageFormatMetadataAttribute>().MimeType;
                     return new StreamResponse(() => ms, mimetype)
                         .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()))
 #if !DEBUG
@@ -102,7 +84,6 @@ namespace TremendousIIIF.Modules
                 try
                 {
                     var filename = parameters.id;
-                    var identifier = string.Format("ark:/{0}/{1}", parameters.naan, parameters.id);
                     var imageUri = new Uri(new Uri(conf.Location), filename);
                     var requestId = Context.GetOwinEnvironment()["RequestId"] as string;
                     (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(conf);

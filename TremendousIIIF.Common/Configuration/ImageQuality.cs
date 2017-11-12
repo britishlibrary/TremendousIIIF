@@ -1,5 +1,4 @@
-﻿using TremendousIIIF.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace TremendousIIIF.Common.Configuration
@@ -18,17 +17,16 @@ namespace TremendousIIIF.Common.Configuration
         public float WeightedRMSE { get; set; }
         public int MaxQualityLayers { get; set; }
 
-        public Dictionary<string, string> OutputFormatQuality {  get; set; }
-        
+        public Dictionary<string, string> OutputFormatQuality { get; set; }
 
         public int GetOutputFormatQuality(ImageFormat format)
         {
-            if(null == OutputFormatQuality)
+            if (null == OutputFormatQuality)
             {
                 return DefaultEncodingQuality;
             }
             OutputFormatQuality.TryGetValue(format.ToString(), out string qualityString);
-            if(!Int32.TryParse(qualityString, out int quality))
+            if (!Int32.TryParse(qualityString, out int quality))
             {
                 return DefaultEncodingQuality;
             }

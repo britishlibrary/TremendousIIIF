@@ -37,12 +37,12 @@ namespace TremendousIIIF.Modules
             Get("/ark:/{naan}/{id}", async (parameters, token) =>
             {
                 var newLocation = string.Format("{0}/info.json", Context.Request.Url.ToString());
-                return new RedirectResponse(newLocation, RedirectResponse.RedirectType.SeeOther);
+                return await new RedirectResponse(newLocation, RedirectResponse.RedirectType.SeeOther);
             });
             Get("/{id}", async (parameters, token) =>
             {
                 var newLocation = string.Format("{0}/info.json", Context.Request.Url.ToString());
-                return new RedirectResponse(newLocation, RedirectResponse.RedirectType.SeeOther);
+                return await new RedirectResponse(newLocation, RedirectResponse.RedirectType.SeeOther);
             });
         }
 

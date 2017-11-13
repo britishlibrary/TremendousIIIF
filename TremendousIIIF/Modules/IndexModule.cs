@@ -121,7 +121,7 @@ namespace TremendousIIIF.Modules
                 var processor = new ImageProcessing.ImageProcessing { HttpClient = HttpClient, Log = Log };
                 MemoryStream ms = await processor.ProcessImage(imageUri, request, Conf.ImageQuality, allowSizeAboveFull, Conf.PdfMetadata);
                 ImageFormat f = request.Format;
-                string mimetype = request.Format.GetAttribute<ImageFormatMetadataAttribute>().MimeType;
+                string mimetype = f.GetAttribute<ImageFormatMetadataAttribute>().MimeType;
                 return new StreamResponse(() => ms, mimetype)
                     .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()))
 #if !DEBUG

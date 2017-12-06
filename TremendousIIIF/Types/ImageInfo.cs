@@ -23,8 +23,8 @@ namespace TremendousIIIF.Types
 
             var tile = new Tile()
             {
-                Width = metadata.TileWidth,
-                Height = metadata.TileHeight,
+                Width = Math.Min(metadata.TileWidth, maxWidth),
+                Height = Math.Min(metadata.TileHeight, maxHeight),
                 ScaleFactors = new List<int>()
             };
             for (int i = 0; i < metadata.ScalingLevels; i++)

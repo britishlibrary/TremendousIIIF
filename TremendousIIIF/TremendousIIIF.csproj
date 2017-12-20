@@ -5,6 +5,7 @@
     <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
     <PostBuildEvent></PostBuildEvent>
     <TargetFramework>net462</TargetFramework>
+    <UserSecretsId>da5e1014-e5cc-4a22-a401-44f07f81af4c</UserSecretsId>
     
   </PropertyGroup>
 
@@ -20,16 +21,16 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LibOwin" Version="1.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.0" />
     <PackageReference Include="Nancy" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Nancy.Serialization.JsonNet" Version="2.0.0-clinteastwood" />
-    <PackageReference Include="Serilog" Version="2.5.0" />
+    <PackageReference Include="Serilog" Version="2.6.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="2.1.2" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="2.4.0" />
-    <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="5.4.0" />
+    <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="5.5.0" />
     <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.1-dev-00767" />
   </ItemGroup>
   <ItemGroup>

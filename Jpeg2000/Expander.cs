@@ -228,13 +228,15 @@ namespace Jpeg2000
                     Log.Debug("Extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}", extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                     compositor.set_buffer_surface(extracted_dims);
                     compositor.set_quality_limiting(limiter, quality.OutputDpi, quality.OutputDpi);
+                    Log.Debug("Set quality limiting: {@Limiter}, {@HorizontalPPI}, {@VerticalPPI}", limiter, quality.OutputDpi, quality.OutputDpi);
                     compositor.set_max_quality_layers(layers);
+                    Log.Debug("Set max quality layers: {@Layers}", layers);
                     var compositorBuffer = compositor.GetCompositionBitmap(extracted_dims);
 
                     using (Ckdu_dims newRegion = new Ckdu_dims())
                     {
                         // we're only interested in the final composited image
-                        while (compositor.process(0, newRegion))
+                        while (compositor.process(256000, newRegion))
                         {
                         }
 

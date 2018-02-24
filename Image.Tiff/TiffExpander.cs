@@ -100,12 +100,10 @@ namespace Image.Tiff
         public static SKBitmap CreateBitmapFromPixels(int[] pixelData, int width, int height)
         {
             var bmp = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
-            bmp.LockPixels();
             GCHandle pinnedArray = GCHandle.Alloc(pixelData, GCHandleType.Pinned);
             IntPtr pointer = pinnedArray.AddrOfPinnedObject();
             bmp.SetPixels(pointer);
             pinnedArray.Free();
-            bmp.UnlockPixels();
             return bmp;
         }
 

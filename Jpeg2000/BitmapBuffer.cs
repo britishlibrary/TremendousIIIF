@@ -23,7 +23,6 @@ namespace Jpeg2000
                               // `Ckdu_bitmap_compositor::allocate_buffer', which causes
                               // a new managed instance of the object to be instantiated.
             bitmap = new SKBitmap(size.x, size.y);
-            bitmap.LockPixels();
             buffer_handle = bitmap.GetPixels();
             this.init(buffer_handle, bitmap.RowBytes / 4);
             this.set_read_accessibility(true);
@@ -39,8 +38,6 @@ namespace Jpeg2000
         /// </summary>
         public SKBitmap AcquireBitmap()
         {
-            if (buffer_handle != IntPtr.Zero)
-                bitmap.UnlockPixels();
             buffer_handle = IntPtr.Zero;
             this.init(IntPtr.Zero, 0);
             return bitmap;
@@ -54,7 +51,6 @@ namespace Jpeg2000
         {
             Debug.Assert(buffer_handle == IntPtr.Zero);
             if (buffer_handle != IntPtr.Zero) return;
-            bitmap.LockPixels();
             buffer_handle = bitmap.GetPixels();
             this.init(buffer_handle, bitmap.RowBytes / 4);
         }
@@ -72,8 +68,6 @@ namespace Jpeg2000
         {
             if (in_dispose)
             {
-                if (buffer_handle != IntPtr.Zero)
-                    bitmap.UnlockPixels();
                 if (bitmap != null)
                     bitmap.Dispose();
                 if (size != null)

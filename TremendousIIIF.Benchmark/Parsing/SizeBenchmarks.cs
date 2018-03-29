@@ -1,5 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Attributes.Exporters;
+using BenchmarkDotNet.Attributes.Jobs;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Toolchains.CsProj;
 using Image.Common;
 using System;
 using System.Collections.Generic;
@@ -10,7 +14,17 @@ using TremendousIIIF.Validation;
 
 namespace TremendousIIIF.Benchmark.Parsing
 {
+    public class MultipleRuntimes : ManualConfig
+    {
+        public MultipleRuntimes()
+        {
+            Add(Job.Default.With(CsProjCoreToolchain.NetCoreApp20));
+
+            Add(Job.Default.With(CsProjClassicNetToolchain.Net471));
+        }
+    }
     [HtmlExporter, CsvExporter, RPlotExporter]
+    [Config(typeof(MultipleRuntimes))]
     [MemoryDiagnoser]
     public class SizeBenchmarks
     {
@@ -18,7 +32,7 @@ namespace TremendousIIIF.Benchmark.Parsing
         public string RegionString;
 
         [Benchmark]
-        public ImageSize Custom()
+        public ImageSize Default()
         {
             try
             {

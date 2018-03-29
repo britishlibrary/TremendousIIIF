@@ -10,34 +10,21 @@ namespace TremendousIIIF.Benchmark.Image
 {
     public class ImageEncodingBenchmarks
     {
-        public static SKImage Image { get; set; }
+        public static SKSurface Image { get; set; }
         [Params(SKEncodedImageFormat.Jpeg)]
         public SKEncodedImageFormat Format { get; set; }
+
+        public static ILogger Log = new LoggerConfiguration().CreateLogger();
         [GlobalSetup]
         public static void SetUp()
         {
             if (Image == null)
             {
                 var file = new Uri("file:///C:/Source/TremendousIIIF/TremendousIIIF.Benchmark/TestData/RoyalMS.jp2");
-                var request = new ImageRequest
-                {
-                    Region = new ImageRegion
-                    {
-                        X = 0,
-                        Y = 0,
-                        Mode = ImageRegionMode.Full
-                    },
-                    Size = new ImageSize
-                    {
-                        Mode = ImageSizeMode.Max,
-                        Percent = 1
-                    },
-                    Format = ImageFormat.jpg,
-                    Quality = ImageQuality.bitonal,
-                    Rotation = new ImageRotation { Degrees = 0, Mirror = false }
-                };
-                (var state, var img) = Jpeg2000.J2KExpander.ExpandRegion(null, null, file, request, false, new Common.Configuration.ImageQuality());
-                Image = img;
+                var request = new ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.bitonal, ImageFormat.jpg);
+                (var state, var img) = Jpeg2000.J2KExpander.ExpandRegion(null, Log, file, request, false, new Common.Configuration.ImageQuality());
+                Image = SKSurface.Create(img.Width, img.Height, SKImageInfo.PlatformColorType, SKAlphaType.Premul);
+                Image.Canvas.DrawImage(img, 0, 0);
             }
         }
 

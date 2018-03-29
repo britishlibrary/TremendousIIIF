@@ -103,23 +103,24 @@ namespace TremendousIIIF.Modules
                 var identifier = string.Format("ark:/{0}/{1}", parameters.naan, parameters.id);
                 (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(Conf);
 
-                var request = ImageRequestValidator.Validate(identifier,
+                var requestId = Context.GetOwinEnvironment()["RequestId"] as string;
+
+                var request = ImageRequestValidator.Validate(
                                                                 parameters.region,
                                                                 parameters.size,
                                                                 parameters.rotation,
                                                                 parameters.quality,
                                                                 parameters.format,
+                                                                requestId,
                                                                 maxWidth,
                                                                 maxHeight,
                                                                 maxArea,
                                                                 Conf.SupportedFormats());
-                request.RequestId = Context.GetOwinEnvironment()["RequestId"] as string;
-
                 Log.Debug("{@Request}", request);
                 var imageUri = new Uri(new Uri(Conf.Location), filename);
                 var allowSizeAboveFull = Conf.AllowSizeAboveFull;
                 var processor = new ImageProcessing.ImageProcessing { HttpClient = HttpClient, Log = Log };
-                MemoryStream ms = await processor.ProcessImage(imageUri, request, Conf.ImageQuality, allowSizeAboveFull, Conf.PdfMetadata);
+                Stream ms = await processor.ProcessImage(imageUri, request, Conf.ImageQuality, allowSizeAboveFull, Conf.PdfMetadata);
                 ImageFormat f = request.Format;
                 string mimetype = f.GetAttribute<ImageFormatMetadataAttribute>().MimeType;
                 return new StreamResponse(() => ms, mimetype)

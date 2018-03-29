@@ -1,10 +1,13 @@
 ﻿namespace Image.Common
 {
-    public class ImageRotation
+    public readonly struct ImageRotation
     {
-        public float Degrees { get; set; }
-        public bool Mirror { get; set; }
+        public ImageRotation(float degrees, bool mirror)
+        {
+            Degrees = degrees;
+            Mirror = mirror;
+        }
+        public float Degrees { get; }
+        public bool Mirror { get; }
     }
-
-
 }

@@ -2,14 +2,9 @@
 {
     public class ProcessState
     {
-        public ProcessState(string id)
+        public ProcessState()
         {
-            ID = id;
         }
-        /// <summary>
-        /// The identifier for this resource
-        /// </summary>
-        public string ID { get; set; }
         /// <summary>
         /// The scale of the output image
         /// </summary>

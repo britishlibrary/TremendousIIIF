@@ -111,7 +111,7 @@ namespace ImageProcessing
             {
                 case EncodingStrategy.Skia:
                     FormatLookup.TryGetValue(format, out SKEncodedImageFormat formatType);
-                    return EncodeSkiaImage(surface.Snapshot(), formatType, q);
+                    return EncodeSkiaImage(surface, formatType, q);
                 case EncodingStrategy.PDF:
                     return EncodePdf(surface, width, height, q, pdfMetadata);
                 case EncodingStrategy.JPEG2000:
@@ -171,15 +171,20 @@ namespace ImageProcessing
             return (angle, originX, originY, (int)newImgWidth, (int)newImgHeight);
         }
 
-        public static Stream EncodeSkiaImage(SKImage image, SKEncodedImageFormat format, int q)
+        public static Stream EncodeSkiaImage(SKSurface surface, SKEncodedImageFormat format, int q)
         {
             var output = new MemoryStream();
-            using (var data = image.Encode(format, q))
+            using (var image = surface.Snapshot())
+            //using (var data = image.Encode(format, q))
             {
-                data.SaveTo(output);
+                var data = image.Encode(format, q);
+                var ms = data.AsStream(false);
+                ms.Seek(0, SeekOrigin.Begin);
+                return ms;
+                //data.SaveTo(output);
             }
-            output.Seek(0, SeekOrigin.Begin);
-            return output;
+            //output.Seek(0, SeekOrigin.Begin);
+            //return output;
         }
 
         /// <summary>

@@ -63,18 +63,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.Full
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.Full
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.Full),
+                new ImageSize(ImageSizeMode.Full),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
 
@@ -90,22 +86,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.Region,
-                    X = x,
-                    Y = y,
-                    Width = width,
-                    Height = height
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.Full
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.Region, x, y, width, height),
+                new ImageSize(ImageSizeMode.Full),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
@@ -133,22 +121,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.PercentageRegion,
-                    X = x,
-                    Y = y,
-                    Width = width,
-                    Height = height
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.Full
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.PercentageRegion, x, y, width, height),
+                new ImageSize(ImageSizeMode.Full),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
@@ -176,25 +156,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.Region,
-                    X = x,
-                    Y = y,
-                    Width = width,
-                    Height = height
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.MaintainAspectRatio,
-                    Width = 200,
-                    Height = 200,
-                    Percent = 1
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.Region, x, y, width, height),
+                new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 200, 200),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
             using (img)
@@ -222,24 +191,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.Region,
-                    X = x,
-                    Y = y,
-                    Width = width,
-                    Height = height
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.MaintainAspectRatio,
-                    Width = 50,
-                    Height = 50
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.Region, x, y, width, height),
+                new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 50, 50),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
             using (img)
@@ -266,25 +225,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.PercentageRegion,
-                    X = x,
-                    Y = y,
-                    Width = width,
-                    Height = height
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.MaintainAspectRatio,
-                    Width = 50,
-                    Height = 50,
-                    Percent = 1
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.PercentageRegion, x, y, width, height),
+                new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 50, 50),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
@@ -312,25 +260,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.PercentageRegion,
-                    X = x,
-                    Y = y,
-                    Width = width,
-                    Height = height
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.MaintainAspectRatio,
-                    Width = 200,
-                    Height = 200,
-                    Percent = 1
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.PercentageRegion, x, y, width, height),
+                new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 200, 200),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
@@ -357,18 +294,14 @@ namespace Image.Tiff.Test
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
-            {
-                ID = "",
-                Format = ImageFormat.jpg,
-                Region = new ImageRegion
-                {
-                    Mode = ImageRegionMode.Square
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.Max
-                }
-            };
+            (
+                "",
+                new ImageRegion(ImageRegionMode.Square),
+                new ImageSize(ImageSizeMode.Max),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
 
             (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)

@@ -8,20 +8,18 @@ namespace TremendousIIIF.Validation
 {
     public static class ImageRequestValidator
     {
-        public static ImageRequest Validate(string identifier, string region, string size, string rotation, string quality, string format, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
+        static readonly char[] Delimiter = { ',' };
+        public static ImageRequest Validate(string region, string size, string rotation, string quality, string format, string requestId, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
         {
-            return new ImageRequest
-            {
-                ID = identifier,
-                Region = CalculateRegion(region),
-                Rotation = ParseRotation(rotation),
-                Size = CalculateSize(size),
-                Quality = ParseQuality(quality),
-                Format = ParseFormat(format, supportedFormats),
-                MaxArea = maxArea,
-                MaxWidth = maxWidth,
-                MaxHeight = maxHeight
-            };
+            return new ImageRequest(requestId, 
+                                    CalculateRegion(region), 
+                                    CalculateSize(size), 
+                                    ParseRotation(rotation), 
+                                    ParseQuality(quality), 
+                                    ParseFormat(format, supportedFormats), 
+                                    maxWidth, 
+                                    maxHeight, 
+                                    maxArea);
         }
 
         private static ImageRotation ParseRotation(string rotation)
@@ -31,11 +29,7 @@ namespace TremendousIIIF.Validation
             {
                 throw new ArgumentException("Invalid number of degrees", "rotation");
             }
-            return new ImageRotation
-            {
-                Degrees = degrees,
-                Mirror = rotation.StartsWith("!")
-            };
+            return new ImageRotation(degrees, rotation.StartsWith("!"));
         }
         /// <summary>
         /// Validates requested format first against those supported by IIIF Image API 2.1, then against those <paramref name="supportedFormats"/> enabled in configuration
@@ -74,7 +68,6 @@ namespace TremendousIIIF.Validation
         }
         public static ImageRegion CalculateRegion(string region_string)
         {
-            char[] Delimiter = new[] { ',' };
             ImageRegionMode regionMode;
             switch (region_string.Substring(0, 4))
             {
@@ -106,16 +99,9 @@ namespace TremendousIIIF.Validation
                     {
                         InvalidRegion();
                     }
-                    return new ImageRegion
-                    {
-                        Mode = regionMode,
-                        X = Single.Parse(regions[0]),
-                        Y = Single.Parse(regions[1]),
-                        Width = Single.Parse(regions[2]),
-                        Height = Single.Parse(regions[3])
-                    };
+                    return new ImageRegion(regionMode, Single.Parse(regions[0]), Single.Parse(regions[1]), Single.Parse(regions[2]), Single.Parse(regions[3]));
                 default:
-                    return new ImageRegion { Mode = regionMode, X = 0f, Y = 0f, Width = 0f, Height = 0f };
+                    return new ImageRegion(regionMode, 0f, 0f, 0f, 0f);
             }
         }
 
@@ -137,13 +123,13 @@ namespace TremendousIIIF.Validation
                     percentage = Convert.ToSingle(size_string) / 100;
                     break;
                 default:
-                    if (size_string.StartsWith("!"))
+                    if (size_string.IndexOf("!") == 0)
                     {
 
                         sizeMode = ImageSizeMode.MaintainAspectRatio;
                         size_string = size_string.Substring(1);
                     }
-                    else if (size_string.Contains(","))
+                    else if (size_string.IndexOf(",") >= 0)
                     {
                         sizeMode = ImageSizeMode.Distort;
                     }
@@ -158,7 +144,12 @@ namespace TremendousIIIF.Validation
             {
                 case ImageSizeMode.MaintainAspectRatio:
                 case ImageSizeMode.Distort:
-                    var sizes = size_string.Split(',');
+                    // do away with some allocations when Span<T> is here
+                    //ReadOnlySpan<char> inputSpan = size_string.AsReadOnlySpan();
+                    //int commaPos = size_string.IndexOf(',');
+                    //int first = int.Parse(inputSpan.Slice(0, commaPos));
+                    //int second = int.Parse(inputSpan.Slice(commaPos + 1));
+                    var sizes = size_string.Split(Delimiter);
                     if (sizes.Length != 2 || sizes.All(s => s.Length == 0))
                     {
                         throw new FormatException("Invald size format specified");
@@ -178,13 +169,13 @@ namespace TremendousIIIF.Validation
                     break;
             }
 
-            return new ImageSize
-            {
-                Width = width,
-                Height = height,
-                Mode = sizeMode,
-                Percent = percentage
-            };
+            return new ImageSize(sizeMode, percentage, width, height);
+            //{
+            //    Width = width,
+            //    Height = height,
+            //    Mode = sizeMode,
+            //    Percent = percentage
+            //};
         }
 
     }

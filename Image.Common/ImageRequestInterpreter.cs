@@ -16,7 +16,7 @@ namespace Image.Common
         static public ProcessState GetInterpretedValues(ImageRequest request, int originalWidth, int originalHeight, bool allowSizeAboveFull)
         {
             request.CheckRequest();
-            ProcessState state = new ProcessState(request.ID);
+            ProcessState state = new ProcessState();
 
             state.StartX = state.StartY = state.RegionHeight = state.RegionWidth = 0;
             state.OutputScale = state.ImageScale = 1;

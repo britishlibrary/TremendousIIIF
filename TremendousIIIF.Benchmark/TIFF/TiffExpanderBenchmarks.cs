@@ -26,7 +26,7 @@ namespace TremendousIIIF.Benchmark.TIFF
         //        [Params(256, 512, 1024, 2048, 4688)]
         [Params(256)]
         public int Height { get; set; }
-        
+
         [Params(0)]//, 1, 2, 3)]
         public int Row { get; set; }
         [Params(0)]//, 1, 2, 3)]
@@ -43,23 +43,7 @@ namespace TremendousIIIF.Benchmark.TIFF
         [GlobalSetup]
         public void Setup()
         {
-            var request = new ImageRequest
-            {
-                Region = new ImageRegion
-                {
-                    X = 0,
-                    Y = 0,
-                    Mode = ImageRegionMode.Full
-                },
-                Size = new ImageSize
-                {
-                    Mode = ImageSizeMode.Max,
-                    Percent = 1
-                },
-                Format = ImageFormat.jpg,
-                Quality = ImageQuality.@default,
-                Rotation = new ImageRotation { Degrees = 0, Mirror = false }
-            };
+            var request = new ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1, 10, 10), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg);
             using (var tiff = T.Tiff.Open(@"C:\Jp2Cache\vdc_tiff", "r"))
             {
                 int width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();

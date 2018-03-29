@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Image.Tiff</RootNamespace>
     <AssemblyName>Image.Tiff</AssemblyName>
-    <TargetFrameworks>net462;netstandard2.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.0</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -32,6 +32,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net462|AnyCPU'">
+    <LangVersion>7.2</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net462|AnyCPU'">
+    <LangVersion>7.2</LangVersion>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Image.Common\Image.Common.csproj">
     </ProjectReference>
@@ -45,8 +51,6 @@
     <PackageReference Include="Serilog" Version="2.6.0" />
 
     <PackageReference Include="BitMiracle.LibTiff.NET" Version="2.4.584.1" />
-
-    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
 
 

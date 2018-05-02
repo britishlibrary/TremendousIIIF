@@ -29,6 +29,6 @@ namespace TremendousIIIF.Benchmark.Image
         }
 
         [Benchmark]
-        public Stream Encode() => ImageProcessing.ImageProcessing.EncodeSkiaImage(Image, Format, 80);
+        public Stream Encode() => ImageProcessing.ImageProcessing.EncodeSkiaImage(Image, Format, 80, 300, 300);
     }
 }

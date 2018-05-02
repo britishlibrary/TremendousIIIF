@@ -246,7 +246,7 @@ namespace ImageProcessing
 
             var chunkHeader = new byte[8];
 
-            for (var i = 0l; i < dataLength; i++)
+            for (var i = 0L; i < dataLength; i++)
             {
                 Marshal.Copy(IntPtr.Add(pngData, offset), chunkHeader, 0, 8);
                 //if (BitConverter.IsLittleEndian)

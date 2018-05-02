@@ -168,7 +168,36 @@ namespace Jpeg2000
                     else if (layers == 0)
                         layers = Convert.ToInt32(Math.Ceiling(quality_layers / 2.0));
 
+                    ushort ppi_x = 96, ppi_y = 96;
+
+                    if (wrapped_src.access_layer(0).exists())
+                    {
+                        var accessLayer = wrapped_src.access_layer(0);
+                        var resolution = accessLayer.access_resolution();
+                        if (resolution.exists())
+                        {
+                            bool for_display = false;
+                            float ypels_per_metre = resolution.get_resolution(for_display);
+                            if (ypels_per_metre <= 0.0F)
+                            {
+                                for_display = true;
+                                ypels_per_metre = resolution.get_resolution(for_display);
+                                if (ypels_per_metre <= 0.0F)
+                                {
+                                    ypels_per_metre = 1.0F;
+                                }
+                            }
+
+                            float xpels_per_metre = ypels_per_metre * resolution.get_aspect_ratio(for_display);
+
+                            ppi_x = Convert.ToUInt16(Math.Ceiling(xpels_per_metre * 0.0254));
+                            ppi_y = Convert.ToUInt16(Math.Ceiling(ypels_per_metre * 0.0254));
+                        }
+                    }
+
                     var state = ImageRequestInterpreter.GetInterpretedValues(request, originalWidth, originalHeight, allowSizeAboveFull);
+                    state.HorizontalResolution = ppi_x;
+                    state.VerticalResolution = ppi_y;
                     Log.Debug("Image request {@Request}", state);
                     var scale = state.OutputScale;
                     var scaleDiff = 0f;
@@ -182,7 +211,6 @@ namespace Jpeg2000
                     imagePosition.y = state.StartY;
 
                     Ckdu_dims extracted_dims = new Ckdu_dims();
-
                     extracted_dims.assign(imageDimensions);
                     extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
                     extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));

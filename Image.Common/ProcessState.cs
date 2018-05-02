@@ -37,5 +37,13 @@
         /// The height (in pixels) of the output image
         /// </summary>
         public int OutputHeight { get; set; }
+        /// <summary>
+        /// The Horizontal Resoltion (DPI)
+        /// </summary>
+        public ushort HorizontalResolution { get; set; }
+        /// <summary>
+        /// The Vertical Resoltion (DPI)
+        /// </summary>
+        public ushort VerticalResolution { get; set; }
     }
 }

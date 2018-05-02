@@ -9,6 +9,7 @@ using System.Net.Http;
 using Serilog;
 using Conf = TremendousIIIF.Common.Configuration;
 using RotationCoords = System.ValueTuple<float, float, float, int, int>;
+using System.Runtime.InteropServices;
 
 namespace ImageProcessing
 {
@@ -100,18 +101,20 @@ namespace ImageProcessing
                         encodingStrategy,
                         request.Format,
                         quality.GetOutputFormatQuality(request.Format),
-                        pdfMetadata);
+                        pdfMetadata,
+                        state.HorizontalResolution,
+                        state.VerticalResolution);
                 }
             }
         }
 
-        private static Stream Encode(SKSurface surface, int width, int height, EncodingStrategy encodingStrategy, ImageFormat format, int q, Conf.PdfMetadata pdfMetadata)
+        private static Stream Encode(SKSurface surface, int width, int height, EncodingStrategy encodingStrategy, ImageFormat format, int q, Conf.PdfMetadata pdfMetadata, ushort horizontalResolution, ushort verticalResolution)
         {
             switch (encodingStrategy)
             {
                 case EncodingStrategy.Skia:
                     FormatLookup.TryGetValue(format, out SKEncodedImageFormat formatType);
-                    return EncodeSkiaImage(surface, formatType, q);
+                    return EncodeSkiaImage(surface, formatType, q, horizontalResolution, verticalResolution);
                 case EncodingStrategy.PDF:
                     return EncodePdf(surface, width, height, q, pdfMetadata);
                 case EncodingStrategy.JPEG2000:
@@ -171,20 +174,167 @@ namespace ImageProcessing
             return (angle, originX, originY, (int)newImgWidth, (int)newImgHeight);
         }
 
-        public static Stream EncodeSkiaImage(SKSurface surface, SKEncodedImageFormat format, int q)
+        public static Stream EncodeSkiaImage(SKSurface surface, SKEncodedImageFormat format, int q, ushort horizontalResolution, ushort verticalResolution)
         {
             var output = new MemoryStream();
             using (var image = surface.Snapshot())
-            //using (var data = image.Encode(format, q))
             {
                 var data = image.Encode(format, q);
+                if (format == SKEncodedImageFormat.Jpeg)
+                {
+                    SetJpgDpi(data.Data, horizontalResolution, verticalResolution);
+                }
+                
                 var ms = data.AsStream(false);
                 ms.Seek(0, SeekOrigin.Begin);
                 return ms;
-                //data.SaveTo(output);
             }
-            //output.Seek(0, SeekOrigin.Begin);
-            //return output;
+        }
+
+        private static void SetJpgDpi(IntPtr jpgData, ushort horizontalResolution, ushort verticalResolution)
+        {
+            // The Skia JPEG encoder sets a default 96x96 DPI, so reset to original DPI
+
+            // JPEG HEADER
+            // SOI byte[2]
+            // APP0 marker byte[2]
+            // Length byte[2]
+            // Identifier byte[5] = JIFF in ASCII followed by null byte
+            // JIFF Version byte[2]
+            // Density units byte[1]
+            // XDensity byte[2]
+            // YDensity byte[2]
+            // 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17
+            // FF D8 FF EO 00 10 4A 46 49 46 00 01 02 DD XX XX YY YY
+            //...
+            // TODO: clean this up using Span<T>
+            var header = new byte[18];
+
+            Marshal.Copy(jpgData, header, 0, 18);
+
+            var type = new byte[] { 0x01 };
+            byte[] h_dpi = BitConverter.GetBytes(horizontalResolution);
+            byte[] v_dpi = BitConverter.GetBytes(verticalResolution);
+
+            // JPEG is big endian
+            if (BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(h_dpi);
+                Array.Reverse(v_dpi);
+            }
+
+            Buffer.BlockCopy(type, 0, header, 13, 1);
+            Buffer.BlockCopy(h_dpi, 0, header, 14, 2);
+            Buffer.BlockCopy(v_dpi, 0, header, 16, 2);
+
+            Marshal.Copy(header, 0, jpgData, 18);
+        }
+
+        private static void SetPngDpi(IntPtr pngData, long dataLength, ushort horizontalResolution, ushort verticalResolution)
+        {
+            // PNG
+            // The pHYs chunk specifies the intended pixel size or aspect ratio for display of the image.It contains:
+
+            // Pixels per unit, X axis: 4 bytes(unsigned integer)
+            // Pixels per unit, Y axis: 4 bytes(unsigned integer)
+            // Unit specifier:          1 byte
+            // PNG uses pixels per m
+
+            // need to read each chunk until we find pHYs, then overwrite it
+            // EXCEPT that the Skia PNG encoder doesn't set it at all. will have to add it in, much more complicated :(
+            var offset = 8; // skip header
+
+            var chunkHeader = new byte[8];
+
+            for (var i = 0l; i < dataLength; i++)
+            {
+                Marshal.Copy(IntPtr.Add(pngData, offset), chunkHeader, 0, 8);
+                //if (BitConverter.IsLittleEndian)
+                //{
+                //    Array.Reverse(chunkHeader);
+                //}
+                offset += 8;
+                var numBytes = SwapEndianness(BitConverter.ToInt32(chunkHeader, 0));
+                var ctype = System.Text.Encoding.ASCII.GetString(chunkHeader, 4, 4);
+
+                if ("IDAT" == ctype)
+                {
+                    // pHYs must appear before first IDAT
+                    break;
+                }
+
+                if ("pHYs" != ctype)
+                {
+                    // data[?] plus crc[4]
+                    offset += numBytes + 4;
+                    continue;
+                }
+                var chunkData = new byte[numBytes];
+                Marshal.Copy(IntPtr.Add(pngData, offset), chunkData, offset, numBytes);
+
+                // change the data
+                var type = new byte[] { 0x01 }; // pixels per metre!
+                var ppmh = horizontalResolution / 0.0254;
+                var ppmv = verticalResolution / 0.0254;
+                byte[] h_dpi = BitConverter.GetBytes(ppmh);
+                byte[] v_dpi = BitConverter.GetBytes(ppmv);
+                Buffer.BlockCopy(h_dpi, 0, chunkData, 0, 4);
+                Buffer.BlockCopy(v_dpi, 0, chunkData, 4, 4);
+                Buffer.BlockCopy(type, 0, chunkData, 8, 1);
+
+                var newcrc = Crc32(chunkData, 0, numBytes, idatCrc);
+
+                Marshal.Copy(chunkData, 0, pngData + offset, numBytes);
+                Marshal.Copy(BitConverter.GetBytes(newcrc), 0, pngData + offset + numBytes, 4);
+                break;
+            }
+
+        }
+
+        public static int SwapEndianness(int value)
+        {
+            var b1 = (value >> 0) & 0xff;
+            var b2 = (value >> 8) & 0xff;
+            var b3 = (value >> 16) & 0xff;
+            var b4 = (value >> 24) & 0xff;
+
+            return b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0;
+        }
+
+        static uint[] crcTable;
+
+        // Stores a running CRC (initialized with the CRC of "IDAT" string). When
+        // you write this to the PNG, write as a big-endian value
+        static uint idatCrc = Crc32(new byte[] { (byte)'I', (byte)'D', (byte)'A', (byte)'T' }, 0, 4, 0);
+
+        // Call this function with the compressed image bytes, 
+        // passing in idatCrc as the last parameter
+        private static uint Crc32(byte[] stream, int offset, int length, uint crc)
+        {
+            uint c;
+            if (crcTable == null)
+            {
+                crcTable = new uint[256];
+                for (uint n = 0; n <= 255; n++)
+                {
+                    c = n;
+                    for (var k = 0; k <= 7; k++)
+                    {
+                        if ((c & 1) == 1)
+                            c = 0xEDB88320 ^ ((c >> 1) & 0x7FFFFFFF);
+                        else
+                            c = ((c >> 1) & 0x7FFFFFFF);
+                    }
+                    crcTable[n] = c;
+                }
+            }
+            c = crc ^ 0xffffffff;
+            var endOffset = offset + length;
+            for (var i = offset; i < endOffset; i++)
+            {
+                c = crcTable[(c ^ stream[i]) & 255] ^ ((c >> 8) & 0xFFFFFF);
+            }
+            return c ^ 0xffffffff;
         }
 
         /// <summary>

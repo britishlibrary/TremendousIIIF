@@ -76,8 +76,25 @@ namespace Image.Tiff
             int width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
             int height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
 
+            var restag = tiff.GetField(T.TiffTag.RESOLUTIONUNIT);
+            var xrestag = tiff.GetField(T.TiffTag.XRESOLUTION);
+            var yrestag = tiff.GetField(T.TiffTag.YRESOLUTION);
+
+            var resunit = restag == null ? 2 : restag[0].ToShort();
+            var xres = xrestag == null ? 96 : xrestag[0].ToDouble();
+            var yres = yrestag == null ? 96 : yrestag[0].ToDouble();
+
+            // pixels per metre
+            if(resunit == 3)
+            {
+                xres = xres / 0.0254;
+                yres = yres / 0.0254;
+            }
+
             var isTileable = tiff.IsTiled();
             var state = ImageRequestInterpreter.GetInterpretedValues(request, width, height, allowSizeAboveFull);
+            state.HorizontalResolution = Convert.ToUInt16(xres);
+            state.VerticalResolution = Convert.ToUInt16(yres);
             var raster = new int[width * height];
             if (!tiff.ReadRGBAImageOriented(width, height, raster, T.Orientation.TOPLEFT))
             {

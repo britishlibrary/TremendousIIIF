@@ -12,7 +12,7 @@ namespace Jpeg2000
 
     public class J2KExpander
     {
-        public static Metadata GetMetadata(HttpClient client, ILogger log, Uri imageUri, int defaultTileWidth, string requestId)
+        public static Metadata GetMetadata(HttpClient client, ILogger log, Uri imageUri, int defaultTileWidth, in string requestId)
         {
             Ckdu_codestream codestream = new Ckdu_codestream();
             try
@@ -97,7 +97,7 @@ namespace Jpeg2000
             }
 
         }
-        public static (ProcessState state, SKImage image) ExpandRegion(HttpClient client, ILogger Log, Uri imageUri, ImageRequest request, bool allowSizeAboveFull, C.ImageQuality quality)
+        public static (ProcessState state, SKImage image) ExpandRegion(HttpClient client, ILogger Log, Uri imageUri, in ImageRequest request, bool allowSizeAboveFull, C.ImageQuality quality)
         {
             using (var compositor = new BitmapCompositor())
             using (var env = new Ckdu_thread_env())

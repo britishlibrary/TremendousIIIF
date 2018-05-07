@@ -53,7 +53,7 @@ namespace ImageProcessing
                 var expectedHeight = state.OutputHeight;
                 var alphaType = request.Quality == ImageQuality.bitonal ? SKAlphaType.Opaque : SKAlphaType.Premul;
 
-                (var angle, var originX, var originY, var newImgWidth, var newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
+                var (angle, originX, originY, newImgWidth, newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
 
                 using (var surface = SKSurface.Create(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType))
                 using (var canvas = surface.Canvas)

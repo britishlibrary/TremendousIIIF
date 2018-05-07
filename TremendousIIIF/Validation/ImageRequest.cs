@@ -9,7 +9,7 @@ namespace TremendousIIIF.Validation
     public static class ImageRequestValidator
     {
         static readonly char[] Delimiter = { ',' };
-        public static ImageRequest Validate(string region, string size, string rotation, string quality, string format, string requestId, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
+        public static ImageRequest Validate(in string region, in string size, in string rotation, in string quality, in string format, in string requestId, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
         {
             return new ImageRequest(requestId, 
                                     CalculateRegion(region), 

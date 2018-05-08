@@ -13,7 +13,7 @@ namespace TremendousIIIF
 {
     public class Startup
     {
-        private static HttpClient httpClient = new HttpClient(new HttpClientHandler { UseProxy = false, MaxConnectionsPerServer = 64  });
+        private static readonly HttpClient httpClient = new HttpClient(new HttpClientHandler { UseProxy = false, MaxConnectionsPerServer = 64  });
         private static ImageServer Conf = new ImageServer();
         private static ILogger Log;
 
@@ -59,7 +59,7 @@ namespace TremendousIIIF
             var testImage = new Uri(new Uri(Conf.Location), Conf.HealthcheckIdentifier);
             try
             {
-                var loader = new ImageProcessing.ImageLoader { HttpClient = httpClient, Log = Log };
+                var loader = new ImageProcessing.ImageLoader(httpClient, Log);
                 await loader.GetSourceFormat(testImage, "");
                 return true;
             }

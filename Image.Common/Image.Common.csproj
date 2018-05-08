@@ -18,7 +18,7 @@
     <Copyright>Copyright © The British Library 2017</Copyright>
     <Description />
     <Authors>The British Library</Authors>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

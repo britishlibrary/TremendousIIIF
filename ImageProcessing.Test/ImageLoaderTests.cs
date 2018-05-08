@@ -20,7 +20,9 @@ namespace ImageProcessing.Test
         [DataRow("test_image.jp2", ImageFormat.jp2)]
         public void GetSourceFormat_Local(string filename, ImageFormat format)
         {
-            var loader = new ImageLoader();
+            var mockCLient = new Mock<HttpClient>();
+            var mockLogger = new Mock<ILogger>();
+            var loader = new ImageLoader(mockCLient.Object, mockLogger.Object);
             var imageUri = new Uri(Path.GetFullPath(filename));
 
             var result = loader.GetSourceFormat(imageUri, "").Result;
@@ -32,7 +34,9 @@ namespace ImageProcessing.Test
         [ExpectedException(typeof(IOException))]
         public void GetSourceFormat_Unsupported_Local()
         {
-            var loader = new ImageLoader();
+            var mockCLient = new Mock<HttpClient>();
+            var mockLogger = new Mock<ILogger>();
+            var loader = new ImageLoader(mockCLient.Object, mockLogger.Object);
             var imageUri = new Uri(Path.GetFullPath("test_image.png"));
 
             try
@@ -51,7 +55,9 @@ namespace ImageProcessing.Test
         [ExpectedException(typeof(IOException))]
         public void GetSourceFormat_Unsupported_Uri()
         {
-            var loader = new ImageLoader();
+            var mockCLient = new Mock<HttpClient>();
+            var mockLogger = new Mock<ILogger>();
+            var loader = new ImageLoader(mockCLient.Object, mockLogger.Object);
             var imageUri = new Uri("gopher://example.com/test_image.png");
 
             try
@@ -78,7 +84,8 @@ namespace ImageProcessing.Test
 
             var httpClient = new HttpClient(handler.Object);
 
-            var loader = new ImageLoader() { HttpClient = httpClient };
+            var mockLogger = new Mock<ILogger>();
+            var loader = new ImageLoader(httpClient, mockLogger.Object);
             var imageUri = new Uri("http://example.com/test_image.png");
 
             try
@@ -116,7 +123,8 @@ namespace ImageProcessing.Test
             var logger = new Mock<ILogger>();
             logger.Setup(l => l.Error(It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<HttpStatusCode>(), It.IsAny<string>())).Verifiable();
 
-            var loader = new ImageLoader() { HttpClient = httpClient, Log = logger.Object };
+
+            var loader = new ImageLoader(httpClient, logger.Object);
             var imageUri = new Uri("http://example.com/test_image.png");
 
             try
@@ -167,7 +175,8 @@ namespace ImageProcessing.Test
 
                 var httpClient = new HttpClient(handler.Object);
 
-                var loader = new ImageLoader() { HttpClient = httpClient };
+                var mockLogger = new Mock<ILogger>();
+                var loader = new ImageLoader(httpClient, mockLogger.Object);
                 var imageUri = new Uri("http://example.com/test_image.tif");
 
                 var result = loader.GetSourceFormat(imageUri, "").Result;
@@ -178,9 +187,9 @@ namespace ImageProcessing.Test
         }
 
         [TestMethod]
-        [DataRow("test_image.tif","application/octet-stream", ImageFormat.tif)]
-        [DataRow("test_image.tif","text/plain", ImageFormat.tif)]
-        [DataRow("test_image.tif","text/plain;charset=UTF-8", ImageFormat.tif)]
+        [DataRow("test_image.tif", "application/octet-stream", ImageFormat.tif)]
+        [DataRow("test_image.tif", "text/plain", ImageFormat.tif)]
+        [DataRow("test_image.tif", "text/plain;charset=UTF-8", ImageFormat.tif)]
         [DataRow("test_image.jp2", "application/octet-stream", ImageFormat.jp2)]
         [DataRow("test_image.jp2", "text/plain", ImageFormat.jp2)]
         [DataRow("test_image.jp2", "text/plain;charset=UTF-8", ImageFormat.jp2)]
@@ -206,8 +215,8 @@ namespace ImageProcessing.Test
                     .Verifiable();
 
                 var httpClient = new HttpClient(handler.Object);
-
-                var loader = new ImageLoader() { HttpClient = httpClient };
+                var mockLogger = new Mock<ILogger>();
+                var loader = new ImageLoader(httpClient, mockLogger.Object);
                 var imageUri = new Uri("http://example.com/test_image.tif");
 
                 var result = loader.GetSourceFormat(imageUri, "").Result;
@@ -240,8 +249,9 @@ namespace ImageProcessing.Test
                     .Verifiable();
 
                 var httpClient = new HttpClient(handler.Object);
+                var mockLogger = new Mock<ILogger>();
+                var loader = new ImageLoader(httpClient, mockLogger.Object);
 
-                var loader = new ImageLoader() { HttpClient = httpClient };
                 var imageUri = new Uri("http://example.com/test_image.tif");
 
                 try
@@ -282,7 +292,8 @@ namespace ImageProcessing.Test
 
                 var httpClient = new HttpClient(handler.Object);
 
-                var loader = new ImageLoader() { HttpClient = httpClient };
+                var mockLogger = new Mock<ILogger>();
+                var loader = new ImageLoader(httpClient, mockLogger.Object);
                 var imageUri = new Uri("http://example.com/test_image.png");
 
                 try

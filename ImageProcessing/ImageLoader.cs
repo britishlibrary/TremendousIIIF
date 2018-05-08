@@ -16,8 +16,14 @@ namespace ImageProcessing
 {
     public class ImageLoader
     {
-        public HttpClient HttpClient { get; set; }
-        public ILogger Log { get; set; }
+        private readonly HttpClient _httpClient;
+        private readonly ILogger _log;
+
+        public ImageLoader(HttpClient httpClient, ILogger log)
+        {
+            _httpClient = httpClient;
+            _log = log;
+        }
 
         /// <summary>
         /// MagicBytes used to identify JPEG2000 or TIFF files (big or little endian) if unsuitable mimetype supplied
@@ -45,9 +51,9 @@ namespace ImageProcessing
             switch (sourceFormat)
             {
                 case ImageFormat.jp2:
-                    return J2KExpander.ExpandRegion(HttpClient, Log, imageUri, request, allowSizeAboveFull, quality);
+                    return J2KExpander.ExpandRegion(_httpClient, _log, imageUri, request, allowSizeAboveFull, quality);
                 case ImageFormat.tif:
-                    return TiffExpander.ExpandRegion(HttpClient, Log, imageUri, request, allowSizeAboveFull);
+                    return TiffExpander.ExpandRegion(_httpClient, _log, imageUri, request, allowSizeAboveFull);
                 default:
                     throw new IOException("Unsupported source format");
             }
@@ -65,9 +71,9 @@ namespace ImageProcessing
             switch (sourceFormat)
             {
                 case ImageFormat.jp2:
-                    return J2KExpander.GetMetadata(HttpClient, Log, imageUri, defaultTileWidth, requestId);
+                    return J2KExpander.GetMetadata(_httpClient, _log, imageUri, defaultTileWidth, requestId);
                 case ImageFormat.tif:
-                    return TiffExpander.GetMetadata(HttpClient, Log, imageUri, defaultTileWidth, requestId);
+                    return TiffExpander.GetMetadata(_httpClient, _log, imageUri, defaultTileWidth, requestId);
                 default:
                     throw new IOException("Unsupported source format");
             }
@@ -88,7 +94,7 @@ namespace ImageProcessing
                 using (var headRequest = new HttpRequestMessage(HttpMethod.Head, imageUri))
                 {
                     headRequest.Headers.Add("X-Request-ID", requestId);
-                    using (var response = await HttpClient.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead))
+                    using (var response = await _httpClient.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead))
                     {
                         // Some failures we want to handle differently
                         switch (response.StatusCode)
@@ -99,7 +105,7 @@ namespace ImageProcessing
 
                         if(!response.IsSuccessStatusCode)
                         {
-                            Log.Error("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
+                            _log.Error("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
                             throw new IOException("Unable to load source image");
                         }
 
@@ -117,7 +123,7 @@ namespace ImageProcessing
                             {
                                 rangeRequest.Headers.Add("X-Request-Id", requestId);
                                 rangeRequest.Headers.Range = new RangeHeaderValue(0, longest);
-                                using (var byteResponse = await HttpClient.SendAsync(rangeRequest, HttpCompletionOption.ResponseHeadersRead))
+                                using (var byteResponse = await _httpClient.SendAsync(rangeRequest, HttpCompletionOption.ResponseHeadersRead))
                                 {
                                     byteResponse.EnsureSuccessStatusCode();
                                     var fileBytes = await byteResponse.Content.ReadAsByteArrayAsync();
@@ -148,7 +154,7 @@ namespace ImageProcessing
         /// </summary>
         /// <param name="fileBytes">The binary buffer to compare</param>
         /// <returns></returns>
-        private static ImageFormat CompareMagicBytes(byte[] fileBytes)
+        private static ImageFormat CompareMagicBytes(in byte[] fileBytes)
         {
             foreach (var mb in MagicBytes.OrderByDescending(v => v.Key.Length))
             {
@@ -168,7 +174,7 @@ namespace ImageProcessing
         /// </summary>
         /// <param name="mimeType">The mimetype to compare</param>
         /// <returns></returns>
-        private static ImageFormat GetFormatFromMimeType(string mimeType)
+        private static ImageFormat GetFormatFromMimeType(in string mimeType)
         {
             // still amazes me mimetype mapping isn't properly solved.
             switch (mimeType)

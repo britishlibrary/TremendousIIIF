@@ -17,9 +17,9 @@ A bigly good IIIF image server.
 - supports jpg, png, webp, pdf output natively, experimental tif and jp2 output (everything above jpg & png configurable)
 ## Dependencies
 
-.NET 4.6.2
+.NET 4.7.1
 
-Kakadu 7.10.1, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the *runtime* directory (this is a change in dotnet core 2).
+Kakadu 7.10.3, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the *runtime* directory (this is a change in dotnet core 2).
 
 *If you do not have a Kakadu licence, this will not work*
 
@@ -40,4 +40,4 @@ TremendousIIIF is written from scratch, but based on the accumulated knowledge o
 
 ## Future
 
-Currently builds net462/netstandard2.0/netcoreapp2.0, but not all dependecies are fully compatable (yet)
+Currently builds net471/netstandard2.0/netcoreapp2.0, but not all dependecies are fully compatable (yet)

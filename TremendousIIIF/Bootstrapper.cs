@@ -22,7 +22,7 @@ namespace TremendousIIIF
         // For more information https://github.com/NancyFx/Nancy/wiki/Bootstrapper
         private readonly ILogger log;
         private HttpClient httpClient;
-        private ImageServer imageServer;
+        private readonly ImageServer imageServer;
 
         public Bootstrapper(ImageServer imageServer, ILogger log, HttpClient httpClient)
         {
@@ -36,6 +36,7 @@ namespace TremendousIIIF
             base.ApplicationStartup(container, pipelines);
             container.Register(log);
             container.Register(httpClient);
+            
         }
 
         protected override void Dispose(bool disposing)

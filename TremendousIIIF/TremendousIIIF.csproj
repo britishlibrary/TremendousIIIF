@@ -4,7 +4,7 @@
     <TargetFrameworks>net471;netcoreapp2.0;netstandard2.0</TargetFrameworks>
     <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
     <PostBuildEvent></PostBuildEvent>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>latest</LangVersion>
     <UserSecretsId>da5e1014-e5cc-4a22-a401-44f07f81af4c</UserSecretsId>
     <StartupObject>TremendousIIIF.Program</StartupObject>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -20,10 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LibOwin" Version="1.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore" Version="2.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.2" />
     <PackageReference Include="Nancy" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Nancy.Serialization.JsonNet" Version="2.0.0-clinteastwood" />
     <PackageReference Include="Serilog" Version="2.6.0" />

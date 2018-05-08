@@ -9,7 +9,7 @@ namespace TremendousIIIF.Validation
     public static class ImageRequestValidator
     {
         static readonly char[] Delimiter = { ',' };
-        public static ImageRequest Validate(in string region, in string size, in string rotation, in string quality, in string format, in string requestId, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
+        public static ImageRequest Validate(string region, string size, string rotation, string quality, string format, string requestId, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
         {
             return new ImageRequest(requestId, 
                                     CalculateRegion(region), 
@@ -22,7 +22,7 @@ namespace TremendousIIIF.Validation
                                     maxArea);
         }
 
-        private static ImageRotation ParseRotation(string rotation)
+        private static ImageRotation ParseRotation(in string rotation)
         {
             var degreesString = rotation.Replace("!", "");
             if (!int.TryParse(degreesString, out int degrees) || (degrees < 0 || degrees > 360))
@@ -37,7 +37,7 @@ namespace TremendousIIIF.Validation
         /// <param name="formatString">The raw format string (jpg,png,webm,etc)</param>
         /// <param name="supportedFormats"></param>
         /// <returns></returns>
-        public static ImageFormat ParseFormat(string formatString, List<ImageFormat> supportedFormats)
+        public static ImageFormat ParseFormat(in string formatString, List<ImageFormat> supportedFormats)
         {
             // first check it's permitted by the Image API specification
             if (!Enum.TryParse(formatString, out ImageFormat format))
@@ -53,7 +53,7 @@ namespace TremendousIIIF.Validation
             return format;
         }
 
-        public static ImageQuality ParseQuality(string qualityString)
+        public static ImageQuality ParseQuality(in string qualityString)
         {
             if (!Enum.TryParse(qualityString, out ImageQuality quality))
             {
@@ -170,12 +170,7 @@ namespace TremendousIIIF.Validation
             }
 
             return new ImageSize(sizeMode, percentage, width, height);
-            //{
-            //    Width = width,
-            //    Height = height,
-            //    Mode = sizeMode,
-            //    Percent = percentage
-            //};
+
         }
 
     }

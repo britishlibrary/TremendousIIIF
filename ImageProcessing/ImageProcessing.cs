@@ -15,16 +15,24 @@ namespace ImageProcessing
 {
     public class ImageProcessing
     {
-        public HttpClient HttpClient { get; set; }
-        public ILogger Log { get; set; }
+        private readonly HttpClient _httpClient;
+        private readonly ILogger _log;
+        private readonly ImageLoader _loader;
 
-        private static Dictionary<ImageFormat, SKEncodedImageFormat> FormatLookup = new Dictionary<ImageFormat, SKEncodedImageFormat> {
+        private static readonly Dictionary<ImageFormat, SKEncodedImageFormat> FormatLookup = new Dictionary<ImageFormat, SKEncodedImageFormat> {
             { ImageFormat.jpg, SKEncodedImageFormat.Jpeg },
             { ImageFormat.png, SKEncodedImageFormat.Png },
             { ImageFormat.webp, SKEncodedImageFormat.Webp },
             // GIF appears to be unsupported on Windows in Skia currently
             // { ImageFormat.gif, SKEncodedImageFormat.Gif }
         };
+
+        public ImageProcessing(HttpClient httpClient, ILogger log, ImageLoader loader)
+        {
+            _httpClient = httpClient;
+            _log = log;
+            _loader = loader;
+        }
 
         /// <summary>
         /// Process image pipeline
@@ -44,8 +52,7 @@ namespace ImageProcessing
                 throw new ArgumentException("Unsupported format", "format");
             }
 
-            var loader = new ImageLoader { HttpClient = HttpClient, Log = Log };
-            (var state, var imageRegion) = await loader.ExtractRegion(imageUri, request, allowSizeAboveFull, quality);
+            var (state, imageRegion) = await _loader.ExtractRegion(imageUri, request, allowSizeAboveFull, quality);
 
             using (imageRegion)
             {
@@ -108,7 +115,7 @@ namespace ImageProcessing
             }
         }
 
-        private static Stream Encode(SKSurface surface, int width, int height, EncodingStrategy encodingStrategy, ImageFormat format, int q, Conf.PdfMetadata pdfMetadata, ushort horizontalResolution, ushort verticalResolution)
+        private static Stream Encode(in SKSurface surface, int width, int height, in EncodingStrategy encodingStrategy, in ImageFormat format, int q, in Conf.PdfMetadata pdfMetadata, ushort horizontalResolution, ushort verticalResolution)
         {
             switch (encodingStrategy)
             {
@@ -174,7 +181,7 @@ namespace ImageProcessing
             return (angle, originX, originY, (int)newImgWidth, (int)newImgHeight);
         }
 
-        public static Stream EncodeSkiaImage(SKSurface surface, SKEncodedImageFormat format, int q, ushort horizontalResolution, ushort verticalResolution)
+        public static Stream EncodeSkiaImage(in SKSurface surface, in SKEncodedImageFormat format, int q, ushort horizontalResolution, ushort verticalResolution)
         {
             var output = new MemoryStream();
             using (var image = surface.Snapshot())
@@ -305,11 +312,11 @@ namespace ImageProcessing
 
         // Stores a running CRC (initialized with the CRC of "IDAT" string). When
         // you write this to the PNG, write as a big-endian value
-        static uint idatCrc = Crc32(new byte[] { (byte)'I', (byte)'D', (byte)'A', (byte)'T' }, 0, 4, 0);
+        static readonly uint idatCrc = Crc32(new byte[] { (byte)'I', (byte)'D', (byte)'A', (byte)'T' }, 0, 4, 0);
 
         // Call this function with the compressed image bytes, 
         // passing in idatCrc as the last parameter
-        private static uint Crc32(byte[] stream, int offset, int length, uint crc)
+        private static uint Crc32(in byte[] stream, int offset, int length, uint crc)
         {
             uint c;
             if (crcTable == null)
@@ -346,7 +353,7 @@ namespace ImageProcessing
         /// <param name="q">Image quality (percentage)</param>
         /// <param name="pdfMetadata">Optional metadata to include in the PDF</param>
         /// <returns></returns>
-        public static Stream EncodePdf(SKSurface surface, int width, int height, int q, Conf.PdfMetadata pdfMetadata)
+        public static Stream EncodePdf(in SKSurface surface, int width, int height, int q, in Conf.PdfMetadata pdfMetadata)
         {
             // have to encode to JPEG then paint the encoded bytes, otherwise you get full JP2 quality
             var output = new MemoryStream();
@@ -389,8 +396,7 @@ namespace ImageProcessing
         /// <returns></returns>
         public async Task<Metadata> GetImageInfo(Uri imageUri, int defaultTileWidth, string requestId)
         {
-            var loader = new ImageLoader { HttpClient = HttpClient, Log = Log };
-            return await loader.GetMetadata(imageUri, defaultTileWidth, requestId);
+            return await _loader.GetMetadata(imageUri, defaultTileWidth, requestId);
         }
 
         /// <summary>
@@ -398,7 +404,7 @@ namespace ImageProcessing
         /// </summary>
         /// <param name="format">Requested output format type</param>
         /// <returns><see cref="EncodingStrategy"/></returns>
-        private static EncodingStrategy GetEncodingStrategy(ImageFormat format)
+        private static EncodingStrategy GetEncodingStrategy(in ImageFormat format)
         {
             if (FormatLookup.ContainsKey(format))
             {
@@ -420,7 +426,7 @@ namespace ImageProcessing
             return EncodingStrategy.Unknown;
         }
 
-        enum EncodingStrategy
+        private enum EncodingStrategy
         {
             Unknown,
             Skia,

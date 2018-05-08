@@ -18,14 +18,14 @@ namespace TremendousIIIF.Modules
 {
     public class IIIFImageService : NancyModule
     {
-        private HttpClient HttpClient { get; set; }
         private ILogger Log { get; set; }
         private ImageServer Conf { get; set; }
-        public IIIFImageService(HttpClient httpClient, ILogger log, ImageServer conf)
+        private ImageProcessing.ImageProcessing Processor { get; set; }
+        public IIIFImageService(ILogger log, ImageServer conf, ImageProcessing.ImageProcessing processor)
         {
-            HttpClient = httpClient;
             Log = log;
             Conf = conf;
+            Processor = processor;
 
             // Image Requests
             Get("/ark:/{naan}/{id}/{region}/{size}/{rotation}/{quality}.{format}", async (parameters, token) => await ImageRequest(parameters, token));
@@ -54,8 +54,7 @@ namespace TremendousIIIF.Modules
                 var imageUri = new Uri(new Uri(Conf.Location), filename);
                 var requestId = Context.GetOwinEnvironment()["RequestId"] as string;
                 (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(Conf);
-                var processor = new ImageProcessing.ImageProcessing { HttpClient = HttpClient, Log = Log };
-                var metadata = await processor.GetImageInfo(imageUri, Conf.DefaultTileWidth, requestId);
+                var metadata = await Processor.GetImageInfo(imageUri, Conf.DefaultTileWidth, requestId);
 
                 var full_id = Conf.BaseUri == null ?
                     Request.Url.ToString().Replace("/info.json", "") :
@@ -119,8 +118,7 @@ namespace TremendousIIIF.Modules
                 Log.Debug("{@Request}", request);
                 var imageUri = new Uri(new Uri(Conf.Location), filename);
                 var allowSizeAboveFull = Conf.AllowSizeAboveFull;
-                var processor = new ImageProcessing.ImageProcessing { HttpClient = HttpClient, Log = Log };
-                Stream ms = await processor.ProcessImage(imageUri, request, Conf.ImageQuality, allowSizeAboveFull, Conf.PdfMetadata);
+                Stream ms = await Processor.ProcessImage(imageUri, request, Conf.ImageQuality, allowSizeAboveFull, Conf.PdfMetadata);
                 ImageFormat f = request.Format;
                 string mimetype = f.GetAttribute<ImageFormatMetadataAttribute>().MimeType;
                 return new StreamResponse(() => ms, mimetype)
@@ -159,7 +157,7 @@ namespace TremendousIIIF.Modules
         }
 
 
-        public (int, int, int) GetSizeConstraints(ImageServer conf)
+        public (int, int, int) GetSizeConstraints(in ImageServer conf)
         {
             var maxWidth = Context.GetOwinEnvironment().Where(t => t.Key == "maxWidth").Select(t => t.Value as int?).SingleOrDefault();
             var maxHeight = Context.GetOwinEnvironment().Where(t => t.Key == "maxHeight").Select(t => t.Value as int?).SingleOrDefault();

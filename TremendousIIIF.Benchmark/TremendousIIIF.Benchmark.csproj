@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>TremendousIIIF.Benchmark</RootNamespace>
     <AssemblyName>TremendousIIIF.Benchmark</AssemblyName>
-    <TargetFrameworks>netstandard2.0;net471;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net471;netcoreapp2.2</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />
@@ -72,8 +72,6 @@
    
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
-    <PackageReference Include="BenchmarkDotNet.Core" Version="0.10.14" />
-    <PackageReference Include="BenchmarkDotNet.Toolchains.Roslyn" Version="0.10.14" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Image.Common\Image.Common.csproj">

@@ -1,11 +1,8 @@
 ﻿using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using kdu_mni;
 using System.IO;
+using System.IO.Pipelines;
 
 namespace Jpeg2000
 {
@@ -13,6 +10,7 @@ namespace Jpeg2000
     {
         public static Stream Compress(SKImage input)
         {
+            var pipe = new Pipe();
             using (var tgt = new Cjp2_target())
             using (var fam = new Cjp2_family_tgt())
             using (var memory_target = new MemoryTarget())
@@ -73,10 +71,12 @@ namespace Jpeg2000
 
                 compressor.finish();
                 codestream.destroy();
+
                 //memory_target.close();
                 //codestream.destroy();
                 //tgt.close();
                 //fam.close();
+
                 var ms = new MemoryStream();
                 memory_target.Data.Seek(0, SeekOrigin.Begin);
                 memory_target.Data.CopyTo(ms);

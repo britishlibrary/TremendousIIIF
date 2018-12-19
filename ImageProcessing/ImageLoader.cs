@@ -11,6 +11,7 @@ using Image.Tiff;
 using System.Net.Http.Headers;
 using TremendousIIIF.Common;
 using Serilog;
+using System.Threading;
 
 namespace ImageProcessing
 {
@@ -41,19 +42,19 @@ namespace ImageProcessing
         /// </summary>
         /// <param name="imageUri">The <see cref="Uri"/> of the source image</param>
         /// <param name="request">The <see cref="ImageRequest"/></param>
-        /// <param name="allowSizeAboveFull">Allow the output size to exceed the original dimensions of the image</param>
+        /// <param name="allowUpscaling">Allow the output size to exceed the original dimensions of the image</param>
         /// <param name="quality">The <see cref="ImageQuality"/> settings for encoding</param>
         /// <returns></returns>
-        public async Task<(ProcessState,SKImage)> ExtractRegion(Uri imageUri, ImageRequest request, bool allowSizeAboveFull, TremendousIIIF.Common.Configuration.ImageQuality quality)
+        public async Task<(ProcessState, SKImage)> ExtractRegion(Uri imageUri, ImageRequest request, bool allowUpscaling, TremendousIIIF.Common.Configuration.ImageQuality quality)
         {
             var sourceFormat = await GetSourceFormat(imageUri, request.RequestId);
 
             switch (sourceFormat)
             {
                 case ImageFormat.jp2:
-                    return J2KExpander.ExpandRegion(_httpClient, _log, imageUri, request, allowSizeAboveFull, quality);
+                    return await J2KExpander.ExpandRegion(_httpClient, _log, imageUri, request, allowUpscaling, quality).ConfigureAwait(false);
                 case ImageFormat.tif:
-                    return TiffExpander.ExpandRegion(_httpClient, _log, imageUri, request, allowSizeAboveFull);
+                    return await TiffExpander.ExpandRegion(_httpClient, _log, imageUri, request, allowUpscaling);
                 default:
                     throw new IOException("Unsupported source format");
             }
@@ -71,7 +72,7 @@ namespace ImageProcessing
             switch (sourceFormat)
             {
                 case ImageFormat.jp2:
-                    return J2KExpander.GetMetadata(_httpClient, _log, imageUri, defaultTileWidth, requestId);
+                    return await J2KExpander.GetMetadata(_httpClient, _log, imageUri, defaultTileWidth, requestId).ConfigureAwait(false);
                 case ImageFormat.tif:
                     return TiffExpander.GetMetadata(_httpClient, _log, imageUri, defaultTileWidth, requestId);
                 default:
@@ -85,7 +86,7 @@ namespace ImageProcessing
         /// <param name="imageUri">The <see cref="Uri"/> of the source image</param>
         /// <param name="requestId">The correlation ID to include on any subsequent HTTP requests</param>
         /// <returns></returns>
-        public async Task<ImageFormat> GetSourceFormat(Uri imageUri, string requestId)
+        public async Task<ImageFormat> GetSourceFormat(Uri imageUri, string requestId, CancellationToken token = default)
         {
             var longest = MagicBytes.Keys.Max(k => k.Length);
             if (imageUri.Scheme == "http" || imageUri.Scheme == "https")
@@ -94,7 +95,7 @@ namespace ImageProcessing
                 using (var headRequest = new HttpRequestMessage(HttpMethod.Head, imageUri))
                 {
                     headRequest.Headers.Add("X-Request-ID", requestId);
-                    using (var response = await _httpClient.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead))
+                    using (var response = await _httpClient.SendAsync(headRequest, HttpCompletionOption.ResponseHeadersRead, token))
                     {
                         // Some failures we want to handle differently
                         switch (response.StatusCode)
@@ -103,7 +104,7 @@ namespace ImageProcessing
                                 throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
                         }
 
-                        if(!response.IsSuccessStatusCode)
+                        if (!response.IsSuccessStatusCode)
                         {
                             _log.Error("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
                             throw new IOException("Unable to load source image");
@@ -123,10 +124,11 @@ namespace ImageProcessing
                             {
                                 rangeRequest.Headers.Add("X-Request-Id", requestId);
                                 rangeRequest.Headers.Range = new RangeHeaderValue(0, longest);
-                                using (var byteResponse = await _httpClient.SendAsync(rangeRequest, HttpCompletionOption.ResponseHeadersRead))
+                                using (var byteResponse = await _httpClient.SendAsync(rangeRequest, HttpCompletionOption.ResponseHeadersRead, token))
                                 {
                                     byteResponse.EnsureSuccessStatusCode();
-                                    var fileBytes = await byteResponse.Content.ReadAsByteArrayAsync();
+                                    var fileStream = await byteResponse.Content.ReadAsStreamAsync();
+                                    var fileBytes = StreamToBytes(fileStream);
                                     return CompareMagicBytes(fileBytes);
                                 }
                             }
@@ -149,6 +151,15 @@ namespace ImageProcessing
             throw new IOException("Unsupported scheme");
         }
 
+        private static byte[] StreamToBytes(Stream stream)
+        {
+            using (var sr = new BinaryReader(stream))
+            {
+                return sr.ReadBytes((int)stream.Length);
+            }
+        }
+
+
         /// <summary>
         /// Binary compare of <see cref="MagicBytes"/>
         /// </summary>
@@ -158,10 +169,9 @@ namespace ImageProcessing
         {
             foreach (var mb in MagicBytes.OrderByDescending(v => v.Key.Length))
             {
-                var subBytes = new byte[mb.Key.Length];
-                Buffer.BlockCopy(fileBytes, 0, subBytes, 0, mb.Key.Length);
-
-                if (mb.Key.SequenceEqual(subBytes))
+                var subBytes = new ReadOnlySpan<byte>(fileBytes, 0, mb.Key.Length);
+                var keySpan = new ReadOnlySpan<byte>(mb.Key);
+                if (keySpan.SequenceEqual(subBytes))
                 {
                     return mb.Value;
                 }

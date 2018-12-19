@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Attributes.Exporters;
-using BenchmarkDotNet.Attributes.Jobs;
+
 using Image.Common;
 using Serilog;
 using System;
@@ -26,7 +25,8 @@ namespace TremendousIIIF.Benchmark
         [GlobalSetup]
         public void Setup()
         {
-            IP = new ImageProcessing.ImageProcessing { Log = new LoggerConfiguration().CreateLogger() };
+            var log = new LoggerConfiguration().CreateLogger();
+            IP = new ImageProcessing.ImageProcessing(null,  log, new ImageProcessing.ImageLoader(null,  log));
             ImageUri = new Uri("file:///C:/Source/TremendousIIIF/TremendousIIIF.Benchmark/TestData/RoyalMS.jp2");
             Quality = new Common.Configuration.ImageQuality();
             Request = new ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.gray, ImageFormat.jpg);

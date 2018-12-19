@@ -8,12 +8,13 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ImageProcessing</RootNamespace>
     <AssemblyName>ImageProcessing</AssemblyName>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.2</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <LangVersion>7.3</LangVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,6 +38,7 @@
   <ItemGroup>
     <PackageReference Include="Serilog" Version="2.7.1" />
     <PackageReference Include="SkiaSharp" Version="1.68.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.6.0-preview.18571.3" />
   </ItemGroup>
 
   <ItemGroup>

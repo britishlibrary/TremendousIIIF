@@ -8,7 +8,7 @@ namespace TremendousIIIF.Processors
     {
         public JsonLdResponse(object model, ISerializer serializer, INancyEnvironment environment) : base(model, serializer, environment)
         {
-            this.ContentType = "application/ld+json";
+            this.ContentType = "application/ld+json; profile=\"http://iiif.io/api/image/3/context.json\"";
         }
 
         

@@ -2,12 +2,21 @@
 {
     public readonly struct ImageSize
     {
+        public ImageSize(ImageSizeMode mode, float? percent, int width, int height, bool upscale)
+        {
+            Mode = mode;
+            Percent = percent;
+            Width = width;
+            Height = height;
+            Upscale = upscale;
+        }
         public ImageSize(ImageSizeMode mode, float? percent, int width, int height)
         {
             Mode = mode;
             Percent = percent;
             Width = width;
             Height = height;
+            Upscale = false;
         }
         public ImageSize(ImageSizeMode mode, float? percent)
         {
@@ -15,6 +24,7 @@
             Percent = percent;
             Width = 0;
             Height = 0;
+            Upscale = false;
         }
         public ImageSize(ImageSizeMode mode)
         {
@@ -22,6 +32,7 @@
             Percent = 0;
             Width = 0;
             Height = 0;
+            Upscale = false;
         }
         public ImageSizeMode Mode { get;  }
 
@@ -29,6 +40,8 @@
 
         public int Width { get;   }
         public int Height { get;   }
+
+        public bool Upscale { get; }
 
     }
 

@@ -9,6 +9,7 @@ using SkiaSharp;
 using System.Collections.Generic;
 using System.Linq;
 using RGB = System.ValueTuple<byte, byte, byte>;
+using System.Threading.Tasks;
 
 namespace Image.Tiff.Test
 {
@@ -59,7 +60,7 @@ namespace Image.Tiff.Test
 
         [TestMethod]
         [Description("/test_image.tif/full/full/0/default.jpg")]
-        public void FullImage()
+        public async Task FullImage()
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -72,7 +73,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
 
             Assert.IsNotNull(img, "Image is null");
             Assert.AreEqual(1000, img.Width, "Image width does not match expected width");
@@ -82,7 +83,7 @@ namespace Image.Tiff.Test
         [TestMethod]
         [Description("/test_image.tif/x,y,w,h/full/0/default.jpg")]
         [DynamicData("TestRegions", DynamicDataSourceType.Method)]
-        public void ExtractRegionFullSize(int x, int y, int width, int height)
+        public async Task ExtractRegionFullSize(int x, int y, int width, int height)
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -95,7 +96,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");
@@ -117,7 +118,7 @@ namespace Image.Tiff.Test
         [TestMethod]
         [Description("/test_image.tif/pct:x,y,w,h/full/0/default.jpg")]
         [DynamicData("TestRegionsPct", DynamicDataSourceType.Method)]
-        public void ExtractPctRegionFullSize(float x, float y, float width, float height)
+        public async Task ExtractPctRegionFullSize(float x, float y, float width, float height)
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -130,7 +131,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");
@@ -152,7 +153,7 @@ namespace Image.Tiff.Test
         [TestMethod]
         [Description("/test_image.tif/x,y,w,h/1000,1000/0/default.jpg")]
         [DynamicData("TestRegions", DynamicDataSourceType.Method)]
-        public void ExtractRegionScaleUp(int x, int y, int width, int height)
+        public async Task ExtractRegionScaleUp(int x, int y, int width, int height)
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -165,7 +166,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");
@@ -187,7 +188,7 @@ namespace Image.Tiff.Test
         [TestMethod]
         [Description("/test_image.tif/x,y,w,h/50,50/0/default.jpg")]
         [DynamicData("TestRegions", DynamicDataSourceType.Method)]
-        public void ExtractRegionScaleDown(int x, int y, int width, int height)
+        public async Task ExtractRegionScaleDown(int x, int y, int width, int height)
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -200,7 +201,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");
@@ -221,7 +222,7 @@ namespace Image.Tiff.Test
         [TestMethod]
         [Description("/test_image.tif/pct:x,y,w,h/50,50/0/default.jpg")]
         [DynamicData("TestRegionsPct", DynamicDataSourceType.Method)]
-        public void ExtractPctRegionScaleDown(float x, float y, float width, float height)
+        public async Task ExtractPctRegionScaleDown(float x, float y, float width, float height)
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -234,7 +235,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");
@@ -256,7 +257,7 @@ namespace Image.Tiff.Test
         [TestMethod]
         [Description("/test_image.tif/pct:x,y,w,h/200,200/0/default.jpg")]
         [DynamicData("TestRegionsPct", DynamicDataSourceType.Method)]
-        public void ExtractPctRegionScaleUp(float x, float y, float width, float height)
+        public async Task ExtractPctRegionScaleUp(float x, float y, float width, float height)
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -269,7 +270,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");
@@ -290,7 +291,7 @@ namespace Image.Tiff.Test
 
         [TestMethod]
         [Description("/test_image.tif/square/max/0/default.jpg")]
-        public void ExtractSquareMax()
+        public async Task ExtractSquareMax()
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -303,7 +304,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (var state, var img) = await TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");

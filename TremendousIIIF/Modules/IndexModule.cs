@@ -46,8 +46,36 @@ namespace TremendousIIIF.Modules
             });
         }
 
+        private async Task<dynamic> ImageInfov3(dynamic parameters, CancellationToken token)
+        {
+
+            var filename = parameters.id;
+            var imageUri = new Uri(new Uri(Conf.Location), filename);
+            var requestId = Context.GetOwinEnvironment()["RequestId"] as string;
+            (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(Conf);
+            var metadata = await Processor.GetImageInfo(imageUri, Conf.DefaultTileWidth, requestId);
+
+            var full_id = Conf.BaseUri == null ?
+                Request.Url.ToString().Replace("/info.json", "") :
+                string.Format("{0}ark:/{1}/{2}", Conf.BaseUri.ToString(), parameters.naan, parameters.id);
+
+            var info = new Types.v3_1.ImageInfo(metadata, Conf, maxWidth, maxHeight, maxArea)
+            {
+                ID = full_id,
+            };
+
+            return await Negotiate
+                .WithAllowedMediaRange(new MediaRange("application/ld+json"))
+                    .WithAllowedMediaRange(new MediaRange("application/json"))
+                    
+                    .WithHeader("Link", null) // hide nancy automatic Link: rel="alternative"
+                    .WithModel(info);
+        }
         private async Task<dynamic> ImageInfo(dynamic parameters, CancellationToken token)
         {
+            if (Conf.DefaultAPIVersion == ApiVersion.v3_0 )
+                return await ImageInfov3(parameters, token);
+
             try
             {
                 var filename = parameters.id;
@@ -60,7 +88,7 @@ namespace TremendousIIIF.Modules
                     Request.Url.ToString().Replace("/info.json", "") :
                     string.Format("{0}ark:/{1}/{2}", Conf.BaseUri.ToString(), parameters.naan, parameters.id);
 
-                var info = new ImageInfo(metadata, Conf, maxWidth, maxHeight, maxArea)
+                var info = new Types.v2_1.ImageInfo(metadata, Conf, maxWidth, maxHeight, maxArea)
                 {
                     ID = full_id,
                 };
@@ -122,7 +150,7 @@ namespace TremendousIIIF.Modules
                 ImageFormat f = request.Format;
                 string mimetype = f.GetAttribute<ImageFormatMetadataAttribute>().MimeType;
                 return new StreamResponse(() => ms, mimetype)
-                    .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", new ImageInfo().Profile.First()))
+                    .WithHeader("Link", string.Format("<{0}>;rel=\"profile\"", "http://iiif.io/api/image/3/context.json"))
 #if !DEBUG
                         .AsAttachment(string.Format("{0}.{1}", (string)parameters.id, (string)parameters.format));
 #else

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using kdu_mni;
+﻿using kdu_mni;
 using System.IO;
 
 namespace Jpeg2000
@@ -15,15 +10,13 @@ namespace Jpeg2000
 
         public MemoryTarget()
         {
-            Data = new MemoryStream();
-            Offset = 0;
         }
 
         public override bool post_write(int num_bytes)
         {
             var buffer = new byte[num_bytes];
             var count = pull_data(buffer, 0, num_bytes);
-            Data.Write(buffer, 0, count);
+            Data.Write(buffer, Offset, count);
             Offset += count;
             return true;
         }

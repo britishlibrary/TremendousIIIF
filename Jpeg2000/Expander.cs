@@ -6,14 +6,27 @@ using System.Net.Http;
 using Serilog;
 using System.IO;
 using C = TremendousIIIF.Common.Configuration;
+using System.Threading.Tasks;
 
 namespace Jpeg2000
 {
-
     public class J2KExpander
     {
-        public static Metadata GetMetadata(HttpClient client, ILogger log, Uri imageUri, int defaultTileWidth, in string requestId)
+        private static void InitialiseKakaduLogging(ILogger log)
         {
+            KakaduMessage sysout = new KakaduMessage(false, log);
+            KakaduMessage syserr = new KakaduMessage(true, log);
+            Ckdu_message_formatter pretty_sysout = new Ckdu_message_formatter(sysout);
+            Ckdu_message_formatter pretty_syserr = new Ckdu_message_formatter(syserr);
+
+            Ckdu_global_funcs.kdu_customize_warnings(pretty_sysout);
+            Ckdu_global_funcs.kdu_customize_errors(pretty_syserr);
+        }
+        public static async Task<Metadata> GetMetadata(HttpClient client, ILogger log, Uri imageUri, int defaultTileWidth, string requestId)
+        {
+
+            InitialiseKakaduLogging(log);
+
             Ckdu_codestream codestream = new Ckdu_codestream();
             try
             {
@@ -21,7 +34,8 @@ namespace Jpeg2000
                 using (var wrapped_src = new Cjpx_source())
                 using (var jp2_source = new Cjp2_source())
                 {
-                    family_src.Open(client, imageUri, false);
+                    await family_src.Initialise(client, imageUri, false);
+                    family_src.Open(imageUri);
 
                     int success = wrapped_src.open(family_src, true);
                     if (success < 1)
@@ -31,8 +45,8 @@ namespace Jpeg2000
                         throw new IOException("could not be read as JPEG2000");
                     }
 
-                    jp2_source.open(family_src);
-                    while (!jp2_source.read_header()) ;
+                    //jp2_source.open(family_src);
+                    //while (!jp2_source.read_header()) ;
 
                     int ref_component = 0;
 
@@ -97,30 +111,34 @@ namespace Jpeg2000
             }
 
         }
-        public static (ProcessState state, SKImage image) ExpandRegion(HttpClient client, ILogger Log, Uri imageUri, in ImageRequest request, bool allowSizeAboveFull, C.ImageQuality quality)
+        public static async Task<(ProcessState state, SKImage image)> ExpandRegion(HttpClient client, ILogger Log, Uri imageUri, ImageRequest request, bool allowSizeAboveFull, C.ImageQuality quality)
         {
+            InitialiseKakaduLogging(Log);
+
             using (var compositor = new BitmapCompositor())
-            using (var env = new Ckdu_thread_env())
+            //using (var env = new Ckdu_thread_env())
             using (var family_src = new JPEG2000Source(Log, request.RequestId))
             using (var wrapped_src = new Cjpx_source())
             using (var imageDimensions = new Ckdu_dims())
             using (var limiter = new Ckdu_quality_limiter(quality.WeightedRMSE))
             {
+                await family_src.Initialise(client, imageUri, false);
                 Ckdu_codestream codestream = new Ckdu_codestream();
                 try
                 {
                     int num_threads = Ckdu_global_funcs.kdu_get_num_processors();
-                    env.create();
+                    //env.create();
 
-                    for (int nt = 1; nt < num_threads; nt++)
-                    {
-                        if (!env.add_thread())
-                        {
-                            num_threads = nt;
-                        }
-                    }
+                    //for (int nt = 1; nt < num_threads; nt++)
+                    //{
+                    //    if (!env.add_thread())
+                    //    {
+                    //        num_threads = nt;
+                    //    }
+                    //}
                     Log.Debug("Created {@NumThreads} threads", num_threads);
-                    family_src.Open(client, imageUri, false);
+                    family_src.Open(imageUri);
+                    Log.Debug("Opened {@ImageURI}", imageUri);
 
                     int success = wrapped_src.open(family_src, true);
                     if (success < 1)
@@ -129,24 +147,24 @@ namespace Jpeg2000
                         wrapped_src.close();
                         throw new IOException("could not be read as JPEG2000");
                     }
-
-                    if (wrapped_src != null)
-                        compositor.create(wrapped_src);
-
-                    compositor.set_thread_env(env, null);
-                    compositor.get_total_composition_dims(imageDimensions);
-                    Ckdu_coords imageSize = imageDimensions.access_size();
-                    Ckdu_coords imagePosition = imageDimensions.access_pos();
-
-                    float imageScale = 1;
-
-                    int ref_component = 0;
+                    Log.Debug("Wrapped Source {@Sucess}", success);
 
                     if (wrapped_src == null)
                     {
                         throw new IOException("could not be read as JPEG2000");
                     }
-                    codestream.create(wrapped_src.access_codestream(ref_component).open_stream());
+                    int ref_component = 0;
+                    var input_box = wrapped_src.access_codestream(ref_component, true);
+                    if (null == input_box)
+                    {
+                        throw new IOException("Unable to open access codestream");
+                    }
+
+                    var input_stream = input_box.open_stream();
+
+                    codestream.create(input_stream, null);
+                    Log.Debug("Codestream created");
+
                     codestream.set_fast();
 
                     int originalWidth, originalHeight;
@@ -172,6 +190,7 @@ namespace Jpeg2000
 
                     if (wrapped_src.access_layer(0).exists())
                     {
+                        Log.Debug("Access Layer exists");
                         var accessLayer = wrapped_src.access_layer(0);
                         var resolution = accessLayer.access_resolution();
                         if (resolution.exists())
@@ -194,6 +213,32 @@ namespace Jpeg2000
                             ppi_y = Convert.ToUInt16(Math.Ceiling(ypels_per_metre * 0.0254));
                         }
                     }
+
+                    compositor.create(wrapped_src);
+                    Log.Debug("Compositor created");
+                    //compositor.set_thread_env(env, null);
+                    compositor.get_total_composition_dims(imageDimensions);
+                    Log.Debug("Get total composition dims {@ImageDims}", imageDimensions);
+                    Ckdu_coords imageSize = imageDimensions.access_size();
+                    Log.Debug("Access size {@AccessSize}", imageSize);
+                    Ckdu_coords imagePosition = imageDimensions.access_pos();
+                    Log.Debug("Access Position {@AccessPosition}", imagePosition);
+
+                    float imageScale = 1;
+
+
+                    int codestreams = 0;
+
+                    Log.Debug("Family Src top level {@IsTopLevelComplete}", family_src.is_top_level_complete());
+                    Log.Debug("Family Src codestream {@Codestream}", family_src.is_codestream_main_header_complete(0));
+                    Log.Debug("Family Src exists {@Exists}", family_src.exists());
+
+
+                    var codestream_count = wrapped_src.count_codestreams(ref codestreams);
+                    Log.Debug("Counted codestreams {@Codestreams} {@CodestreamCount}", codestreams, codestream_count);
+
+
+
 
                     var state = ImageRequestInterpreter.GetInterpretedValues(request, originalWidth, originalHeight, allowSizeAboveFull);
                     state.HorizontalResolution = ppi_x;
@@ -279,8 +324,8 @@ namespace Jpeg2000
                     if (codestream.exists())
                         codestream.destroy();
 
-                    if (env.exists())
-                        env.destroy();
+                    //if (env.exists())
+                    //    env.destroy();
 
                     if (family_src != null)
                         family_src.close();

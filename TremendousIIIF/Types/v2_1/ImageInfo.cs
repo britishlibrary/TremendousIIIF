@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using TremendousIIIF.Common.Configuration;
 
-namespace TremendousIIIF.Types
+namespace TremendousIIIF.Types.v2_1
 {
     public class ImageInfo
     {

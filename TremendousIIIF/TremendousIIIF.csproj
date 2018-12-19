@@ -1,13 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFrameworks>net471;netcoreapp2.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net471;netcoreapp2.2;netstandard2.0</TargetFrameworks>
     <RuntimeIdentifier>win7-x64</RuntimeIdentifier>
     <PostBuildEvent></PostBuildEvent>
     <LangVersion>latest</LangVersion>
     <UserSecretsId>da5e1014-e5cc-4a22-a401-44f07f81af4c</UserSecretsId>
     <StartupObject>TremendousIIIF.Program</StartupObject>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>AnyCPU;x64</Platforms>
     
   </PropertyGroup>
@@ -16,7 +15,6 @@
     <Folder Include="Controllers\" />
     <Folder Include="Modules\" />
     <Folder Include="Validation\" />
-    <Folder Include="Types\" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="LibOwin" Version="1.0.0" />
@@ -31,6 +29,7 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.0.1" />
     <PackageReference Include="Serilog.Sinks.ElasticSearch" Version="6.5.0" />
     <PackageReference Include="Serilog.Sinks.RollingFile" Version="3.3.1-dev-00767" />
+    <PackageReference Include="System.Memory" Version="4.5.2-servicing-27114-05" />
   </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="1.0.0" />

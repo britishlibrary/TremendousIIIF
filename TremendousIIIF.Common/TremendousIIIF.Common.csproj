@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TremendousIIIF.Common</RootNamespace>
     <AssemblyName>TremendousIIIF.Common</AssemblyName>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netcoreapp2.2</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <Title>TremendousIIIF.COmmon</Title>
     <Version>1.0.0.0</Version>

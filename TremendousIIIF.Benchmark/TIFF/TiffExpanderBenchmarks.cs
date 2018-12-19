@@ -1,18 +1,17 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Attributes.Exporters;
-using BenchmarkDotNet.Attributes.Jobs;
 using Image.Common;
 using Image.Tiff;
 using SkiaSharp;
-using System;
 using T = BitMiracle.LibTiff.Classic;
 using TremendousIIIF.Common;
 using System.IO;
 
 namespace TremendousIIIF.Benchmark.TIFF
 {
+
     [HtmlExporter, CsvExporter, RPlotExporter]
-    //[MemoryDiagnoser]
+    [Config(typeof(MultipleRuntimes))]
+    [MemoryDiagnoser]
     public class TiffExpanderBenchmarks
     {
         int[] imageData;
@@ -20,16 +19,15 @@ namespace TremendousIIIF.Benchmark.TIFF
         SKImage imageAsImg;
         int width; int height;
 
-        //[Params(256, 512, 1024, 2048, 2940)]
-        [Params(256)]
+        [Params(256, 512, 1024, 2048, 2940)]
+        
         public int Width { get; set; }
-        //        [Params(256, 512, 1024, 2048, 4688)]
-        [Params(256)]
+        [Params(256, 512, 1024, 2048, 4688)]
         public int Height { get; set; }
 
-        [Params(0)]//, 1, 2, 3)]
+        [Params(0, 1, 2, 3)]
         public int Row { get; set; }
-        [Params(0)]//, 1, 2, 3)]
+        [Params(0, 1, 2, 3)]
         public int Column { get; set; }
 
         public SKRectI Region
@@ -43,7 +41,6 @@ namespace TremendousIIIF.Benchmark.TIFF
         [GlobalSetup]
         public void Setup()
         {
-            var request = new ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1, 10, 10), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg);
             using (var tiff = T.Tiff.Open(@"C:\Jp2Cache\vdc_tiff", "r"))
             {
                 int width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
@@ -72,6 +69,11 @@ namespace TremendousIIIF.Benchmark.TIFF
         public SKImage CopyImageRegion() => TiffExpander.CopyImageRegion(imageAsImg, Width, Height, Region);
         [Benchmark]
         public SKImage CopyImageRegion2() => TiffExpander.CopyImageRegion2(imageAsBmp, Width, Height, Region);
+
+        [Benchmark]
+        public SKImage CopyImageRegion3() => TiffExpander.CopyImageRegion3(imageAsBmp, Width, Height, Region);
+        [Benchmark]
+        public SKImage CopyImageRegion4() => TiffExpander.CopyImageRegion4(imageAsBmp, Width, Height, Region);
     }
 }
 

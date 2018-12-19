@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Net.Http.Headers;
 using System.IO;
 using Serilog;
+using System.IO.Pipelines;
+using System.Runtime.InteropServices;
 
 namespace Jpeg2000
 {
@@ -16,13 +18,18 @@ namespace Jpeg2000
     public class HttpCompressedSource : Ckdu_compressed_source_nonnative
     {
         private Uri _imageUri;
-        private Int64 _offset = 0;
+        private long _offset = 0;
         private bool _headerOnly;
         const int JP2HeaderLength = 1135;
-        private string RequestId;
-        private AsyncLazy<byte[]> _data;
+        private readonly string RequestId;
+        //private AsyncLazy<Memory<byte>> _data;
         private HttpClient _client;
         private ILogger Log;
+        private Pipe Pipe;
+        Task Reader;
+        Task Writer;
+        private Stream _httpData;
+        private MemoryStream _data;
 
         /// <summary>
         /// 
@@ -38,38 +45,79 @@ namespace Jpeg2000
             _headerOnly = headerOnly;
             RequestId = requestId;
             _client = client;
-            _data = new AsyncLazy<byte[]>(() => GetData(_headerOnly));
+            //_data = new AsyncLazy<Memory<byte>>(() => GetData(_headerOnly));
             Log = log;
+            _data = new MemoryStream();
+            //Reader = GetData(Pipe.Reader);
+            //_httpData = Task.Run(()=>GetData(_headerOnly)).Result;
         }
 
-        private async Task<byte[]> ReadData()
+        public async Task Initialise()
         {
-            return await _data;
+            _httpData = await GetData(_headerOnly).ConfigureAwait(false);
+            await _httpData.CopyToAsync(_data).ConfigureAwait(false);
+            _data.Seek(0, SeekOrigin.Begin);
         }
+
+        //private async Task<Memory<byte>> ReadData()
+        //{
+        //    return await _data;
+        //}
+
+        //public override int post_read(int num_bytes)
+        //{
+        //    //byte[] requestedBytes = new byte[num_bytes];
+        //    var data = ReadData().Result;
+        //    var actual_bytes = (data.Length - _offset) < num_bytes ? data.Length - (int)_offset : num_bytes;
+        //    //Buffer.BlockCopy(data, (int)_offset, requestedBytes, 0, actual_bytes);
+
+        //    //push_data(requestedBytes, 0, actual_bytes);
+        //    //return actual_bytes;
+
+        //    push_data(data.Slice((int)_offset, actual_bytes).Span.(), 0, actual_bytes);
+        //    _offset = Interlocked.Add(ref _offset, actual_bytes);
+        //    return actual_bytes;
+        //}
 
         public override int post_read(int num_bytes)
         {
-            byte[] requestedBytes = new byte[num_bytes];
-            var data = ReadData().Result;
-            var actual_bytes = (data.Length - _offset) < num_bytes ? data.Length - (int)_offset : num_bytes;
-            Buffer.BlockCopy(data, (int)_offset, requestedBytes, 0, actual_bytes);
-            _offset = Interlocked.Add(ref _offset, actual_bytes);
-            push_data(requestedBytes, 0, actual_bytes);
-            return actual_bytes;
+            var buffer = new byte[num_bytes];
+
+            try
+            {
+
+                var bytes_read = _data.Read(buffer, 0, num_bytes);
+
+                push_data(buffer, 0, bytes_read);
+                _offset += bytes_read;
+                return bytes_read;
+
+
+
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Exception reading network string");
+            }
+            return 0;
+
         }
 
         public override int get_capabilities()
         {
-            return Ckdu_global.KDU_SOURCE_CAP_SEQUENTIAL| Ckdu_global.KDU_SOURCE_CAP_SEEKABLE;
+            return Ckdu_global.KDU_SOURCE_CAP_SEQUENTIAL | Ckdu_global.KDU_SOURCE_CAP_SEEKABLE;
         }
 
         public override bool seek(long offset)
         {
-            if (offset > ReadData().Result.Length)
+            //return false;
+            //if (offset > ReadData().Result.Length)
+            if (offset > _data.Length)
             {
                 return false;
             }
-            Interlocked.Exchange(ref _offset, offset);
+            _offset = offset;
+            _data.Seek(offset, SeekOrigin.Begin);
             return true;
         }
 
@@ -82,10 +130,58 @@ namespace Jpeg2000
         {
             _client = null;
             _data = null;
+            _httpData.Dispose();
+            _httpData = null;
             return base.close();
         }
+        private async Task ReadPipe(PipeReader reader)
+        {
+            await reader.ReadAsync();
+        }
 
-        private async Task<byte[]> GetData(bool headerOnly)
+        //private async Task WritePipe(PipeWriter writer)
+        //{
+        //    using (var request = new HttpRequestMessage(HttpMethod.Get, _imageUri))
+        //    {
+        //        request.Headers.Add("X-Request-ID", RequestId);
+        //        try
+        //        {
+        //            using (var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+        //            {
+        //                if (response.StatusCode == System.Net.HttpStatusCode.OK || response.StatusCode == System.Net.HttpStatusCode.PartialContent)
+        //                {
+        //                    var memory = writer.GetMemory();
+        //                    var dataStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+        //                    var rawBuffer = MemoryMarshal.Cast<Memory<byte>, byte>(memory.Span);
+        //                    dataStream.Read(rawBuffer, 0, 0);
+        //                }
+        //                switch (response.StatusCode)
+        //                {
+        //                    case System.Net.HttpStatusCode.NotFound:
+        //                        throw new FileNotFoundException("Unable to load source image", _imageUri.ToString());
+        //                    default:
+        //                    case System.Net.HttpStatusCode.InternalServerError:
+        //                        throw new IOException("Unable to load source image");
+        //                }
+        //            }
+        //        }
+        //        catch (TaskCanceledException e)
+        //        {
+        //            if (e.CancellationToken.IsCancellationRequested)
+        //            {
+        //                Log.Error(e, "HTTP Request Cancelled");
+        //                throw;
+        //            }
+        //            else
+        //            {
+        //                Log.Error(e, "HTTP Request Failed");
+        //                throw e.InnerException;
+        //            }
+        //        }
+        //    }
+        //}
+
+        private async Task<Stream> GetData(bool headerOnly, CancellationToken token = default)
         {
             using (var request = new HttpRequestMessage(HttpMethod.Get, _imageUri))
             {
@@ -96,11 +192,17 @@ namespace Jpeg2000
                 request.Headers.Add("X-Request-ID", RequestId);
                 try
                 {
-                    using (var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead))
+                    //using (var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
+                    var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false);
                     {
                         if (response.StatusCode == System.Net.HttpStatusCode.OK || response.StatusCode == System.Net.HttpStatusCode.PartialContent)
                         {
-                            return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                            //using (token.Register(response.Dispose))
+                            //{
+                            return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                            
+
+                            //}
                         }
                         switch (response.StatusCode)
                         {
@@ -114,12 +216,13 @@ namespace Jpeg2000
                 }
                 catch (TaskCanceledException e)
                 {
-                    if(e.CancellationToken.IsCancellationRequested)
+                    if (e.CancellationToken.IsCancellationRequested)
                     {
                         Log.Error(e, "HTTP Request Cancelled");
                         throw;
                     }
-                    else {
+                    else
+                    {
                         Log.Error(e, "HTTP Request Failed");
                         throw e.InnerException;
                     }

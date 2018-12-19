@@ -77,6 +77,7 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(256, result.Y);
             Assert.AreEqual(256, result.Width);
             Assert.AreEqual(256, result.Height);
+
         }
         [ExpectedException(typeof(FormatException))]
         public void CaluclateRegion_Pct_Inavlid()
@@ -93,6 +94,31 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(0f, result.Width);
             Assert.AreEqual(0f, result.Height);
             Assert.AreEqual(0.5f, result.Percent);
+            Assert.IsFalse(result.Upscale);
+        }
+
+        [TestMethod]
+        public void CalculateSize_Pct_Valid_Int_Upscale()
+        {
+            var result = ImageRequestValidator.CalculateSize("^pct:50");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.PercentageScaled);
+            Assert.AreEqual(0f, result.Width);
+            Assert.AreEqual(0f, result.Height);
+            Assert.AreEqual(0.5f, result.Percent);
+            Assert.IsTrue(result.Upscale);
+        }
+
+        [TestMethod]
+        public void CalculateSize_Pct_Valid_Int_Upscale_Big()
+        {
+            var result = ImageRequestValidator.CalculateSize("^pct:110");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.PercentageScaled);
+            Assert.AreEqual(0f, result.Width);
+            Assert.AreEqual(0f, result.Height);
+            Assert.AreEqual(1.1f, result.Percent);
+            Assert.IsTrue(result.Upscale);
         }
 
         [TestMethod]
@@ -111,6 +137,7 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(0f, result.Width);
             Assert.AreEqual(0f, result.Height);
             Assert.AreEqual(0.5f, result.Percent);
+            Assert.IsFalse(result.Upscale);
         }
 
         [TestMethod]
@@ -122,6 +149,7 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(0f, result.Width);
             Assert.AreEqual(0f, result.Height);
             Assert.AreEqual(0.5f, result.Percent);
+            Assert.IsFalse(result.Upscale);
         }
 
         [TestMethod]
@@ -132,6 +160,7 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(result.Mode, ImageSizeMode.Max);
             Assert.AreEqual(0f, result.Width);
             Assert.AreEqual(0f, result.Height);
+            Assert.IsFalse(result.Upscale);
         }
         [TestMethod]
         public void CalculateSize_Max()
@@ -141,6 +170,17 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(result.Mode, ImageSizeMode.Max);
             Assert.AreEqual(0f, result.Width);
             Assert.AreEqual(0f, result.Height);
+            Assert.IsFalse(result.Upscale);
+        }
+        [TestMethod]
+        public void CalculateSize_Max_Upscaled()
+        {
+            var result = ImageRequestValidator.CalculateSize("^max");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.Max);
+            Assert.AreEqual(0f, result.Width);
+            Assert.AreEqual(0f, result.Height);
+            Assert.IsTrue(result.Upscale);
         }
         [TestMethod]
         public void CalculateSize_Width()
@@ -150,6 +190,17 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
             Assert.AreEqual(256, result.Width);
             Assert.AreEqual(0, result.Height);
+            Assert.IsFalse(result.Upscale);
+        }
+        [TestMethod]
+        public void CalculateSize_Width_Upscaled()
+        {
+            var result = ImageRequestValidator.CalculateSize("^256,");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
+            Assert.AreEqual(256, result.Width);
+            Assert.AreEqual(0, result.Height);
+            Assert.IsTrue(result.Upscale);
         }
         [TestMethod]
         public void CalculateSize_Height()
@@ -159,6 +210,17 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
             Assert.AreEqual(0, result.Width);
             Assert.AreEqual(256, result.Height);
+            Assert.IsFalse(result.Upscale);
+        }
+        [TestMethod]
+        public void CalculateSize_Height_Upscale()
+        {
+            var result = ImageRequestValidator.CalculateSize("^,256");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
+            Assert.AreEqual(0, result.Width);
+            Assert.AreEqual(256, result.Height);
+            Assert.IsTrue(result.Upscale);
         }
 
         [TestMethod]
@@ -169,6 +231,18 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(result.Mode, ImageSizeMode.Distort);
             Assert.AreEqual(256, result.Width);
             Assert.AreEqual(512, result.Height);
+            Assert.IsFalse(result.Upscale);
+        }
+
+        [TestMethod]
+        public void CalculateSize_Width_Height_Upscale()
+        {
+            var result = ImageRequestValidator.CalculateSize("^256,512");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.Distort);
+            Assert.AreEqual(256, result.Width);
+            Assert.AreEqual(512, result.Height);
+            Assert.IsTrue(result.Upscale);
         }
 
         [TestMethod]
@@ -185,6 +259,28 @@ namespace TremendousIIIF.Test
             Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
             Assert.AreEqual(256, result.Width);
             Assert.AreEqual(100, result.Height);
+            Assert.IsFalse(result.Upscale);
+
+        }
+        [TestMethod]
+        public void CalculateSize_Best_Upscale()
+        {
+            var result = ImageRequestValidator.CalculateSize("^!256,100");
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Mode, ImageSizeMode.MaintainAspectRatio);
+            Assert.AreEqual(256, result.Width);
+            Assert.AreEqual(100, result.Height);
+            Assert.IsTrue(result.Upscale);
+
+        }
+
+        [ExpectedException(typeof(FormatException))]
+        [TestMethod]
+        public void CalculateSize_Best_UpscaleInvalid()
+        {
+            var result = ImageRequestValidator.CalculateSize("!^256,100");
+
+
         }
 
         [TestMethod]

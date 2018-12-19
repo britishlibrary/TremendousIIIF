@@ -3,14 +3,15 @@ using System.IO;
 using kdu_mni;
 using System.Net.Http;
 using Serilog;
+using System.Threading.Tasks;
 
 namespace Jpeg2000
 {
     public class JPEG2000Source : Cjp2_family_src
     {
         const int JP2HeaderLength = 1135;
-        string RequestId;
-        ILogger Log;
+        private readonly string RequestId;
+        private readonly ILogger Log;
         Ckdu_compressed_source_nonnative compSrc;
 
         public bool queueRequests = false;
@@ -21,14 +22,24 @@ namespace Jpeg2000
             Log = log;
         }
 
-        public void Open(HttpClient client, Uri imageUri, bool headerOnly)
+        public async ValueTask Initialise(HttpClient client, Uri imageUri, bool headerOnly)
         {
             if (imageUri.Scheme == "http" || imageUri.Scheme == "https")
             {
-                compSrc = new HttpCompressedSource(client, Log, imageUri, RequestId, headerOnly);
+                var src = new HttpCompressedSource(client, Log, imageUri, RequestId, headerOnly);
+                compSrc = src;
+                await src.Initialise().ConfigureAwait(false);
+            }
+        }
+
+        public void Open(Uri imageUri)
+        {
+            if (null != compSrc)
+            {
+                
                 base.open(compSrc);
             }
-            else if (imageUri.IsFile)
+            else
             {
                 string filename = imageUri.LocalPath;
                 base.open(GetFilePath(filename), true);

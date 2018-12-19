@@ -29,11 +29,11 @@ namespace Jpeg2000
         {
             int tgt_row_gap = 0;
             IntPtr tgt_handle = tgt.get_buf(ref tgt_row_gap, true);
-            foreach (var buf in bufferList)
+            for (var buf = bufferList.First; buf != null; buf = buf.Next)
             {
-                if(buf.buffer_handle == tgt_handle)
+                if (buf.Value.buffer_handle == tgt_handle)
                 {
-                    return buf;
+                    return buf.Value;
                 }
             }
             return null;

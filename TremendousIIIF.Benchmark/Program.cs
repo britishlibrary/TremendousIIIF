@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BenchmarkDotNet.Running;
+﻿using BenchmarkDotNet.Running;
 using TremendousIIIF.Benchmark.Image;
 using TremendousIIIF.Benchmark.Parsing;
 using TremendousIIIF.Benchmark.TIFF;
-using BenchmarkDotNet.Attributes.Jobs;
+using BenchmarkDotNet.Attributes;
 
 namespace TremendousIIIF.Benchmark
 {
@@ -22,8 +17,9 @@ namespace TremendousIIIF.Benchmark
                 typeof(ImageEncodingBenchmarks),
                 typeof(RegionBenchmarks),
                 typeof(SizeBenchmarks),
-                typeof(PipelineBenchmarks)
-                //typeof(TiffExpanderBenchmarks)
+                typeof(PipelineBenchmarks),
+                typeof(TiffExpanderBenchmarks),
+                typeof(ImageDPIBenchmarks)
             });
             switcher.Run(args);
         }

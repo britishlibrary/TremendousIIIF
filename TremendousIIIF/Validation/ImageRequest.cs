@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TremendousIIIF.Common;
 
+
 namespace TremendousIIIF.Validation
 {
     public static class ImageRequestValidator
@@ -111,25 +112,40 @@ namespace TremendousIIIF.Validation
             var percentage = 1f;
             int width = 0;
             int height = 0;
-            switch (size_string.Substring(0, Math.Min(size_string.Length, 4)))
+
+            var size_span = size_string.AsSpan();
+
+            var upscaling = size_span[0] == '^';
+            var maintain_ar = size_span[upscaling?1:0] == '!';
+
+            var modeStart = upscaling && maintain_ar ? 2: (upscaling || maintain_ar) ? 1 : 0;
+            
+            var sizeStart = modeStart;
+
+            var mode = size_span.Slice(modeStart, Math.Min(size_span.Length - modeStart, 4));
+            switch (mode)
             {
-                case "full":
-                case "max":
+                // Ugh. feels like this should be a special case
+                // https://github.com/dotnet/csharplang/issues/1881
+                case var _ when mode.SequenceEqual("full".AsSpan()):
+                case var _ when mode.SequenceEqual("max".AsSpan()):
+                    //case "full":
+                    //case "max":
                     sizeMode = ImageSizeMode.Max;
                     break;
-                case "pct:":
+                //case "pct:":
+                case var _ when mode.SequenceEqual("pct:".AsSpan()):
                     sizeMode = ImageSizeMode.PercentageScaled;
-                    size_string = size_string.Substring(4);
-                    percentage = Convert.ToSingle(size_string) / 100;
+                    // TODO: framework is rubbish compared to core :(
+                    percentage = float.Parse(size_span.Slice(modeStart + 4).ToString()) / 100;
+                    sizeStart += 4;
                     break;
                 default:
-                    if (size_string.IndexOf("!") == 0)
+                    if (maintain_ar)
                     {
-
                         sizeMode = ImageSizeMode.MaintainAspectRatio;
-                        size_string = size_string.Substring(1);
                     }
-                    else if (size_string.IndexOf(",") >= 0)
+                    else if (mode.IndexOf(',') >= 0)
                     {
                         sizeMode = ImageSizeMode.Distort;
                     }
@@ -144,32 +160,30 @@ namespace TremendousIIIF.Validation
             {
                 case ImageSizeMode.MaintainAspectRatio:
                 case ImageSizeMode.Distort:
-                    // do away with some allocations when Span<T> is here
-                    //ReadOnlySpan<char> inputSpan = size_string.AsReadOnlySpan();
-                    //int commaPos = size_string.IndexOf(',');
-                    //int first = int.Parse(inputSpan.Slice(0, commaPos));
-                    //int second = int.Parse(inputSpan.Slice(commaPos + 1));
-                    var sizes = size_string.Split(Delimiter);
-                    if (sizes.Length != 2 || sizes.All(s => s.Length == 0))
+                    var sizeSpan = size_span.Slice(sizeStart);
+                    var commaPos = sizeSpan.IndexOf(',');
+                    var first = sizeSpan.Slice(0, commaPos);
+                    var second = sizeSpan.Slice(commaPos+1);
+                    if(second.IsEmpty && first.IsEmpty)
                     {
                         throw new FormatException("Invald size format specified");
                     }
-                    if (sizes[0] != string.Empty)
+                    if (!first.IsEmpty)
                     {
-                        width = Int32.Parse(sizes[0]);
+                        width = int.Parse(first.ToString());
                     }
-                    if (sizes[1] != string.Empty)
+                    if (!second.IsEmpty)
                     {
-                        height = Int32.Parse(sizes[1]);
+                        height = int.Parse(second.ToString());
                     }
-                    if (sizes.Where(s => s != string.Empty).Count() == 1)
+                    if ((first.IsEmpty && !second.IsEmpty) || (!first.IsEmpty && second.IsEmpty))
                     {
                         sizeMode = ImageSizeMode.MaintainAspectRatio;
                     }
                     break;
             }
 
-            return new ImageSize(sizeMode, percentage, width, height);
+            return new ImageSize(sizeMode, percentage, width, height, upscaling);
 
         }
 

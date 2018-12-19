@@ -4,6 +4,7 @@ using C = TremendousIIIF.Common.Configuration;
 using Serilog;
 using Image.Common;
 using System.Diagnostics.CodeAnalysis;
+using System.Threading.Tasks;
 
 namespace Jpeg2000.Test
 {
@@ -18,7 +19,7 @@ namespace Jpeg2000.Test
             Log = new LoggerConfiguration().CreateLogger();
         }
         [TestMethod]
-        public void RegionScale()
+        public async Task RegionScale()
         {
 
             var filename = @"C:\JP2Cache\vdc_0000000388E8.0x000008";
@@ -33,7 +34,7 @@ namespace Jpeg2000.Test
             );
             var q = new C.ImageQuality();
 
-            (var state, var img) = J2KExpander.ExpandRegion(null, Log, new Uri(filename), request, false, q);
+            (var state, var img) = await J2KExpander.ExpandRegion(null, Log, new Uri(filename), request, false, q);
             using (img)
             {
                 Assert.AreEqual(3, img.Width);

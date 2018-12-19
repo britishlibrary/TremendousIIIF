@@ -1,16 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Attributes.Exporters;
 using Image.Common;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TremendousIIIF.Validation;
 
 namespace TremendousIIIF.Benchmark.Parsing
 {
     [HtmlExporter, CsvExporter, RPlotExporter]
+    [Config(typeof(MultipleRuntimes))]
     [MemoryDiagnoser]
     public class RegionBenchmarks
     {

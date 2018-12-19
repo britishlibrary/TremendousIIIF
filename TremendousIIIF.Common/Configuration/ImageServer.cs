@@ -16,8 +16,11 @@ namespace TremendousIIIF.Common.Configuration
             MaxHeight = int.MaxValue;
             DefaultTileWidth = 256;
             AdditionalOutputFormats = new List<string>();
+            DefaultAPIVersion = ApiVersion.v2_1;
         }
         public ImageQuality ImageQuality { get; set; }
+
+        public ApiVersion DefaultAPIVersion { get; set; }
 
         public string HealthcheckIdentifier { get; set; }
         public string Location { get; set; }

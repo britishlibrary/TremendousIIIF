@@ -6,12 +6,13 @@ using System.Runtime.InteropServices;
 using System.Net.Http;
 using Serilog;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace Image.Tiff
 {
     public class TiffExpander
     {
-        public static (ProcessState state, SKImage image) ExpandRegion(HttpClient httpClient, ILogger log, Uri imageUri, ImageRequest request, bool allowSizeAboveFull)
+        public static async Task<(ProcessState state, SKImage image)> ExpandRegion(HttpClient httpClient, ILogger log, Uri imageUri, ImageRequest request, bool allowSizeAboveFull)
         {
             if (imageUri.IsFile)
             {
@@ -23,6 +24,7 @@ namespace Image.Tiff
             else
             {
                 var stream = new TiffHttpSource(httpClient, log, imageUri, request.RequestId);
+                await stream.Initialise();
                 using (var tiff = T.Tiff.ClientOpen("custom", "r", null, stream))
                 {
                     return ReadFullImage(tiff, request, allowSizeAboveFull);
@@ -71,7 +73,7 @@ namespace Image.Tiff
             };
         }
 
-        private static (ProcessState state, SKImage image) ReadFullImage(T.Tiff tiff, ImageRequest request, bool allowSizeAboveFull)
+        private static (ProcessState state, SKImage image) ReadFullImage(T.Tiff tiff, in ImageRequest request, bool allowSizeAboveFull)
         {
             int width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
             int height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
@@ -85,7 +87,7 @@ namespace Image.Tiff
             var yres = yrestag == null ? 96 : yrestag[0].ToDouble();
 
             // pixels per metre
-            if(resunit == 3)
+            if (resunit == 3)
             {
                 xres = xres / 0.0254;
                 yres = yres / 0.0254;
@@ -110,7 +112,7 @@ namespace Image.Tiff
                 var regionHeight = state.RegionHeight;
 
                 var srcRegion = SKRectI.Create(state.StartX, state.StartY, regionWidth, regionHeight);
-                return (state, CopyImageRegion2(bmp, desiredWidth, desiredHeight, srcRegion));
+                return (state, CopyBitmapRegion(bmp, desiredWidth, desiredHeight, srcRegion));
             }
         }
 
@@ -124,21 +126,21 @@ namespace Image.Tiff
             return bmp;
         }
 
+        // Current benchmark winner
         public static SKImage CopyBitmapRegion(SKBitmap bmp, int width, int height, SKRectI srcRegion)
         {
             using (var output = new SKBitmap(width, height))
             {
                 bmp.ExtractSubset(output, srcRegion);
-                var img = SKImage.FromBitmap(output);
-                return SKImage.FromBitmap(SKBitmap.FromImage(img));
+                return SKImage.FromBitmap(output);
             }
         }
 
- 
+
         // Benchmarking indicates using SKBitmap.ExtractSubset() -> SKImage -> SKBitmap -> SKImage (basically a copy) is faster
         public static SKImage CopyImageRegion(SKImage srcImage, int width, int height, SKRectI srcRegion)
         {
-            using (var surface = SKSurface.Create(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul))
+            using (var surface = SKSurface.Create(new SKImageInfo(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul)))
             using (var paint = new SKPaint())
             {
                 var canvas = surface.Canvas;
@@ -150,7 +152,7 @@ namespace Image.Tiff
 
         public static SKImage CopyImageRegion2(SKBitmap srcImage, int width, int height, SKRectI srcRegion)
         {
-            using (var surface = SKSurface.Create(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul))
+            using (var surface = SKSurface.Create(new SKImageInfo(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul)))
             using (var output = new SKBitmap(width, height))
             using (var paint = new SKPaint())
             {
@@ -160,6 +162,22 @@ namespace Image.Tiff
                 canvas.DrawBitmap(output, new SKRect(0, 0, output.Width, output.Height), new SKRect(0, 0, width, height), paint);
                 return surface.Snapshot();
             }
+        }
+
+        public static SKImage CopyImageRegion3(SKBitmap srcImage, int width, int height, SKRectI srcRegion)
+        {
+            using (var output = new SKBitmap(width, height))
+            {
+                srcImage.ScalePixels(output, SKFilterQuality.High);
+                return SKImage.FromBitmap(output);
+            }
+
+        }
+
+        public static SKImage CopyImageRegion4(SKBitmap srcImage, int width, int height, SKRectI srcRegion)
+        {
+            var result = srcImage.Resize(new SKImageInfo(width, height), SKFilterQuality.High);
+            return SKImage.FromBitmap(result);
         }
     }
 }

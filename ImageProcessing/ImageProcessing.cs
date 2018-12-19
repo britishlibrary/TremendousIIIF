@@ -10,6 +10,7 @@ using Serilog;
 using Conf = TremendousIIIF.Common.Configuration;
 using RotationCoords = System.ValueTuple<float, float, float, int, int>;
 using System.Runtime.InteropServices;
+using System.Buffers.Binary;
 
 namespace ImageProcessing
 {
@@ -62,7 +63,7 @@ namespace ImageProcessing
 
                 var (angle, originX, originY, newImgWidth, newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
 
-                using (var surface = SKSurface.Create(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType))
+                using (var surface = SKSurface.Create(new SKImageInfo(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType)))
                 using (var canvas = surface.Canvas)
                 using (var region = new SKRegion())
                 {
@@ -123,7 +124,7 @@ namespace ImageProcessing
                     FormatLookup.TryGetValue(format, out SKEncodedImageFormat formatType);
                     return EncodeSkiaImage(surface, formatType, q, horizontalResolution, verticalResolution);
                 case EncodingStrategy.PDF:
-                    return EncodePdf(surface, width, height, q, pdfMetadata);
+                    return EncodePdf(surface, width, height, q, pdfMetadata, horizontalResolution);
                 case EncodingStrategy.JPEG2000:
                     return Jpeg2000.Compressor.Compress(surface.Snapshot());
                 case EncodingStrategy.Tifflib:
@@ -183,22 +184,21 @@ namespace ImageProcessing
 
         public static Stream EncodeSkiaImage(in SKSurface surface, in SKEncodedImageFormat format, int q, ushort horizontalResolution, ushort verticalResolution)
         {
-            var output = new MemoryStream();
             using (var image = surface.Snapshot())
             {
                 var data = image.Encode(format, q);
                 if (format == SKEncodedImageFormat.Jpeg)
                 {
-                    SetJpgDpi(data.Data, horizontalResolution, verticalResolution);
+                    SetJpgDpi(data.Data, data.Size, horizontalResolution, verticalResolution);
                 }
-                
+
                 var ms = data.AsStream(false);
                 ms.Seek(0, SeekOrigin.Begin);
                 return ms;
             }
         }
 
-        private static void SetJpgDpi(IntPtr jpgData, ushort horizontalResolution, ushort verticalResolution)
+        public static void SetJpgDpi(IntPtr jpgData, long size, ushort horizontalResolution, ushort verticalResolution)
         {
             // The Skia JPEG encoder sets a default 96x96 DPI, so reset to original DPI
 
@@ -214,27 +214,17 @@ namespace ImageProcessing
             // 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17
             // FF D8 FF EO 00 10 4A 46 49 46 00 01 02 DD XX XX YY YY
             //...
-            // TODO: clean this up using Span<T>
-            var header = new byte[18];
-
-            Marshal.Copy(jpgData, header, 0, 18);
-
-            var type = new byte[] { 0x01 };
-            byte[] h_dpi = BitConverter.GetBytes(horizontalResolution);
-            byte[] v_dpi = BitConverter.GetBytes(verticalResolution);
-
-            // JPEG is big endian
-            if (BitConverter.IsLittleEndian)
+            // new Span<T> makes things much better, although need to be explicit about it being unsafe due to using pointer
+            unsafe
             {
-                Array.Reverse(h_dpi);
-                Array.Reverse(v_dpi);
+                var header = new Span<byte>(jpgData.ToPointer(), (int)size);
+                // i must be missing something here, this is convoluted to say the least
+                var densityByteRef = MemoryMarshal.GetReference(header.Slice(13, 1));
+                System.Runtime.CompilerServices.Unsafe.Write(&densityByteRef, 0x01);
+                // JPEG is big endian
+                BinaryPrimitives.WriteUInt16BigEndian(header.Slice(14, 2), horizontalResolution);
+                BinaryPrimitives.WriteUInt16BigEndian(header.Slice(16, 2), verticalResolution);
             }
-
-            Buffer.BlockCopy(type, 0, header, 13, 1);
-            Buffer.BlockCopy(h_dpi, 0, header, 14, 2);
-            Buffer.BlockCopy(v_dpi, 0, header, 16, 2);
-
-            Marshal.Copy(header, 0, jpgData, 18);
         }
 
         private static void SetPngDpi(IntPtr pngData, long dataLength, ushort horizontalResolution, ushort verticalResolution)
@@ -348,38 +338,39 @@ namespace ImageProcessing
         /// Encode output image as PDF
         /// </summary>
         /// <param name="surface"></param>
-        /// <param name="width">Requested output width (pixels)</param>
+        /// <param name="width">Requested output width (pixels), because you can't get a surface's dimensions once created(?)</param>
         /// <param name="height">Requested output height (pixels)</param>
         /// <param name="q">Image quality (percentage)</param>
         /// <param name="pdfMetadata">Optional metadata to include in the PDF</param>
+        /// <param name="dpi">The pixels per inch resolution that images will be rasterised at in the PDF</param>
         /// <returns></returns>
-        public static Stream EncodePdf(in SKSurface surface, int width, int height, int q, in Conf.PdfMetadata pdfMetadata)
+        public static Stream EncodePdf(in SKSurface surface, int width, int height, int q, in Conf.PdfMetadata pdfMetadata, ushort dpi)
         {
-            // have to encode to JPEG then paint the encoded bytes, otherwise you get full JP2 quality
             var output = new MemoryStream();
 
             var metadata = new SKDocumentPdfMetadata()
             {
                 Creation = DateTime.Now,
+                EncodingQuality = q,
+                RasterDpi = dpi
 
             };
 
             if (null != pdfMetadata)
             {
                 metadata.Author = pdfMetadata.Author;
+                metadata.Producer = pdfMetadata.Author;
             }
 
             using (var skstream = new SKManagedWStream(output))
             using (var writer = SKDocument.CreatePdf(skstream, metadata))
-            using (var snapshot = surface.Snapshot())
-            using (var data = snapshot.Encode(SKEncodedImageFormat.Jpeg, q))
-            using (var image = SKImage.FromEncodedData(data))
             using (var paint = new SKPaint())
             {
                 using (var canvas = writer.BeginPage(width, height))
                 {
                     paint.FilterQuality = SKFilterQuality.High;
-                    canvas.DrawImage(image, new SKRect(0, 0, width, height), paint);
+                    canvas.DrawSurface(surface, new SKPoint(0, 0), paint);
+                    //canvas.DrawImage(image, new SKRect(0, 0, width, height), paint);
                     writer.EndPage();
                 }
             }

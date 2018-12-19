@@ -24,8 +24,8 @@ namespace Jpeg2000
                               // a new managed instance of the object to be instantiated.
             bitmap = new SKBitmap(size.x, size.y);
             buffer_handle = bitmap.GetPixels();
-            this.init(buffer_handle, bitmap.RowBytes / 4);
-            this.set_read_accessibility(true);
+            init(buffer_handle, bitmap.RowBytes / 4);
+            set_read_accessibility(true);
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Jpeg2000
         public SKBitmap AcquireBitmap()
         {
             buffer_handle = IntPtr.Zero;
-            this.init(IntPtr.Zero, 0);
+            init(IntPtr.Zero, 0);
             return bitmap;
         }
 
@@ -52,7 +52,7 @@ namespace Jpeg2000
             Debug.Assert(buffer_handle == IntPtr.Zero);
             if (buffer_handle != IntPtr.Zero) return;
             buffer_handle = bitmap.GetPixels();
-            this.init(buffer_handle, bitmap.RowBytes / 4);
+            init(buffer_handle, bitmap.RowBytes / 4);
         }
 
 

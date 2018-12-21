@@ -8,8 +8,8 @@ namespace Image.Tiff
     public class TiffMemoryDestination : TiffStream
     {
 
-        private Int64 _size = 0;
-        private Int64 _offset = 0;
+        private long _size = 0;
+        private long _offset = 0;
         public byte[] _data;
 
         public TiffMemoryDestination(int size)

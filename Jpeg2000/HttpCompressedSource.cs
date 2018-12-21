@@ -9,6 +9,7 @@ using System.IO;
 using Serilog;
 using System.IO.Pipelines;
 using System.Runtime.InteropServices;
+using System.Buffers;
 
 namespace Jpeg2000
 {
@@ -81,26 +82,24 @@ namespace Jpeg2000
 
         public override int post_read(int num_bytes)
         {
-            var buffer = new byte[num_bytes];
+            var buffer = ArrayPool<byte>.Shared.Rent(num_bytes);
 
             try
             {
-
                 var bytes_read = _data.Read(buffer, 0, num_bytes);
-
                 push_data(buffer, 0, bytes_read);
                 _offset += bytes_read;
                 return bytes_read;
-
-
-
             }
             catch (Exception e)
             {
                 Log.Error(e, "Exception reading network string");
             }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+            }
             return 0;
-
         }
 
         public override int get_capabilities()

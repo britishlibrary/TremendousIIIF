@@ -197,7 +197,14 @@ namespace ImageProcessing
                 return ms;
             }
         }
-
+        /// <summary>
+        /// Overwrite the DPI of a JPEG
+        /// The Skia JPEG encoder sets a default DPI of 96x96, whith no way to change it. 
+        /// </summary>
+        /// <param name="jpgData"><see cref="IntPtr"/> Pointer to the data</param>
+        /// <param name="size">Size of data, in bytes</param>
+        /// <param name="horizontalResolution">Horizontal resolution, dots per inch</param>
+        /// <param name="verticalResolution">Vertical resolution, dots per inch</param>
         public static void SetJpgDpi(IntPtr jpgData, long size, ushort horizontalResolution, ushort verticalResolution)
         {
             // The Skia JPEG encoder sets a default 96x96 DPI, so reset to original DPI
@@ -353,7 +360,6 @@ namespace ImageProcessing
                 Creation = DateTime.Now,
                 EncodingQuality = q,
                 RasterDpi = dpi
-
             };
 
             if (null != pdfMetadata)
@@ -370,7 +376,6 @@ namespace ImageProcessing
                 {
                     paint.FilterQuality = SKFilterQuality.High;
                     canvas.DrawSurface(surface, new SKPoint(0, 0), paint);
-                    //canvas.DrawImage(image, new SKRect(0, 0, width, height), paint);
                     writer.EndPage();
                 }
             }
@@ -401,20 +406,18 @@ namespace ImageProcessing
             {
                 return EncodingStrategy.Skia;
             }
-            if (ImageFormat.pdf == format)
-            {
-                return EncodingStrategy.PDF;
-            }
-            if (ImageFormat.jp2 == format)
-            {
-                return EncodingStrategy.JPEG2000;
-            }
-            if (ImageFormat.tif == format)
-            {
-                return EncodingStrategy.Tifflib;
-            }
 
-            return EncodingStrategy.Unknown;
+            switch (format)
+            {
+                case ImageFormat.pdf:
+                    return EncodingStrategy.PDF;
+                case ImageFormat.jp2:
+                    return EncodingStrategy.JPEG2000;
+                case ImageFormat.tif:
+                    return EncodingStrategy.Tifflib;
+                default:
+                    return EncodingStrategy.Unknown;
+            }
         }
 
         private enum EncodingStrategy

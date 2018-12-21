@@ -1,5 +1,4 @@
-﻿using System;
-using TremendousIIIF.LibOwin;
+﻿using TremendousIIIF.LibOwin;
 
 using AppFunc = System.Func<System.Collections.Generic.IDictionary<string, object>, System.Threading.Tasks.Task>;
 
@@ -18,17 +17,17 @@ namespace TremendousIIIF.Middleware
                 var owinContext = new OwinContext(env);
                 if (owinContext.Request.Headers.TryGetValue("X-maxWidth", out string[] maxWidth))
                 {
-                    if(Int32.TryParse(maxWidth[0],out int mw))
+                    if(int.TryParse(maxWidth[0],out int mw))
                     owinContext.Set("maxWidth", mw);
                 }
                 if (owinContext.Request.Headers.TryGetValue("X-maxHeight", out string[] maxHeight))
                 {
-                    if (Int32.TryParse(maxHeight[0], out int mw))
+                    if (int.TryParse(maxHeight[0], out int mw))
                         owinContext.Set("maxHeight", mw);
                 }
                 if (owinContext.Request.Headers.TryGetValue("X-maxArea", out string[] maxArea))
                 {
-                    if (Int32.TryParse(maxArea[0], out int mw))
+                    if (int.TryParse(maxArea[0], out int mw))
                         owinContext.Set("maxArea", mw);
                 }
                 await next(env);

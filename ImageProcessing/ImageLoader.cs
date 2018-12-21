@@ -12,6 +12,7 @@ using System.Net.Http.Headers;
 using TremendousIIIF.Common;
 using Serilog;
 using System.Threading;
+using LazyCache;
 
 namespace ImageProcessing
 {
@@ -19,11 +20,13 @@ namespace ImageProcessing
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger _log;
+        private readonly IAppCache _cache;
 
-        public ImageLoader(HttpClient httpClient, ILogger log)
+        public ImageLoader(HttpClient httpClient, ILogger log, IAppCache cache)
         {
             _httpClient = httpClient;
             _log = log;
+            _cache = cache;
         }
 
         /// <summary>
@@ -47,7 +50,7 @@ namespace ImageProcessing
         /// <returns></returns>
         public async Task<(ProcessState, SKImage)> ExtractRegion(Uri imageUri, ImageRequest request, bool allowUpscaling, TremendousIIIF.Common.Configuration.ImageQuality quality)
         {
-            var sourceFormat = await GetSourceFormat(imageUri, request.RequestId);
+            var sourceFormat = await _cache.GetOrAddAsync(imageUri.ToString(), () => GetSourceFormat(imageUri, request.RequestId));
 
             switch (sourceFormat)
             {
@@ -68,7 +71,8 @@ namespace ImageProcessing
         /// <returns></returns>
         public async Task<Metadata> GetMetadata(Uri imageUri, int defaultTileWidth, string requestId)
         {
-            var sourceFormat = await Task.Run(() => GetSourceFormat(imageUri, requestId));
+            var sourceFormat = await _cache.GetOrAddAsync(imageUri.ToString(), () => GetSourceFormat(imageUri, requestId));
+
             switch (sourceFormat)
             {
                 case ImageFormat.jp2:

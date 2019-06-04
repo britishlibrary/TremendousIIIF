@@ -1,34 +1,34 @@
 ﻿using Image.Common;
+using LanguageExt;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using TremendousIIIF.Common;
-
 
 namespace TremendousIIIF.Validation
 {
     public static class ImageRequestValidator
     {
         static readonly char[] Delimiter = { ',' };
-        public static ImageRequest Validate(string region, string size, string rotation, string quality, string format, string requestId, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
+
+        public static Either<ValidationError, ImageRequest> Validate(string region, string size, string rotation, string quality, string format, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
         {
-            return new ImageRequest(requestId, 
-                                    CalculateRegion(region), 
-                                    CalculateSize(size), 
-                                    ParseRotation(rotation), 
-                                    ParseQuality(quality), 
-                                    ParseFormat(format, supportedFormats), 
-                                    maxWidth, 
-                                    maxHeight, 
-                                    maxArea);
+
+            return
+                from _region in CalculateRegion(region).ToEither(() => new ValidationError("Invalid region value", nameof(region)))
+                from _size in CalculateSize(size).ToEither(() => new ValidationError("Invalid size value", nameof(size)))
+                from _rotation in ParseRotation(rotation).ToEither(() => new ValidationError("Invalid rotation value", nameof(rotation)))
+                from _quality in ParseQuality(quality).ToEither(() => new ValidationError("Invalid quality value", nameof(quality)))
+                from _format in ParseFormat(format, supportedFormats)
+                select new ImageRequest(_region, _size, _rotation, _quality, _format, maxWidth, maxHeight, maxArea);
         }
 
-        private static ImageRotation ParseRotation(in string rotation)
+        private static Option<ImageRotation> ParseRotation(in string rotation)
         {
             var degreesString = rotation.Replace("!", "");
             if (!int.TryParse(degreesString, out int degrees) || (degrees < 0 || degrees > 360))
             {
-                throw new ArgumentException("Invalid number of degrees", "rotation");
+                return Option<ImageRotation>.None;
             }
             return new ImageRotation(degrees, rotation.StartsWith("!"));
         }
@@ -38,48 +38,45 @@ namespace TremendousIIIF.Validation
         /// <param name="formatString">The raw format string (jpg,png,webm,etc)</param>
         /// <param name="supportedFormats"></param>
         /// <returns></returns>
-        public static ImageFormat ParseFormat(in string formatString, List<ImageFormat> supportedFormats)
+        public static Either<ValidationError, ImageFormat> ParseFormat(in string formatString, List<ImageFormat> supportedFormats)
         {
             // first check it's permitted by the Image API specification
             if (!Enum.TryParse(formatString, out ImageFormat format))
             {
-                throw new ArgumentException("Unsupported format", "format");
+                return new ValidationError("The requested format is not supported by the IIIF Image API specification", nameof(format));
             }
             // then check we either support it at our compliance level, or that we have explicitly enabled support for it
             if (!supportedFormats.Contains(format))
             {
-                throw new ArgumentException("Unsupported format", "format");
+                return new ValidationError("The requested format is not supported. Please check the info.json and the API specification for details.", false);
             }
 
             return format;
         }
 
-        public static ImageQuality ParseQuality(in string qualityString)
+        public static Option<ImageQuality> ParseQuality(in string qualityString)
         {
-            if (!Enum.TryParse(qualityString, out ImageQuality quality))
-            {
-                throw new ArgumentException("Unsupported format", "quality");
-            }
-            return quality;
+            return Enum.TryParse(qualityString, out ImageQuality quality)
+                ? quality :
+                Option<ImageQuality>.None;
         }
 
-        public static void InvalidRegion()
+        public static Option<ImageRegion> CalculateRegion(string region_string)
         {
-            throw new FormatException("Invalid region parameter");
-        }
-        public static ImageRegion CalculateRegion(string region_string)
-        {
+            if (region_string.Length < 4)
+                return Option<ImageRegion>.None;
+
             ImageRegionMode regionMode;
             switch (region_string.Substring(0, 4))
             {
                 case "full":
                     if (region_string != "full")
-                        InvalidRegion();
+                        return Option<ImageRegion>.None;
                     regionMode = ImageRegionMode.Full;
                     break;
                 case "squa":
                     if (region_string != "square")
-                        InvalidRegion();
+                        return Option<ImageRegion>.None;
                     regionMode = ImageRegionMode.Square;
                     break;
                 case "pct:":
@@ -88,25 +85,29 @@ namespace TremendousIIIF.Validation
                     break;
                 default:
                     regionMode = ImageRegionMode.Region;
+                    // only pct: can be floating point, we expect whole pixels for normal region request
+                    if (!region_string.Replace(',', '0').All(char.IsDigit))
+                        return Option<ImageRegion>.None;
                     break;
             }
 
             switch (regionMode)
             {
-                case ImageRegionMode.PercentageRegion:
                 case ImageRegionMode.Region:
+                case ImageRegionMode.PercentageRegion:
                     var regions = region_string.Split(Delimiter);
-                    if (regions.Length != 4 || regions.Any(r => r.Length < 1))
+                    var parsed = regions.Select(r => float.TryParse(r, out var v) ? v : Option<float>.None).ToArray();
+                    if (parsed.Length != 4 || parsed.Any(p => p.IsNone))
                     {
-                        InvalidRegion();
+                        return Option<ImageRegion>.None;
                     }
-                    return new ImageRegion(regionMode, Single.Parse(regions[0]), Single.Parse(regions[1]), Single.Parse(regions[2]), Single.Parse(regions[3]));
+                    return new ImageRegion(regionMode, parsed[0].IfNone(0), parsed[1].IfNone(0), parsed[2].IfNone(0), parsed[3].IfNone(0));
                 default:
                     return new ImageRegion(regionMode, 0f, 0f, 0f, 0f);
             }
         }
 
-        public static ImageSize CalculateSize(string size_string)
+        public static Option<ImageSize> CalculateSize(string size_string)
         {
             ImageSizeMode sizeMode;
             var percentage = 1f;
@@ -116,10 +117,10 @@ namespace TremendousIIIF.Validation
             var size_span = size_string.AsSpan();
 
             var upscaling = size_span[0] == '^';
-            var maintain_ar = size_span[upscaling?1:0] == '!';
+            var maintain_ar = size_span[upscaling ? 1 : 0] == '!';
 
-            var modeStart = upscaling && maintain_ar ? 2: (upscaling || maintain_ar) ? 1 : 0;
-            
+            var modeStart = upscaling && maintain_ar ? 2 : (upscaling || maintain_ar) ? 1 : 0;
+
             var sizeStart = modeStart;
 
             var mode = size_span.Slice(modeStart, Math.Min(size_span.Length - modeStart, 4));
@@ -145,13 +146,13 @@ namespace TremendousIIIF.Validation
                     {
                         sizeMode = ImageSizeMode.MaintainAspectRatio;
                     }
-                    else if (mode.IndexOf(',') >= 0)
+                    else if (size_string.Split(',').Length == 2)
                     {
                         sizeMode = ImageSizeMode.Distort;
                     }
                     else
                     {
-                        throw new FormatException("Invalid size format specified");
+                        return Option<ImageSize>.None;
                     }
                     break;
             }
@@ -163,10 +164,10 @@ namespace TremendousIIIF.Validation
                     var sizeSpan = size_span.Slice(sizeStart);
                     var commaPos = sizeSpan.IndexOf(',');
                     var first = sizeSpan.Slice(0, commaPos);
-                    var second = sizeSpan.Slice(commaPos+1);
-                    if(second.IsEmpty && first.IsEmpty)
+                    var second = sizeSpan.Slice(commaPos + 1);
+                    if (second.IsEmpty && first.IsEmpty)
                     {
-                        throw new FormatException("Invald size format specified");
+                        return Option<ImageSize>.None;
                     }
                     if (!first.IsEmpty)
                     {

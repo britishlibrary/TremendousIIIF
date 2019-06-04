@@ -1,6 +1,7 @@
-﻿using TremendousIIIF.LibOwin;
-
-using AppFunc = System.Func<System.Collections.Generic.IDictionary<string, object>, System.Threading.Tasks.Task>;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Primitives;
+using System;
+using System.Threading.Tasks;
 
 namespace TremendousIIIF.Middleware
 {
@@ -10,28 +11,35 @@ namespace TremendousIIIF.Middleware
     /// </summary>
     public class SizeConstraints
     {
-        public static AppFunc Middleware(AppFunc next)
+        private readonly RequestDelegate _next;
+        public SizeConstraints(RequestDelegate next)
         {
-            return async env =>
+            _next = next ?? throw new ArgumentNullException(nameof(next));
+        }
+
+        public async Task Invoke(HttpContext httpContext)
+        {
+            if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
+
+            if (httpContext.Request.Headers.TryGetValue("X-maxWidth", out StringValues maxWidth))
             {
-                var owinContext = new OwinContext(env);
-                if (owinContext.Request.Headers.TryGetValue("X-maxWidth", out string[] maxWidth))
-                {
-                    if(int.TryParse(maxWidth[0],out int mw))
-                    owinContext.Set("maxWidth", mw);
-                }
-                if (owinContext.Request.Headers.TryGetValue("X-maxHeight", out string[] maxHeight))
-                {
-                    if (int.TryParse(maxHeight[0], out int mw))
-                        owinContext.Set("maxHeight", mw);
-                }
-                if (owinContext.Request.Headers.TryGetValue("X-maxArea", out string[] maxArea))
-                {
-                    if (int.TryParse(maxArea[0], out int mw))
-                        owinContext.Set("maxArea", mw);
-                }
-                await next(env);
-            };
+                if (int.TryParse(maxWidth[0], out int mw))
+                    httpContext.Items.Add("maxWidth", mw);
+            }
+
+            if (httpContext.Request.Headers.TryGetValue("X-maxHeight", out StringValues maxHeight))
+            {
+                if (int.TryParse(maxHeight[0], out int mh))
+                    httpContext.Items.Add("maxHeight", mh);
+            }
+
+            if (httpContext.Request.Headers.TryGetValue("X-maxArea", out StringValues maxArea))
+            {
+                if (int.TryParse(maxArea[0], out int ma))
+                    httpContext.Items.Add("maxArea", ma);
+            }
+
+            await _next(httpContext);
         }
     }
 }

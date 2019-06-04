@@ -6,7 +6,11 @@ using Moq;
 using System.Net.Http;
 using TremendousIIIF.Common;
 using System.Net;
-using Serilog;
+using Microsoft.Extensions.Logging;
+using LazyCache;
+using System.Threading.Tasks;
+using System.Threading;
+using Microsoft.Extensions.Logging.Internal;
 
 namespace ImageProcessing.Test
 {
@@ -18,14 +22,15 @@ namespace ImageProcessing.Test
         [TestMethod]
         [DataRow("test_image.tif", ImageFormat.tif)]
         [DataRow("test_image.jp2", ImageFormat.jp2)]
-        public void GetSourceFormat_Local(string filename, ImageFormat format)
+        public async Task GetSourceFormat_Local(string filename, ImageFormat format)
         {
-            var mockCLient = new Mock<HttpClient>();
-            var mockLogger = new Mock<ILogger>();
-            var loader = new ImageLoader(mockCLient.Object, mockLogger.Object);
+            var mockClient = new Mock<HttpClient>();
+            var mockLogger = new Mock<ILogger<ImageLoader>>();
+            var mockCache = new Mock<IAppCache>();
+            var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
             var imageUri = new Uri(Path.GetFullPath(filename));
 
-            var result = loader.GetSourceFormat(imageUri, "").Result;
+            var result = await loader.GetSourceFormat(mockClient.Object, imageUri, CancellationToken.None);
 
             Assert.AreEqual(format, result);
         }
@@ -34,14 +39,15 @@ namespace ImageProcessing.Test
         [ExpectedException(typeof(IOException))]
         public void GetSourceFormat_Unsupported_Local()
         {
-            var mockCLient = new Mock<HttpClient>();
-            var mockLogger = new Mock<ILogger>();
-            var loader = new ImageLoader(mockCLient.Object, mockLogger.Object);
+            var mockClient = new Mock<HttpClient>();
+            var mockLogger = new Mock<ILogger<ImageLoader>>();
+            var mockCache = new Mock<IAppCache>();
+            var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
             var imageUri = new Uri(Path.GetFullPath("test_image.png"));
 
             try
             {
-                var result = loader.GetSourceFormat(imageUri, "").Result;
+                var result = loader.GetSourceFormat(mockClient.Object, imageUri, CancellationToken.None).Result;
 
                 Assert.AreEqual(ImageFormat.jp2, result);
             }
@@ -55,14 +61,15 @@ namespace ImageProcessing.Test
         [ExpectedException(typeof(IOException))]
         public void GetSourceFormat_Unsupported_Uri()
         {
-            var mockCLient = new Mock<HttpClient>();
-            var mockLogger = new Mock<ILogger>();
-            var loader = new ImageLoader(mockCLient.Object, mockLogger.Object);
+            var mockClient = new Mock<HttpClient>();
+            var mockLogger = new Mock<ILogger<ImageLoader>>();
+            var mockCache = new Mock<IAppCache>();
+            var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
             var imageUri = new Uri("gopher://example.com/test_image.png");
 
             try
             {
-                var result = loader.GetSourceFormat(imageUri, "").Result;
+                var result = loader.GetSourceFormat(mockClient.Object, imageUri, CancellationToken.None).Result;
 
                 Assert.AreEqual(ImageFormat.jp2, result);
             }
@@ -84,13 +91,14 @@ namespace ImageProcessing.Test
 
             var httpClient = new HttpClient(handler.Object);
 
-            var mockLogger = new Mock<ILogger>();
-            var loader = new ImageLoader(httpClient, mockLogger.Object);
+            var mockLogger = new Mock<ILogger<ImageLoader>>();
+            var mockCache = new Mock<IAppCache>();
+            var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
             var imageUri = new Uri("http://example.com/test_image.png");
 
             try
             {
-                var result = loader.GetSourceFormat(imageUri, "").Result;
+                var result = loader.GetSourceFormat(httpClient, imageUri, CancellationToken.None).Result;
 
                 Assert.AreEqual(ImageFormat.jp2, result);
 
@@ -120,21 +128,22 @@ namespace ImageProcessing.Test
 
             var httpClient = new HttpClient(handler.Object);
 
-            var logger = new Mock<ILogger>();
-            logger.Setup(l => l.Error(It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<HttpStatusCode>(), It.IsAny<string>())).Verifiable();
+            var mockLogger = new Mock<ILogger<ImageLoader>>();
+            //logger.Setup(l => l.Log(LogLevel.Error, It.IsAny<string>(), It.IsAny<Uri>(), It.IsAny<HttpStatusCode>(), It.IsAny<string>())).Verifiable();
 
 
-            var loader = new ImageLoader(httpClient, logger.Object);
+            var mockCache = new Mock<IAppCache>();
+            var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
             var imageUri = new Uri("http://example.com/test_image.png");
 
             try
             {
-                var result = loader.GetSourceFormat(imageUri, "").Result;
+                var result = loader.GetSourceFormat(httpClient, imageUri,CancellationToken.None).Result;
             }
             catch (AggregateException e)
             {
                 handler.Verify(v => v.Send(It.IsAny<HttpRequestMessage>()), Times.Once);
-                logger.Verify(v => v.Error(It.IsAny<string>(), It.IsAny<Uri>(), It.Is<HttpStatusCode>(c => c == code), It.IsAny<string>()), Times.Once);
+                mockLogger.Verify(v => v.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Once);
                 throw e.InnerException;
             }
         }
@@ -175,11 +184,12 @@ namespace ImageProcessing.Test
 
                 var httpClient = new HttpClient(handler.Object);
 
-                var mockLogger = new Mock<ILogger>();
-                var loader = new ImageLoader(httpClient, mockLogger.Object);
+                var mockLogger = new Mock<ILogger<ImageLoader>>();
+                var mockCache = new Mock<IAppCache>();
+                var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
                 var imageUri = new Uri("http://example.com/test_image.tif");
 
-                var result = loader.GetSourceFormat(imageUri, "").Result;
+                var result = loader.GetSourceFormat(httpClient, imageUri, CancellationToken.None).Result;
 
                 Assert.AreEqual(format, result);
                 handler.Verify(v => v.Send(It.IsAny<HttpRequestMessage>()), Times.Once);
@@ -215,11 +225,12 @@ namespace ImageProcessing.Test
                     .Verifiable();
 
                 var httpClient = new HttpClient(handler.Object);
-                var mockLogger = new Mock<ILogger>();
-                var loader = new ImageLoader(httpClient, mockLogger.Object);
+                var mockLogger = new Mock<ILogger<ImageLoader>>();
+                var mockCache = new Mock<IAppCache>();
+                var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
                 var imageUri = new Uri("http://example.com/test_image.tif");
 
-                var result = loader.GetSourceFormat(imageUri, "").Result;
+                var result = loader.GetSourceFormat(httpClient, imageUri, CancellationToken.None).Result;
 
                 Assert.AreEqual(format, result);
                 handler.Verify(v => v.Send(It.IsAny<HttpRequestMessage>()), Times.Exactly(2));
@@ -249,14 +260,15 @@ namespace ImageProcessing.Test
                     .Verifiable();
 
                 var httpClient = new HttpClient(handler.Object);
-                var mockLogger = new Mock<ILogger>();
-                var loader = new ImageLoader(httpClient, mockLogger.Object);
+                var mockLogger = new Mock<ILogger<ImageLoader>>();
+                var mockCache = new Mock<IAppCache>();
+                var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
 
                 var imageUri = new Uri("http://example.com/test_image.tif");
 
                 try
                 {
-                    var result = loader.GetSourceFormat(imageUri, "").Result;
+                    var result = loader.GetSourceFormat(httpClient, imageUri, CancellationToken.None).Result;
 
                     Assert.AreEqual(ImageFormat.jp2, result);
                     handler.Verify(v => v.Send(It.IsAny<HttpRequestMessage>()), Times.Once);
@@ -292,13 +304,14 @@ namespace ImageProcessing.Test
 
                 var httpClient = new HttpClient(handler.Object);
 
-                var mockLogger = new Mock<ILogger>();
-                var loader = new ImageLoader(httpClient, mockLogger.Object);
+                var mockLogger = new Mock<ILogger<ImageLoader>>();
+                var mockCache = new Mock<IAppCache>();
+                var loader = new ImageLoader(mockLogger.Object, mockCache.Object);
                 var imageUri = new Uri("http://example.com/test_image.png");
 
                 try
                 {
-                    var result = loader.GetSourceFormat(imageUri, "").Result;
+                    var result = loader.GetSourceFormat(httpClient, imageUri, CancellationToken.None).Result;
 
                     Assert.AreEqual(ImageFormat.jp2, result);
                     handler.Verify(v => v.Send(It.IsAny<HttpRequestMessage>()), Times.Exactly(2));

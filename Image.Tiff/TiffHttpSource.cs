@@ -4,7 +4,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace Image.Tiff
 {
@@ -19,15 +19,13 @@ namespace Image.Tiff
         private MemoryStream _data;
         private Uri _imageUri;
         private long _offset = 0;
-        private readonly string RequestId;
         private ILogger Log;
 
-        public TiffHttpSource(HttpClient httpClient, ILogger log, Uri imageUri, string requestId)
+        public TiffHttpSource(HttpClient httpClient, ILogger log, Uri imageUri)
         {
             Log = log;
             this.httpClient = httpClient;
             _imageUri = imageUri;
-            RequestId = requestId;
             
         }
 
@@ -71,8 +69,7 @@ namespace Image.Tiff
         {
             using (var request = new HttpRequestMessage(HttpMethod.Get, _imageUri))
             {
-                request.Headers.Add("X-Request-ID", RequestId);
-                try
+                 try
                 {
                     var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                     {
@@ -82,6 +79,7 @@ namespace Image.Tiff
                             _data = new MemoryStream((int)_size);
                             var data = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
                             await data.CopyToAsync(_data).ConfigureAwait(false);
+                            await data.FlushAsync();
                             response.Dispose();
                             return;
                         }
@@ -99,12 +97,12 @@ namespace Image.Tiff
                 {
                     if (e.CancellationToken.IsCancellationRequested)
                     {
-                        Log.Error(e, "HTTP Request Cancelled");
+                        Log.LogError(e, "HTTP Request Cancelled");
                         throw;
                     }
                     else
                     {
-                        Log.Error(e, "HTTP Request Failed");
+                        Log.LogError(e, "HTTP Request Failed");
                         throw e.InnerException;
                     }
                 }

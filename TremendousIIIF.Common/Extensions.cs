@@ -15,5 +15,9 @@ namespace TremendousIIIF.Common
                 .OfType<TAttribute>()
                 .SingleOrDefault();
         }
+
+        public static string GetError(this ArgumentException ex)
+    => ex.ParamName == null ?
+        ex.Message : ex.Message.Remove(ex.Message.LastIndexOf(Environment.NewLine));
     }
 }

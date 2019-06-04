@@ -1,11 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
 
 using Image.Common;
-using Serilog;
 using System;
 using System.IO;
 using System.Threading.Tasks;
 using TremendousIIIF.Common;
+using LazyCache;
+using Microsoft.Extensions.Logging;
 
 namespace TremendousIIIF.Benchmark
 {
@@ -25,11 +26,12 @@ namespace TremendousIIIF.Benchmark
         [GlobalSetup]
         public void Setup()
         {
-            var log = new LoggerConfiguration().CreateLogger();
-            IP = new ImageProcessing.ImageProcessing(null,  log, new ImageProcessing.ImageLoader(null,  log));
+            var plog = new LoggerFactory().CreateLogger<ImageProcessing.ImageProcessing>();
+            var llog = new LoggerFactory().CreateLogger<ImageProcessing.ImageLoader>();
+            IP = new ImageProcessing.ImageProcessing( plog, new ImageProcessing.ImageLoader(llog, null));
             ImageUri = new Uri("file:///C:/Source/TremendousIIIF/TremendousIIIF.Benchmark/TestData/RoyalMS.jp2");
             Quality = new Common.Configuration.ImageQuality();
-            Request = new ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.gray, ImageFormat.jpg);
+            Request = new ImageRequest(new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.gray, ImageFormat.jpg);
         }
 
         [Benchmark]

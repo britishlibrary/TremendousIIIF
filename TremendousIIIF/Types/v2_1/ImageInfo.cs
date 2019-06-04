@@ -3,10 +3,11 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using TremendousIIIF.Common.Configuration;
+using TremendousIIIF.Types;
 
 namespace TremendousIIIF.Types.v2_1
 {
-    public class ImageInfo
+    public class ImageInfo : IImageInfo
     {
         [JsonConstructor]
         public ImageInfo()
@@ -16,7 +17,7 @@ namespace TremendousIIIF.Types.v2_1
             Profile = new List<object> { "http://iiif.io/api/image/2/level2.json" };
         }
 
-        public ImageInfo(Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea) : this()
+        public ImageInfo(Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, bool enableGeoService, string geodatauri) : this()
         {
             Height = metadata.Height;
             Width = metadata.Width;
@@ -35,11 +36,19 @@ namespace TremendousIIIF.Types.v2_1
 
             Profile.Add(new ServiceProfile(conf.AllowSizeAboveFull)
             {
-                MaxWidth = maxWidth == int.MaxValue ? default(int) : maxWidth,
-                MaxHeight = maxHeight == int.MaxValue ? default(int) : maxHeight,
-                MaxArea = maxArea == int.MaxValue ? default(int) : maxArea,
+                MaxWidth = maxWidth == int.MaxValue ? default : maxWidth,
+                MaxHeight = maxHeight == int.MaxValue ? default : maxHeight,
+                MaxArea = maxArea == int.MaxValue ? default : maxArea,
                 Formats = conf.AdditionalOutputFormats.Count == 0 ? null : conf.AdditionalOutputFormats
             });
+
+            if (metadata.HasGeoData && enableGeoService)
+            {
+                Services = new List<Service>
+                {
+                    new Service() { Context = "http://geojson.org/geojson-ld/geojson-context.jsonld", ID = geodatauri}
+                };
+            }
         }
         [JsonProperty("@context", Order = 1, Required = Required.Always)]
         public string Context { get; set; }
@@ -61,6 +70,9 @@ namespace TremendousIIIF.Types.v2_1
 
         [JsonProperty("tiles", Order = 6, NullValueHandling = NullValueHandling.Ignore)]
         public List<Tile> Tiles { get; set; }
+
+        [JsonProperty("service", Order = 8, NullValueHandling = NullValueHandling.Ignore)]
+        public List<Service> Services { get; set; }
     }
 
     public class ServiceProfile
@@ -90,8 +102,8 @@ namespace TremendousIIIF.Types.v2_1
 
     public class Tile
     {
-        [JsonProperty("@type")]
-        public string Type { get; set; }
+        [JsonProperty("@type", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
+        public string Type = "iiif:Tile";
 
         [JsonProperty("width")]
         public int Width { get; set; }
@@ -101,5 +113,17 @@ namespace TremendousIIIF.Types.v2_1
 
         [JsonProperty("scaleFactors")]
         public List<int> ScaleFactors { get; set; }
+    }
+
+    public class Service
+    {
+        [JsonProperty("@context", Order = 1, Required = Required.Always)]
+        public string Context { get; set; }
+
+        [JsonProperty("@id", Order = 2, Required = Required.Always)]
+        public string ID { get; set; }
+
+        [JsonProperty("profile", Order = 3, Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+        public string Profile { get; set; }
     }
 }

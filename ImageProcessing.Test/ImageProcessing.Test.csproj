@@ -19,7 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Image.Common\Image.Common.csproj" />
-    <ProjectReference Include="..\ImageProcessing\ImageProcessing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

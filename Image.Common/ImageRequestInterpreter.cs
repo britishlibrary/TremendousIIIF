@@ -31,8 +31,11 @@ namespace Image.Common
                 case ImageRegionMode.Region:
                     state.StartX = Convert.ToInt32(request.Region.X);
                     state.StartY = Convert.ToInt32(request.Region.Y);
-                    state.OutputWidth = state.RegionWidth = Convert.ToInt32(request.Region.Width);
-                    state.OutputHeight = state.RegionHeight = Convert.ToInt32(request.Region.Height);
+                    // If the request specifies a region which extends beyond the dimensions of the full image as reported in the image information document, 
+                    // then the service SHOULD return an image cropped at the image’s edge, rather than adding empty space.
+                    // https://preview.iiif.io/api/image-prezi-rc2/api/image/3.0/#41-region
+                    state.OutputWidth = state.RegionWidth = Math.Min(Convert.ToInt32(request.Region.Width), originalWidth);
+                    state.OutputHeight = state.RegionHeight = Math.Min(Convert.ToInt32(request.Region.Height), originalHeight);
                     break;
                 case ImageRegionMode.Square:
                     state.OutputWidth = state.OutputHeight = state.RegionHeight = state.RegionWidth = Math.Min(originalWidth, originalHeight);

@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using kdu_mni;
 using System.IO;
-using System.IO.Pipelines;
 
 namespace Jpeg2000
 {
@@ -10,7 +9,6 @@ namespace Jpeg2000
     {
         public static Stream Compress(SKImage input)
         {
-            var pipe = new Pipe();
             using (var tgt = new Cjp2_target())
             using (var fam = new Cjp2_family_tgt())
             using (var memory_target = new MemoryTarget())
@@ -35,6 +33,8 @@ namespace Jpeg2000
 
                 siz.set(Ckdu_global.Sdims, 0, 0, input.Width);
                 siz.set(Ckdu_global.Sdims, 0, 1, input.Height);
+
+                siz.set(Ckdu_global.Stiles, 0, 0, 512);
 
 
                 siz.set(Ckdu_global.Ssigned, 0, 0, false);

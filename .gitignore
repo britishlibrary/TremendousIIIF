@@ -240,7 +240,7 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
-/TremendousIIIF/kdu_*.dll
+/TremendousIIIF/*.dll
 
 /TremendousIIIF.Benchmark/BenchmarkDotNet.Artifacts/results
 /TremendousIIIF.Benchmark/kdu_v7AR.dll

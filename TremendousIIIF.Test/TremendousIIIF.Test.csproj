@@ -58,8 +58,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Image.Common\Image.Common.csproj">
     </ProjectReference>
-    <ProjectReference Include="..\ImageProcessing\ImageProcessing.csproj">
-    </ProjectReference>
     <ProjectReference Include="..\TremendousIIIF.Common\TremendousIIIF.Common.csproj">
     </ProjectReference>
     <ProjectReference Include="..\TremendousIIIF\TremendousIIIF.csproj">
@@ -71,16 +69,28 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Moq" Version="4.11.0" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.4.0" />
     <PackageReference Include="MSTest.TestFramework" Version="1.4.0" />
-    <PackageReference Include="Microsoft.CodeCoverage" Version="15.9.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="Microsoft.CodeCoverage" Version="16.1.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.0" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="ImageProcessing\test_image.jp2">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageProcessing\test_image.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="ImageProcessing\test_image.tif">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

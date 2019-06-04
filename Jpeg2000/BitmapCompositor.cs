@@ -6,7 +6,7 @@ namespace Jpeg2000
 {
     public class BitmapCompositor : Ckdu_region_compositor
     {
-        private LinkedList<BitmapBuffer> bufferList = new LinkedList<BitmapBuffer>();
+        private readonly LinkedList<BitmapBuffer> bufferList = new LinkedList<BitmapBuffer>();
         private bool disposed;
 
         public BitmapCompositor() : base()
@@ -22,10 +22,10 @@ namespace Jpeg2000
             var res = get_composition_buffer(region);
             if (res == null)
                 return null;
-            return Find(res);
+            return Find(res)?.Value;
         }
 
-        private BitmapBuffer Find(Ckdu_compositor_buf tgt)
+        private LinkedListNode<BitmapBuffer> Find(Ckdu_compositor_buf tgt)
         {
             int tgt_row_gap = 0;
             IntPtr tgt_handle = tgt.get_buf(ref tgt_row_gap, true);
@@ -33,7 +33,7 @@ namespace Jpeg2000
             {
                 if (buf.Value.buffer_handle == tgt_handle)
                 {
-                    return buf.Value;
+                    return buf;
                 }
             }
             return null;
@@ -69,10 +69,11 @@ namespace Jpeg2000
                 {
                     return;
                 }
-                equiv = buffer;
+                equiv = buffer.Value;
+                bufferList.Remove(buffer);
+                equiv.Dispose();
             }
-            bufferList.Remove(equiv);
-            equiv.Dispose();
+            
         }
 
         /// <summary>

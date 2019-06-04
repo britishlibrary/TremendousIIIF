@@ -18,7 +18,7 @@ namespace TremendousIIIF.Test.Request
         [Description("/full/full/0/")]
         public void Full_Full()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg);
+            var request = new Image.Common.ImageRequest(new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX, "Expected x offset does not match calculated x offset");
             Assert.AreEqual(0, result.StartY, "Expected y offset does not match calculated y offset");
@@ -32,7 +32,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Square),
                 new ImageSize(ImageSizeMode.Max, 1),
                 new ImageRotation(0, false),
@@ -54,7 +53,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Square),
                 new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 0, 100),
                 new ImageRotation(0, false),
@@ -76,7 +74,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Square),
                 new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 0, 100),
                 new ImageRotation(0, false),
@@ -98,7 +95,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Square),
                 new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 105, 100),
                 new ImageRotation(0, false),
@@ -120,7 +116,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Square),
                 new ImageSize(ImageSizeMode.Distort, 1, 50, 50),
                 new ImageRotation(0, false),
@@ -143,7 +138,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Square),
                 new ImageSize(ImageSizeMode.Distort, 1, 150, 50),
                 new ImageRotation(0, false),
@@ -165,7 +159,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 150, 0),
                 new ImageRotation(0, false),
@@ -186,7 +179,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 0, 150),
                 new ImageRotation(0, false),
@@ -207,7 +199,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.PercentageScaled, 0.5f),
                 new ImageRotation(0, false),
@@ -228,7 +219,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.Distort, 1, 225, 100),
                 new ImageRotation(0, false),
@@ -249,7 +239,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 225, 100),
                 new ImageRotation(0, false),
@@ -265,13 +254,32 @@ namespace TremendousIIIF.Test.Request
             Assert.AreEqual(100, result.OutputHeight, "Expected height does not match calculated height");
         }
         [TestMethod]
+        [Description("/0,0,1024,1024/full/0/")]
+        public void Region_Cropped_to_Image_Boundaries()
+        {
+            var request = new Image.Common.ImageRequest
+            (
+                new ImageRegion(ImageRegionMode.Region,0,0,1024,1024),
+                new ImageSize(ImageSizeMode.Full),
+                new ImageRotation(0, false),
+                ImageQuality.@default,
+                ImageFormat.jpg
+            );
+            var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
+            Assert.AreEqual(0, result.StartX, "Expected x position does not match calculated x position");
+            Assert.AreEqual(0, result.StartY, "Expected y position does not match calculated y position");
+            Assert.AreEqual(width, result.RegionWidth, "Expected region width does not match calculated region width");
+            Assert.AreEqual(height, result.RegionHeight, "Expected region height does not match calculated region height");
+            Assert.AreEqual(width, result.OutputWidth, "Expected width does not match calculated width");
+            Assert.AreEqual(height, result.OutputHeight, "Expected height does not match calculated height");
+        }
+        [TestMethod]
         [Description("/full/0,0/0/")]
         [ExpectedException(typeof(ArgumentException))]
         public void CheckBounds_Width_Height()
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.Distort, 1, 0, 0),
                 new ImageRotation(0, false),
@@ -287,7 +295,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Region, -1, -1, 100, 100),
                 new ImageSize(ImageSizeMode.Distort, 1, 100, 100),
                 new ImageRotation(0, false),
@@ -303,7 +310,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Region, 0, 0, 0, 100),
                 new ImageSize(ImageSizeMode.Distort, 1, 100, 100),
                 new ImageRotation(0, false),
@@ -319,7 +325,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Region, 600, 900, 100, 100),
                 new ImageSize(ImageSizeMode.Distort, 1, 54, 54),
                 new ImageRotation(0, false),
@@ -342,7 +347,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.Distort, 1, 744, 501),
                 new ImageRotation(0, false),
@@ -365,7 +369,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.Max, 1, 0, 0),
                 new ImageRotation(0, false),
@@ -385,7 +388,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.Distort, 1, width * 2, height * 2),
                 new ImageRotation(0, false),
@@ -404,7 +406,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.Distort, 1, width * 2, height * 2),
                 new ImageRotation(0, false),
@@ -425,7 +426,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.PercentageScaled, 2),
                 new ImageRotation(0, false),
@@ -444,7 +444,6 @@ namespace TremendousIIIF.Test.Request
         {
             var request = new Image.Common.ImageRequest
             (
-                "",
                 new ImageRegion(ImageRegionMode.Full),
                 new ImageSize(ImageSizeMode.Max, 1),
                 new ImageRotation(0, false),
@@ -467,7 +466,7 @@ namespace TremendousIIIF.Test.Request
         [Description("/full/,2000/0/default.jpg maxWidth = 1000, maxHeight = 1000, sizeAboveFull = false")]
         public void Full_Max_MaxWidth_MaxHeight_Exact()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 0, 2000), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg, 1000, 1000, int.MaxValue);
+            var request = new Image.Common.ImageRequest( new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 0, 2000), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg, 1000, 1000, int.MaxValue);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, 6640, 4007, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
@@ -480,7 +479,7 @@ namespace TremendousIIIF.Test.Request
         [TestMethod]
         public void Full_Pct_Expanded_Yes_size_Above_Full()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.PercentageScaled, 2), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg);
+            var request = new Image.Common.ImageRequest( new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.PercentageScaled, 2), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, true);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
@@ -493,7 +492,7 @@ namespace TremendousIIIF.Test.Request
         [TestMethod]
         public void Pct_region_full_No_size_Above_Full_maxWidth()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.PercentageRegion, 0, 0, 100, 100), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg, 150, int.MaxValue, int.MaxValue);
+            var request = new Image.Common.ImageRequest(new ImageRegion(ImageRegionMode.PercentageRegion, 0, 0, 100, 100), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg, 150, int.MaxValue, int.MaxValue);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
@@ -506,7 +505,7 @@ namespace TremendousIIIF.Test.Request
         [TestMethod]
         public void Full_Expanded_Yes_size_Above_Full_Max_Width()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Distort, 1, width * 2, height * 2), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg, 500, 300, int.MaxValue);
+            var request = new Image.Common.ImageRequest( new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Distort, 1, width * 2, height * 2), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg, 500, 300, int.MaxValue);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, true);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
@@ -519,7 +518,7 @@ namespace TremendousIIIF.Test.Request
         [TestMethod]
         public void Full_Expanded_Yes_size_Above_Full_Max_Height()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Distort, 1, width * 2, height * 4), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg, int.MaxValue, 300, int.MaxValue);
+            var request = new Image.Common.ImageRequest(new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Distort, 1, width * 2, height * 4), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg, int.MaxValue, 300, int.MaxValue);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, true);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
@@ -533,7 +532,7 @@ namespace TremendousIIIF.Test.Request
         [TestMethod]
         public void Full_Expanded_No_size_Above_Full_Max_Width()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, width, height), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg, 200, int.MaxValue, int.MaxValue);
+            var request = new Image.Common.ImageRequest(new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, width, height), new ImageRotation(90, false), ImageQuality.@default, ImageFormat.jpg, 200, int.MaxValue, int.MaxValue);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, width, height, false);
             Assert.AreEqual(0, result.StartX);
             Assert.AreEqual(0, result.StartY);
@@ -546,7 +545,7 @@ namespace TremendousIIIF.Test.Request
         [TestMethod]
         public void ExactSizeShouldEqualExactSize()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Region, 500, 500, 500, 500), new ImageSize(ImageSizeMode.Distort, 1, 500, 500), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg);
+            var request = new Image.Common.ImageRequest(new ImageRegion(ImageRegionMode.Region, 500, 500, 500, 500), new ImageSize(ImageSizeMode.Distort, 1, 500, 500), new ImageRotation(0, false), ImageQuality.@default, ImageFormat.jpg);
             var result = ImageRequestInterpreter.GetInterpretedValues(request, 2000, 2000, false);
             Assert.AreEqual(500, result.StartX);
             Assert.AreEqual(500, result.StartY);
@@ -558,14 +557,14 @@ namespace TremendousIIIF.Test.Request
         [ExpectedException(typeof(ArgumentException))]
         public void RegionShouldNotAllowUnsigned()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.Region, -1, 0, 500, 500), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false));
+            var request = new Image.Common.ImageRequest(new ImageRegion(ImageRegionMode.Region, -1, 0, 500, 500), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false));
             var result = ImageRequestInterpreter.GetInterpretedValues(request, 2000, 2000, false);
         }
 
         [TestMethod]
         public void PercentageRegionFullSize()
         {
-            var request = new Image.Common.ImageRequest("", new ImageRegion(ImageRegionMode.PercentageRegion, 50, 50, 50, 50), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false));
+            var request = new Image.Common.ImageRequest(new ImageRegion(ImageRegionMode.PercentageRegion, 50, 50, 50, 50), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false));
             var result = ImageRequestInterpreter.GetInterpretedValues(request, 2000, 2000, false);
             Assert.AreEqual(1000, result.StartX);
             Assert.AreEqual(1000, result.StartY);

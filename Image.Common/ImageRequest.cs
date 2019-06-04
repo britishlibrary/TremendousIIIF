@@ -1,4 +1,6 @@
-﻿using TremendousIIIF.Common;
+﻿using System.Collections.Generic;
+using System.Linq;
+using TremendousIIIF.Common;
 namespace Image.Common
 {
     public readonly struct ImageRequest
@@ -24,10 +26,6 @@ namespace Image.Common
         /// </summary>
         public ImageFormat Format { get; }
         /// <summary>
-        /// The unique identifier for this request
-        /// </summary>
-        public string RequestId { get; }
-        /// <summary>
         /// The maximum width, in pixels, for this request
         /// </summary>
         public int MaxWidth { get; }
@@ -39,39 +37,37 @@ namespace Image.Common
         /// The maximum area, in pixels, for this request
         /// </summary>
         public int MaxArea { get; }
-        public ImageRequest(string requestId, ImageRegion region, ImageSize size, ImageRotation rotation, ImageQuality quality, ImageFormat format, int maxWidth, int maxHeight, int maxArea)
+
+        public ImageRequest(ImageRegion region, ImageSize size, ImageRotation rotation, ImageQuality quality, ImageFormat format, int maxWidth, int maxHeight, int maxArea)
         {
             Region = region;
             Size = size;
             Rotation = rotation;
             Quality = quality;
             Format = format;
-            RequestId = requestId;
             MaxArea = maxArea;
             MaxWidth = maxWidth;
             MaxHeight = maxHeight;
         }
 
-        public ImageRequest(string requestId, ImageRegion region, ImageSize size, ImageRotation rotation)
+        public ImageRequest(ImageRegion region, ImageSize size, ImageRotation rotation)
         {
             Region = region;
             Size = size;
             Rotation = rotation;
             Quality = ImageQuality.@default;
             Format = ImageFormat.jpg;
-            RequestId = requestId;
             MaxArea = int.MaxValue;
             MaxWidth = int.MaxValue;
             MaxHeight = int.MaxValue;
         }
-        public ImageRequest(string requestId, ImageRegion region, ImageSize size, ImageRotation rotation, ImageQuality quality, ImageFormat format)
+        public ImageRequest(ImageRegion region, ImageSize size, ImageRotation rotation, ImageQuality quality, ImageFormat format)
         {
             Region = region;
             Size = size;
             Rotation = rotation;
             Quality = quality;
             Format = format;
-            RequestId = requestId;
             MaxArea = int.MaxValue;
             MaxWidth = int.MaxValue;
             MaxHeight = int.MaxValue;

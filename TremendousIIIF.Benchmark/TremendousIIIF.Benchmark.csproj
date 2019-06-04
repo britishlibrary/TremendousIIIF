@@ -71,14 +71,12 @@
   </ItemGroup>
    
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.11.3" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Image.Common\Image.Common.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Image.Tiff\Image.Tiff.csproj">
-    </ProjectReference>
-    <ProjectReference Include="..\ImageProcessing\ImageProcessing.csproj">
     </ProjectReference>
     <ProjectReference Include="..\Jpeg2000\Jpeg2000.csproj">
     </ProjectReference>
@@ -95,6 +93,14 @@
     <Reference Include="kdu_mni">
       <HintPath>..\Jpeg2000\lib\kdu_mni.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="kdu_a7AR.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="kdu_v7AR.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   
   </Project>

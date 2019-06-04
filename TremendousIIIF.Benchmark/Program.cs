@@ -3,6 +3,7 @@ using TremendousIIIF.Benchmark.Image;
 using TremendousIIIF.Benchmark.Parsing;
 using TremendousIIIF.Benchmark.TIFF;
 using BenchmarkDotNet.Attributes;
+using TremendousIIIF.Benchmark.JPEG2000;
 
 namespace TremendousIIIF.Benchmark
 {
@@ -19,7 +20,8 @@ namespace TremendousIIIF.Benchmark
                 typeof(SizeBenchmarks),
                 typeof(PipelineBenchmarks),
                 typeof(TiffExpanderBenchmarks),
-                typeof(ImageDPIBenchmarks)
+                typeof(ImageDPIBenchmarks),
+                typeof(ExpanderBenchmarks)
             });
             switcher.Run(args);
         }

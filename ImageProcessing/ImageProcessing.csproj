@@ -36,9 +36,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Gdal.Core" Version="2.3.0-beta-023" />
+    <PackageReference Include="Gdal.Core.WindowsRuntime" Version="2.3.0-beta-023" />
+    <PackageReference Include="GeoJSON.Net" Version="1.1.70" />
+    <PackageReference Include="GeoJSON.Net.Contrib.MsSqlSpatial" Version="0.3.2" />
+    <PackageReference Include="LanguageExt.FSharp" Version="3.1.15" />
     <PackageReference Include="LazyCache" Version="2.0.0-beta03" />
     <PackageReference Include="LazyCache.AspNetCore" Version="2.0.0-beta03" />
-    <PackageReference Include="Serilog" Version="2.7.1" />
+    <PackageReference Include="MathNet.Numerics" Version="4.7.0" />
+    <PackageReference Include="NetTopologySuite" Version="1.15.2" />
+    <PackageReference Include="Serilog" Version="2.8.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="2.1.1" />
     <PackageReference Include="SkiaSharp" Version="1.68.0" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.6.0-preview.18571.3" />
   </ItemGroup>

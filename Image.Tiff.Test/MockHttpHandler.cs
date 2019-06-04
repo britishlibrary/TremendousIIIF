@@ -13,9 +13,9 @@ namespace Image.Tiff.Test
             throw new NotImplementedException("Mock it");
         }
 
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, System.Threading.CancellationToken cancellationToken)
         {
-            return await Task.FromResult(Send(request));
+            return Task.FromResult(Send(request));
         }
     }
 }

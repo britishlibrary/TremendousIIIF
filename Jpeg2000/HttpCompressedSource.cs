@@ -2,14 +2,13 @@
 using System;
 using System.Threading;
 using System.Net.Http;
-using Nito.AsyncEx;
 using System.Threading.Tasks;
 using System.Net.Http.Headers;
 using System.IO;
-using Serilog;
 using System.IO.Pipelines;
 using System.Runtime.InteropServices;
 using System.Buffers;
+using Microsoft.Extensions.Logging;
 
 namespace Jpeg2000
 {
@@ -40,11 +39,10 @@ namespace Jpeg2000
         /// <param name="imageUri">The <see cref="Uri"/> of the remote image</param>
         /// <param name="requestId">The correlation ID to include on subsequent HTTP requests</param>
         /// <param name="headerOnly">Attempt to retrieve heade bytes only for metadata requests</param>
-        public HttpCompressedSource(HttpClient client, ILogger log, Uri imageUri, string requestId, bool headerOnly = false)
+        public HttpCompressedSource(HttpClient client, ILogger log, Uri imageUri, bool headerOnly = false)
         {
             _imageUri = imageUri;
             _headerOnly = headerOnly;
-            RequestId = requestId;
             _client = client;
             //_data = new AsyncLazy<Memory<byte>>(() => GetData(_headerOnly));
             Log = log;
@@ -53,10 +51,11 @@ namespace Jpeg2000
             //_httpData = Task.Run(()=>GetData(_headerOnly)).Result;
         }
 
-        public async Task Initialise()
+        public async Task Initialise(CancellationToken token)
         {
-            _httpData = await GetData(_headerOnly).ConfigureAwait(false);
-            await _httpData.CopyToAsync(_data).ConfigureAwait(false);
+            _httpData = await GetData(_headerOnly, token).ConfigureAwait(false);
+            await _httpData.CopyToAsync(_data, 81920, token).ConfigureAwait(false);
+            await _httpData.FlushAsync(token);
             _data.Seek(0, SeekOrigin.Begin);
         }
 
@@ -91,9 +90,8 @@ namespace Jpeg2000
                 _offset += bytes_read;
                 return bytes_read;
             }
-            catch (Exception e)
+            catch (Exception e) when (LogError(e))
             {
-                Log.Error(e, "Exception reading network string");
             }
             finally
             {
@@ -188,7 +186,6 @@ namespace Jpeg2000
                 {
                     request.Headers.Range = new RangeHeaderValue(0, JP2HeaderLength);
                 }
-                request.Headers.Add("X-Request-ID", RequestId);
                 try
                 {
                     //using (var response = await _client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token).ConfigureAwait(false))
@@ -199,7 +196,7 @@ namespace Jpeg2000
                             //using (token.Register(response.Dispose))
                             //{
                             return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                            
+
 
                             //}
                         }
@@ -213,20 +210,22 @@ namespace Jpeg2000
                         }
                     }
                 }
-                catch (TaskCanceledException e)
+                catch (TaskCanceledException e) when (e.CancellationToken.IsCancellationRequested && LogError(e))
                 {
-                    if (e.CancellationToken.IsCancellationRequested)
-                    {
-                        Log.Error(e, "HTTP Request Cancelled");
-                        throw;
-                    }
-                    else
-                    {
-                        Log.Error(e, "HTTP Request Failed");
-                        throw e.InnerException;
-                    }
+                    throw;
+
+                }
+                catch (TaskCanceledException e) when (LogError(e))
+                {
+                    throw e.InnerException;
                 }
             }
+
+        }
+        bool LogError(Exception ex)
+        {
+            Log.LogError(ex, "An unexpected exception occured");
+            return true;
         }
     }
 }

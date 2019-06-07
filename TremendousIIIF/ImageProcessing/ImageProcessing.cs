@@ -77,6 +77,7 @@ namespace TremendousIIIF.ImageProcessing
                 using (var surface = SKSurface.Create(new SKImageInfo(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType)))
                 using (var canvas = surface.Canvas)
                 using (var region = new SKRegion())
+
                 {
                     // If the rotation parameter includes mirroring ("!"), the mirroring is applied before the rotation.
                     if (request.Rotation.Mirror)

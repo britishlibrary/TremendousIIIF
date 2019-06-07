@@ -1,19 +1,18 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Image.Common;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Serilog;
+using Microsoft.Net.Http.Headers;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Net.Http.Headers;
+using System.Reflection;
 using System.Threading.Tasks;
 using TremendousIIIF.Common;
 using TremendousIIIF.Common.Configuration;
-using TremendousIIIF.Validation;
 using TremendousIIIF.Types;
-using System.Collections.Generic;
-using Image.Common;
-using System.Reflection;
+using TremendousIIIF.Validation;
 
 namespace TremendousIIIF.Controllers
 {
@@ -23,6 +22,8 @@ namespace TremendousIIIF.Controllers
         readonly ImageServer Conf;
         readonly ImageProcessing.ImageProcessing Processor;
         readonly ILogger<IIIFController> _log;
+
+        readonly static List<string> _validRightsDomains = new List<string> { "creativecommons.org", "rightsstatements.org" };
 
         public IIIFController(ILogger<IIIFController> log, ImageServer conf, ImageProcessing.ImageProcessing processor)
         {
@@ -39,7 +40,7 @@ namespace TremendousIIIF.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<IImageInfo>> Info(string id, [FromHeader] string Accept, [FromHeader(Name = "X-PartOf-Manifest")] string manifestId)
+        public async Task<ActionResult<IImageInfo>> Info(string id, [FromHeader] string Accept, [FromHeader(Name = "X-PartOf-Manifest")] string manifestId, [FromHeader(Name = "X-LicenceUri")] string licence)
         {
             var cancellationToken = HttpContext.RequestAborted;
             var apiVersion = ParseAccept(Accept, Conf.DefaultAPIVersion);
@@ -57,11 +58,11 @@ namespace TremendousIIIF.Controllers
                             new[] { $"<{apiVersion.GetAttribute<ProfileUriAttribute>().ProfileUri}>;rel=\"profile\""
                         });
 
-                if(!string.IsNullOrEmpty(manifestId))
+                if (!string.IsNullOrEmpty(manifestId))
                 {
                     manifestId = string.Format(Conf.ManifestUriFormat, manifestId);
                 }
-                return Ok(MakeInfo(apiVersion, metadata, Conf, maxWidth, maxHeight, maxArea, id, requestUrl, manifestId));
+                return Ok(MakeInfo(apiVersion, metadata, Conf, maxWidth, maxHeight, maxArea, id, requestUrl, manifestId, licence));
             }
             catch (FileNotFoundException e)
             {
@@ -85,16 +86,27 @@ namespace TremendousIIIF.Controllers
             }
         }
 
-        private static object MakeInfo(ApiVersion apiVersion, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, string id, string requestUri, string manifestId)
+        private static object MakeInfo(ApiVersion apiVersion, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, string id, string requestUri, string manifestId, string licence)
         {
             var idUri = conf.BaseUri == null ?
                 requestUri.Replace("/info.json", "") :
                 new Uri(conf.BaseUri, id).ToString();
 
+            if (Uri.TryCreate(licence, UriKind.Absolute, out var licenceUri))
+            {
+                // The value of this property MUST be a string drawn from the set of Creative Commons license URIs, 
+                // the RightsStatements.org rights statement URIs, or those added via the Registry of Known Extensions mechanism
+                // we assume the upstream system is setting the correct URI and just validate the domain
+                if (!_validRightsDomains.Contains(licenceUri.Host))
+                {
+                    licenceUri = null;
+                }
+            }
+
             switch (apiVersion)
             {
                 case ApiVersion.v3_0:
-                    return new Types.v3_0.ImageInfo(idUri, metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, manifestId);
+                    return new Types.v3_0.ImageInfo(idUri, metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, manifestId, licenceUri);
                 case ApiVersion.v2_1:
                 default:
                     return new Types.v2_1.ImageInfo(metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, string.Format(conf.GeoDataBaseUri, id))

@@ -104,30 +104,51 @@ namespace TremendousIIIF.ImageProcessing
 
         public async Task<Feature> GetGeoData(Uri imageUri, string geodataPath, CancellationToken token = default)
         {
-            using (var fs = new FileStream(imageUri.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read, LongestBytes, useAsync: true))
+
+            Gdal.AllRegister();
+            Gdal.SetConfigOption("GDAL_DATA", geodataPath);
+            switch (imageUri.Scheme)
             {
-                var format = await _cache.GetOrAddAsync(imageUri.ToString(), () => GetSourceFormat(fs, token));
+                case "http":
+                case "https:":
+                    (var format, var stream) = await LoadHttp(imageUri, token);
+                    using (stream)
+                    {
+                        (var width, var height, var data) = await GetGeodata(stream, format, imageUri);
 
-                Gdal.AllRegister();
-                Gdal.SetConfigOption("GDAL_DATA", geodataPath);
-
-                switch (format)
-                {
-                    // For JP2, we support GEOJP2. Which is, incredibly, a 1x1 pixel GeoTiff embedded in a box with the GEOPJP2 UUID.
-                    case ImageFormat.jp2:
-                        (var width, var height, var data) = await J2KExpander.GetGeoData(_httpClientFactory.CreateClient(), _log, imageUri).ConfigureAwait(false);
-                        Gdal.FileFromMemBuffer("/vsimem/in.tif", data);
                         if (null != data)
                         {
+                            Gdal.FileFromMemBuffer("/vsimem/in.tif", data);
                             return TransformGeoData("/vsimem/in.tif", width, height);
                         }
+
                         throw new IOException("Unsupported source format");
-                    case ImageFormat.tif:
-                        return TransformGeoData(imageUri.LocalPath);
-                    default:
+                    }
+
+                case var _ when imageUri.IsFile:
+                    using (var fs = new FileStream(imageUri.LocalPath, FileMode.Open, FileAccess.Read, FileShare.Read, LongestBytes, useAsync: true))
+                    {
+                        var fformat = await _cache.GetOrAddAsync(imageUri.ToString(), () => GetSourceFormat(fs, token));
+                        switch (fformat)
+                        {
+                            case ImageFormat.jp2:
+                                (var width, var height, var data) = J2KExpander.GetGeoData(fs, _log, imageUri);
+                                if (null != data)
+                                {
+                                    Gdal.FileFromMemBuffer("/vsimem/in.tif", data);
+                                    return TransformGeoData("/vsimem/in.tif", width, height);
+                                }
+                                break;
+                            case ImageFormat.tif:
+                                return TransformGeoData(imageUri.LocalPath);
+                        }
                         throw new IOException("Unsupported source format");
-                }
+
+                    }
+                default:
+                    throw new IOException("Unsupported scheme");
             }
+
         }
 
         public static Feature TransformGeoData(string fileName, int width = 0, int height = 0)
@@ -349,6 +370,33 @@ namespace TremendousIIIF.ImageProcessing
                             ms.Seek(0, SeekOrigin.Begin);
                         }
                         return TiffExpander.ExpandRegion(ms, _log, imageUri, request, allowUpscaling);
+                    }
+                default:
+                    throw new IOException("Unsupported source format");
+            }
+        }
+
+        private async ValueTask<(int, int, byte[])> GetGeodata(Stream stream, ImageFormat imageFormat, Uri imageUri)
+        {
+            switch (imageFormat)
+            {
+                case ImageFormat.jp2:
+                    return J2KExpander.GetGeoData(stream, _log, imageUri);
+                case ImageFormat.tif:
+                    if (stream != null && stream.CanSeek)
+                        return (0, 0, null);
+                    // libtiff requires a seekable stream :(
+                    // waste of memory
+                    using (var ms = new MemoryStream())
+                    {
+                        if (null != stream)
+                        {
+                            await stream.CopyToAsync(ms);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            stream.Dispose();
+                            return (0, 0, ms.ToArray());
+                        }
+                        return (0, 0, null);
                     }
                 default:
                     throw new IOException("Unsupported source format");

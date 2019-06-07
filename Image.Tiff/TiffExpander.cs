@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.IO;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Image.Tiff
 {
@@ -64,23 +65,27 @@ namespace Image.Tiff
 
             var sub_wh = new List<(int, int)>();
 
-            for (var count = 0; tiff.ReadDirectory(); count++)
+            if (tiff.NumberOfDirectories() > 1)
             {
-                int sub_width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
-                int sub_height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
-                sub_wh.Add((sub_width, sub_height));
+                for (var count = 0; tiff.ReadDirectory(); count++)
+                {
+                    int sub_width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
+                    int sub_height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
+                    sub_wh.Add((sub_width, sub_height));
+                }
             }
 
             return new Metadata
-            {
-                Width = width,
-                Height = height,
-                TileWidth = tileWidth,
-                TileHeight = tileHeight,
-                ScalingLevels = (int)(Math.Floor(Math.Log(Math.Max(width, height), 2)) - 3),
-                HasGeoData = GeoKeyDirectoryTag != null,
-                Sizes = sub_wh
-            };
+            (
+                width : width,
+                height : height,
+                tileWidth : tileWidth,
+                tileHeight : tileHeight,
+                scalingLevels : (int)(Math.Floor(Math.Log(Math.Max(width, height), 2)) - 3),
+                hasGeoData : GeoKeyDirectoryTag != null,
+                sizes : sub_wh,
+                qualities:0
+            );
         }
 
         private static (ProcessState state, SKImage image) ReadFullImage(ILogger log, T.Tiff tiff, in ImageRequest request, bool allowSizeAboveFull)
@@ -104,13 +109,72 @@ namespace Image.Tiff
             }
 
             var state = ImageRequestInterpreter.GetInterpretedValues(request, width, height, allowSizeAboveFull);
+
+            // TODO: find which sub image if available best satisfies the resolution request, because at the moment
+            // we're using the first one we find
+
+            if (tiff.NumberOfDirectories() > 1)
+            {
+                var sub_wh = new Dictionary<short, (int, int)>();
+                for (var count = 0; tiff.ReadDirectory(); count++)
+                {
+                    int sub_width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
+                    int sub_height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
+                    sub_wh.Add(tiff.CurrentDirectory(), (sub_width, sub_height));
+
+                    log.LogDebug("Available TIFF Directory {@Dir}, Dims {@X}, {@Y}", tiff.CurrentDirectory(), sub_width, sub_height);
+                }
+
+                // TODO: would first directory ever not be the largest? check spec
+                var w = sub_wh.Max(k => k.Value.Item1);
+                var h = sub_wh.Max(k => k.Value.Item2);
+
+                if (w != width || h != height)
+                {
+                    width = w;
+                    height = h;
+                    state = ImageRequestInterpreter.GetInterpretedValues(request, width, height, allowSizeAboveFull);
+
+                }
+
+                foreach(var dir in sub_wh)
+                {
+                    (var sub_width, var sub_height) = dir.Value;
+                    float scalex = sub_width / (float)width;
+                    float scaley = sub_height / (float)height;
+
+                    var outputScale = scaley;
+                    if (scalex < scaley)
+                    {
+                        outputScale = scalex;
+                    }
+                    
+
+                    if(outputScale >= state.OutputScale)
+                    {
+                        // also need to scale down the region sizes to match!
+                        state.RegionWidth = Convert.ToInt32 (state.RegionWidth * scalex);
+                        state.RegionHeight = Convert.ToInt32(state.RegionHeight * scaley);
+                        state.StartX = Convert.ToInt32(state.StartX * outputScale);
+                        state.StartY = Convert.ToInt32(state.StartY * outputScale);
+                        tiff.SetDirectory(dir.Key);
+                        log.LogDebug("Set TIFF Directory {@Dir}", dir.Key);
+                    }
+                }
+                // tiff.SetDirectory()
+            }
+
+            log.LogDebug("Current TIFF Directory {@Dir}", tiff.CurrentDirectory());
+
+            
             state.HorizontalResolution = Convert.ToUInt16(xres);
             state.VerticalResolution = Convert.ToUInt16(yres);
 
             // TODO: if tiled/striped, calculate how many tiles needed to satisfy region request and convert that to RGB.
             // unless it's full region, in which case current method probably faster. benchmark!
 
-            // TODO: find which sub image if available best satisfies the resolution request
+            
+
 
             if ((width == state.RegionWidth && height == state.RegionHeight) || !tiff.IsTiled())
             {

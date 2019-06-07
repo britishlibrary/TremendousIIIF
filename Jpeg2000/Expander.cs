@@ -33,144 +33,124 @@ namespace Jpeg2000
             (var a, var b) = InitialiseKakaduLogging(log);
             using (a)
             using (b)
+            using (var compSrc = new StreamCompressedSource(stream))
+            using (var family_src = new Cjp2_family_src())
+            using (var wrapped_src = new Cjpx_source())
+            using (var tile_dims = new Ckdu_dims())
             {
-                using (var family_src = new JPEG2000Source(log))
-                using (var wrapped_src = new Cjpx_source())
-                using (var image_dims = new Ckdu_dims())
-                using (var tile_dims = new Ckdu_dims())
+                family_src.open(compSrc);
+                if (1 != wrapped_src.open(family_src, true))
                 {
-                    family_src.Initialise(stream);
-                    family_src.Open(imageUri);
-
-                    var success = wrapped_src.open(family_src, true);
-                    if (success < 0)
-                    {
-                        family_src.close();
-                        wrapped_src.close();
-                        throw new IOException("could not be read as JPEG2000");
-                    }
-
-                    int ref_component = 0;
-
-                    wrapped_src.count_codestreams(ref ref_component);
-                    var layer = wrapped_src.access_layer(0);
-                    var colour = layer.access_colour(0);
-
-                    var codestream = family_src.GetCodestream();
-                    if (!codestream.exists())
-                    {
-                        //codestream.destroy();
-                        codestream.create(wrapped_src.access_codestream(0).open_stream());
-                    }
-
-
-                    codestream.get_dims(ref_component, image_dims);
-                    Ckdu_coords image_size = image_dims.access_size();
-
-                    int levels = codestream.get_min_dwt_levels();
-                    var imageSize = new SKPoint(image_size.x, image_size.y);
-
-                    codestream.get_tile_dims(new Ckdu_coords(0, 0), ref_component, tile_dims);
-
-                    var tileSize = new SKPoint(tile_dims.access_size().x, tile_dims.access_size().y);
-
-                    // if this wasn't compressed with Stiles={X,Y}
-                    if (tileSize == imageSize)
-                    {
-                        using (var param = codestream.access_siz().access_cluster(Ckdu_global.SIZ_params))
-                        {
-                            int tile_y = 0;
-                            param.get(Ckdu_global.Stiles, 0, 0, ref tile_y);
-                            param.get(Ckdu_global.Stile_origin, 0, 0, ref tile_y);
-
-                        }
-                        using (var param = codestream.access_siz().access_cluster(Ckdu_global.COD_params))
-                        {
-
-                            bool usePrecincts = false;
-                            param.get("Cuse_precincts", 0, 0, ref usePrecincts);
-                            if (usePrecincts && tileSize == imageSize)
-                            {
-                                int[] precincts = new int[levels];
-                                for (int i = 0; i < levels; i++)
-                                {
-                                    param.get("Cprecincts", i, 0, ref precincts[i]);
-                                }
-
-                                tileSize = new SKPoint(precincts[0], precincts[0]);
-                            }
-
-                            // if no precincts defined, we should fall back on default size if it reports
-                            // tile size as being image size
-                            else
-                            {
-                                tileSize = new SKPoint(defaultTileWidth, defaultTileWidth);
-                            }
-                        }
-                    }
-
-                    var meta_manager = wrapped_src.access_meta_manager();
-                    var node = meta_manager.access_root();
-                    bool hasGeoData = node.is_geojp2_uuid();
-                    node = node.get_next_descendant(null);
-                    while (node.exists())
-                    {
-                        if (node.is_geojp2_uuid())
-                        {
-                            hasGeoData = true;
-                        }
-                        node = node.get_next_descendant(node);
-                    }
-
-                    codestream.destroy();
                     family_src.close();
-                    wrapped_src.close();
-
-                    return new Metadata
-                    {
-                        Width = Convert.ToInt32(imageSize.X),
-                        Height = Convert.ToInt32(imageSize.Y),
-                        ScalingLevels = levels,
-                        TileWidth = Convert.ToInt32(tileSize.X),
-                        TileHeight = Convert.ToInt32(tileSize.Y),
-                        HasGeoData = hasGeoData,
-                        // TODO: make this an enum
-                        Qualities = colour.get_num_colours()
-                    };
-
+                    throw new IOException("Could not be read as JPEG2000");
                 }
+                log.LogDebug("Opened {@ImageURI}", imageUri);
+
+                var meta_manager = wrapped_src.access_meta_manager();
+                var node = meta_manager.access_root();
+                bool hasGeoData = node.is_geojp2_uuid();
+                node = node.get_next_descendant(null);
+                while (node.exists())
+                {
+                    if (node.is_geojp2_uuid())
+                    {
+                        hasGeoData = true;
+                        log.LogDebug("hasGeoData {@hasGeoData}", hasGeoData);
+                    }
+                    node = node.get_next_descendant(node);
+                }
+
+                var codestream = new Ckdu_codestream();
+                codestream.create(compSrc);
+
+                Ckdu_coords image_size = wrapped_src.access_layer(0).get_layer_size();
+
+                int levels = codestream.get_min_dwt_levels();
+
+                var imageSize = new SKPoint(image_size.x, image_size.y);
+
+                codestream.get_tile_dims(new Ckdu_coords(0, 0), 0, tile_dims);
+
+                var tileSize = new SKPoint(tile_dims.access_size().x, tile_dims.access_size().y);
+
+                // if this wasn't encoded with Stiles={X,Y}, then the tile size will be image size
+                if (tileSize == imageSize)
+                {
+                    using (var param = codestream.access_siz().access_cluster(Ckdu_global.COD_params))
+                    {
+                        bool usePrecincts = false;
+                        param.get(Ckdu_global.Cuse_precincts, 0, 0, ref usePrecincts);
+                        if (usePrecincts && tileSize == imageSize)
+                        {
+                            int[] precincts = new int[levels];
+                            for (int i = 0; i < levels; i++)
+                            {
+                                param.get(Ckdu_global.Cprecincts, i, 0, ref precincts[i]);
+                            }
+
+                            tileSize = new SKPoint(precincts[0], precincts[0]);
+                        }
+
+                        // if no precincts defined, we should fall back on default size if it reports
+                        // tile size as being image size
+                        else
+                        {
+                            tileSize = new SKPoint(defaultTileWidth, defaultTileWidth);
+                        }
+                    }
+                }
+
+                codestream.destroy();
+                family_src.close();
+                wrapped_src.close();
+
+                return new Metadata
+                (
+                    width: Convert.ToInt32(imageSize.X),
+                    height: Convert.ToInt32(imageSize.Y),
+                    scalingLevels: levels,
+                    tileWidth: Convert.ToInt32(tileSize.X),
+                    tileHeight: Convert.ToInt32(tileSize.Y),
+                    hasGeoData: hasGeoData,
+                    // TODO: make this an enum
+                    qualities: 0,//colour.get_num_colours(),
+                    sizes: null
+                );
+
+
             }
         }
 
-        public static async Task<(int, int, byte[])> GetGeoData(HttpClient client, ILogger log, Uri imageUri, CancellationToken token = default)
+        public static (int, int, byte[]) GetGeoData(Stream stream, ILogger log, Uri imageUri, CancellationToken token = default)
         {
-            InitialiseKakaduLogging(log);
 
-            Ckdu_codestream codestream = new Ckdu_codestream();
+            //Ckdu_codestream codestream = new Ckdu_codestream();
             try
             {
-                using (var family_src = new JPEG2000Source(log))
+                (var a, var b) = InitialiseKakaduLogging(log);
+                using (a)
+                using (b)
+                using (var compSrc = new StreamCompressedSource(stream))
+                using (var family_src = new Cjp2_family_src())
                 using (var wrapped_src = new Cjpx_source())
-                using (var jp2_source = new Cjp2_source())
+                using (var tile_dims = new Ckdu_dims())
                 {
-                    await family_src.Initialise(client, imageUri, false, token);
-                    family_src.Open(imageUri);
-
-                    int success = wrapped_src.open(family_src, true);
-                    if (success < 1)
+                    family_src.open(compSrc);
+                    if (1 != wrapped_src.open(family_src, true))
                     {
                         family_src.close();
-                        wrapped_src.close();
-                        throw new IOException("could not be read as JPEG2000");
+                        throw new IOException("Could not be read as JPEG2000");
                     }
+                    log.LogDebug("Opened {@ImageURI}", imageUri);
+                    
+                    //int ref_component = 0;
 
-                    int ref_component = 0;
+                    //codestream.create(wrapped_src.access_codestream(ref_component).open_stream());
 
-                    codestream.create(wrapped_src.access_codestream(ref_component).open_stream());
+                    //Ckdu_dims image_dims = new Ckdu_dims();
 
-                    Ckdu_dims image_dims = new Ckdu_dims();
-                    codestream.get_dims(ref_component, image_dims);
-                    Ckdu_coords image_size = image_dims.access_size();
+                    Ckdu_coords image_size = wrapped_src.access_layer(0).get_layer_size();
+                    //Ckdu_coords image_size = image_dims.access_size();
 
                     var meta_manager = wrapped_src.access_meta_manager();
                     var node = meta_manager.access_root();
@@ -202,8 +182,8 @@ namespace Jpeg2000
             }
             finally
             {
-                if (codestream.exists())
-                    codestream.destroy();
+                //if (codestream.exists())
+                //    codestream.destroy();
             }
         }
 
@@ -218,14 +198,14 @@ namespace Jpeg2000
             using (var wrapped_src = new Cjp2_source())
             using (var srcImageDimensions = new Ckdu_dims())
             using (var srcRegionDimensions = new Ckdu_dims())
-            
+
             using (var limiter = new Ckdu_quality_limiter(quality.WeightedRMSE))
             {
 
                 try
                 {
                     family_src.open(compSrc);
-                    
+
                     if (!wrapped_src.open(family_src))
                     {
                         family_src.close();
@@ -244,7 +224,7 @@ namespace Jpeg2000
                         compositor.set_scale(false, false, false, 1.0f);
                         compositor.get_total_composition_dims(srcImageDimensions);
                         srcRegionDimensions.assign(srcImageDimensions);
-                        
+
                         quality_layers = compositor.get_max_available_quality_layers();
                         // must remove it to properly target ROI
                         compositor.remove_ilayer(initialLayer, false);
@@ -316,6 +296,8 @@ namespace Jpeg2000
                             compositor.add_ilayer(0, extracted_dims, dstImageDimensions);
                             compositor.set_scale(false, false, false, scale);
 
+                            // check_invalid_scale_code() resets to 0 after each call to set_scale(). must call get_total_composition_dims() before calling.
+                            compositor.get_total_composition_dims(extracted_dims);
                             var checkScale = compositor.check_invalid_scale_code();
                             if (0 != checkScale)
                             {
@@ -330,27 +312,27 @@ namespace Jpeg2000
                                 scale = optimal_scale;
                                 compositor.set_scale(false, false, false, scale, scaleDiff);
                                 compositor.get_total_composition_dims(extracted_dims);
-                            } 
+                            }
 
                             compositor.get_total_composition_dims(extracted_dims);
                             Log.LogDebug("get_total_composition_dims extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}",
                                 extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
                             // check if the access size is the expected size as floating point rounding errors 
                             // might occur
-                            const float roundingValue = 0.0001f;
-                            if (((scale - roundingValue) * imageSize.x > 1 && (scale - roundingValue) * imageSize.y > 1) &&
-                                (scale * imageSize.x != viewSize.x ||
-                                scale * imageSize.y != viewSize.y))
-                            {
-                                // attempt to correct by shifting rounding down
-                                compositor.set_scale(false, false, false, 1, scale - roundingValue);
+                            //const float roundingValue = 0.0001f;
+                            //if (((scale - roundingValue) * imageSize.x > 1 && (scale - roundingValue) * imageSize.y > 1) &&
+                            //    (scale * imageSize.x != viewSize.x ||
+                            //    scale * imageSize.y != viewSize.y))
+                            //{
+                            //    // attempt to correct by shifting rounding down
+                            //    compositor.set_scale(false, false, false, 1, scale - roundingValue);
 
-                                compositor.get_total_composition_dims(extracted_dims);
-                                extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
-                                extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
-                                viewSize.Dispose();
-                                viewSize = extracted_dims.access_size();
-                            }
+                            //    compositor.get_total_composition_dims(extracted_dims);
+                            //    extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
+                            //    extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
+                            //    viewSize.Dispose();
+                            //    viewSize = extracted_dims.access_size();
+                            //}
 
                             checkScale = compositor.check_invalid_scale_code();
                             if (0 != checkScale)
@@ -361,7 +343,7 @@ namespace Jpeg2000
                                 var minScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? scale : 0;
                                 var maxScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_LARGE == checkScale ? scale : 1;
 
-                                var optimal_scale = compositor.find_optimal_scale(extracted_dims, 0, minScale, maxScale);
+                                var optimal_scale = compositor.find_optimal_scale(extracted_dims, scale, scale, scale);
                                 scaleDiff = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? optimal_scale - scale : scale - optimal_scale;
                                 scale = optimal_scale;
                                 compositor.set_scale(false, false, false, scale);
@@ -379,8 +361,14 @@ namespace Jpeg2000
                                 while (compositor.process(0, newRegion, Ckdu_global.KDU_COMPOSIT_DEFER_REGION))
                                 {
                                 }
+                                Log.LogDebug("compositor.is_processing_complete: {@prccomp}", compositor.is_processing_complete());
 
                                 var compositorBuffer = compositor.GetCompositionBitmap(extracted_dims);
+                                if (null == compositorBuffer)
+                                {
+                                    Log.LogError("Unable to composite region");
+                                    throw new IOException("Unable to composite region of JPEG2000");
+                                }
                                 using (var bmp = compositorBuffer.AcquireBitmap())
                                 {
                                     return (state, SKImage.FromBitmap(bmp));

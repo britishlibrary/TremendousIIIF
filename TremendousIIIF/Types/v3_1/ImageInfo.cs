@@ -11,7 +11,7 @@ namespace TremendousIIIF.Types.v3_0
     public readonly struct ImageInfo : IImageInfo
     {
         [JsonConstructor]
-        public ImageInfo(string id, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, bool enableGeoService, string manifestId)
+        public ImageInfo(string id, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, bool enableGeoService, string manifestId, Uri licenceUri)
         {
             Protocol = "http://iiif.io/api/image";
             Profile = "level2";
@@ -53,6 +53,8 @@ namespace TremendousIIIF.Types.v3_0
             {
                 PartOf = new List<LinkedObject> { new LinkedObject { Id = manifestId, Type = "Manifest" } };
             }
+
+            Rights = licenceUri;
         }
         [JsonProperty("@context", Order = 1, Required = Required.Always)]
         public string Context { get; }
@@ -96,6 +98,9 @@ namespace TremendousIIIF.Types.v3_0
 
         [JsonProperty("partOf", Order = 24, DefaultValueHandling = DefaultValueHandling.Ignore)]
         public List<LinkedObject> PartOf { get; }
+
+        [JsonProperty("rights", Order = 25, DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public Uri Rights { get; }
 
         [JsonProperty("tiles", Order = 11, NullValueHandling = NullValueHandling.Ignore)]
         public List<Tile> Tiles { get; }

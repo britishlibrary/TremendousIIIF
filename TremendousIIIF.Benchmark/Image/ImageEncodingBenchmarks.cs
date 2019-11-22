@@ -17,13 +17,13 @@ namespace TremendousIIIF.Benchmark.Image
 
         public static ILogger Log = new LoggerFactory().CreateLogger("test");
         [GlobalSetup]
-        public static async Task SetUp()
+        public static void SetUp()
         {
             if (Image == null)
             {
                 var file = new Uri("file:///C:/Source/TremendousIIIF/TremendousIIIF.Benchmark/TestData/RoyalMS.jp2");
                 var request = new ImageRequest(new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.bitonal, ImageFormat.jpg);
-                (var state, var img) = Jpeg2000.J2KExpander.ExpandRegion(null, Log, file, request, false, new Common.Configuration.ImageQuality());
+                (var _, var img) = Jpeg2000.J2KExpander.ExpandRegion(null, Log, file, request, false, new Common.Configuration.ImageQuality());
                 Image = SKSurface.Create(new SKImageInfo(img.Width, img.Height, SKImageInfo.PlatformColorType, SKAlphaType.Premul));
                 Image.Canvas.DrawImage(img, 0, 0);
             }

@@ -11,6 +11,8 @@ using System.Runtime.InteropServices;
 using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 using System.Threading;
+using System.Text;
+using System.Runtime.CompilerServices;
 
 namespace TremendousIIIF.ImageProcessing
 {
@@ -74,44 +76,41 @@ namespace TremendousIIIF.ImageProcessing
 
                 var (angle, originX, originY, newImgWidth, newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
 
-                using (var surface = SKSurface.Create(new SKImageInfo(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType)))
-                using (var canvas = surface.Canvas)
-                using (var region = new SKRegion())
-
+                using var surface = SKSurface.Create(new SKImageInfo(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType));
+                using var canvas = surface.Canvas;
+                using var region = new SKRegion();
+                // If the rotation parameter includes mirroring ("!"), the mirroring is applied before the rotation.
+                if (request.Rotation.Mirror)
                 {
-                    // If the rotation parameter includes mirroring ("!"), the mirroring is applied before the rotation.
-                    if (request.Rotation.Mirror)
-                    {
-                        canvas.Translate(newImgWidth, 0);
-                        canvas.Scale(-1, 1);
-                    }
-
-                    canvas.Translate(originX, originY);
-                    canvas.RotateDegrees(angle, 0, 0);
-                    // reset clip rects to rotated boundaries
-                    region.SetRect(new SKRectI(0 - (int)originX, 0 - (int)originY, newImgWidth, newImgHeight));
-                    canvas.ClipRegion(region);
-
-                    using (var paint = new SKPaint())
-                    {
-                        paint.FilterQuality = paintQuality;
-                        // if this is grey or bitonal, apply colour filter
-                        ColourFilters.TryGetValue(request.Quality, out var cf);
-                        paint.ColorFilter = cf;
-
-                        canvas.DrawImage(imageRegion, new SKRect(0, 0, expectedWidth, expectedHeight), paint);
-                    }
-
-                    return Encode(surface,
-                        expectedWidth,
-                        expectedHeight,
-                        encodingStrategy,
-                        request.Format,
-                        quality.GetOutputFormatQuality(request.Format),
-                        pdfMetadata,
-                        state.HorizontalResolution,
-                        state.VerticalResolution);
+                    canvas.Translate(newImgWidth, 0);
+                    canvas.Scale(-1, 1);
                 }
+
+                canvas.Translate(originX, originY);
+                canvas.RotateDegrees(angle, 0, 0);
+                // reset clip rects to rotated boundaries
+                region.SetRect(new SKRectI(0 - (int)originX, 0 - (int)originY, newImgWidth, newImgHeight));
+                canvas.ClipRegion(region);
+
+                using (var paint = new SKPaint())
+                {
+                    paint.FilterQuality = paintQuality;
+                    // if this is grey or bitonal, apply colour filter
+                    ColourFilters.TryGetValue(request.Quality, out var cf);
+                    paint.ColorFilter = cf;
+
+                    canvas.DrawImage(imageRegion, new SKRect(0, 0, expectedWidth, expectedHeight), paint);
+                }
+
+                return Encode(surface,
+                    expectedWidth,
+                    expectedHeight,
+                    encodingStrategy,
+                    request.Format,
+                    quality.GetOutputFormatQuality(request.Format),
+                    pdfMetadata,
+                    state.HorizontalResolution,
+                    state.VerticalResolution);
             }
         }
 
@@ -183,18 +182,23 @@ namespace TremendousIIIF.ImageProcessing
 
         public static Stream EncodeSkiaImage(in SKSurface surface, in SKEncodedImageFormat format, int q, ushort horizontalResolution, ushort verticalResolution)
         {
-            using (var image = surface.Snapshot())
+            using var image = surface.Snapshot();
+            var data = image.Encode(format, q);
+            if (format == SKEncodedImageFormat.Jpeg)
             {
-                var data = image.Encode(format, q);
-                if (format == SKEncodedImageFormat.Jpeg)
-                {
-                    SetJpgDpi(data.Data, data.Size, horizontalResolution, verticalResolution);
-                }
-
-                var ms = data.AsStream(false);
-                ms.Seek(0, SeekOrigin.Begin);
-                return ms;
+                SetJpgDpi(data.Data, data.Size, horizontalResolution, verticalResolution);
             }
+            if (format == SKEncodedImageFormat.Png)
+            {
+                var newdata = SetPngDpi(data.Data, data.Size, horizontalResolution, verticalResolution);
+
+                data.Dispose();
+                //data = SKData.Create(newdata., newdata.Length);
+            }
+
+            var ms = data.AsStream(false);
+            ms.Seek(0, SeekOrigin.Begin);
+            return ms;
         }
         /// <summary>
         /// Overwrite the DPI of a JPEG
@@ -226,17 +230,22 @@ namespace TremendousIIIF.ImageProcessing
                 var header = new Span<byte>(jpgData.ToPointer(), (int)size);
                 // i must be missing something here, this is convoluted to say the least
                 var densityByteRef = MemoryMarshal.GetReference(header.Slice(13, 1));
-                System.Runtime.CompilerServices.Unsafe.Write(&densityByteRef, 0x01);
+                Unsafe.Write(&densityByteRef, 0x01);
                 // JPEG is big endian
                 BinaryPrimitives.WriteUInt16BigEndian(header.Slice(14, 2), horizontalResolution);
                 BinaryPrimitives.WriteUInt16BigEndian(header.Slice(16, 2), verticalResolution);
             }
         }
-
-        private static void SetPngDpi(IntPtr pngData, long dataLength, ushort horizontalResolution, ushort verticalResolution)
+        public struct Chunk
+        {
+            public uint Ppx { get; set; }
+            public uint Ppy { get; set; }
+            public byte Spec { get; set; }
+        }
+        private static Span<byte> SetPngDpi(IntPtr pngData, long dataLength, ushort horizontalResolution, ushort verticalResolution)
         {
             // PNG
-            // The pHYs chunk specifies the intended pixel size or aspect ratio for display of the image.It contains:
+            // The pHYs chunk specifies the intended pixel size or aspect ratio for display of the image. It contains:
 
             // Pixels per unit, X axis: 4 bytes(unsigned integer)
             // Pixels per unit, Y axis: 4 bytes(unsigned integer)
@@ -244,7 +253,33 @@ namespace TremendousIIIF.ImageProcessing
             // PNG uses pixels per m
 
             // need to read each chunk until we find pHYs, then overwrite it
-            // EXCEPT that the Skia PNG encoder doesn't set it at all. will have to add it in, much more complicated :(
+            // EXCEPT that the Skia PNG encoder doesn't set it at all.
+            // pHYs must appear before first IDAT chunk
+
+
+            unsafe
+            {
+                var pngSpan = new ReadOnlySpan<byte>(pngData.ToPointer(), (int)dataLength);
+                var idat = Encoding.ASCII.GetBytes("IDAT").AsSpan();
+
+                var idat_pos = pngSpan.IndexOf(idat);
+                var preamble = pngSpan.Slice(0, idat_pos);
+                var rest = pngSpan.Slice(idat_pos);
+
+                var chunk = new Chunk() { Ppx = horizontalResolution, Ppy = verticalResolution, Spec = 0x01 };
+
+                void* valPtr = Unsafe.AsPointer(ref chunk);
+                var physSpan = new Span<byte>(valPtr, Marshal.SizeOf<Chunk>());
+
+                // create pHYs
+                var outputSpan = new Span<byte>();
+                preamble.CopyTo(outputSpan);
+                physSpan.CopyTo(outputSpan);
+                rest.CopyTo(outputSpan);
+
+                return outputSpan;
+            }
+
             var offset = 8; // skip header
 
             var chunkHeader = new byte[8];
@@ -371,12 +406,10 @@ namespace TremendousIIIF.ImageProcessing
             using (var writer = SKDocument.CreatePdf(skstream, metadata))
             using (var paint = new SKPaint())
             {
-                using (var canvas = writer.BeginPage(width, height))
-                {
-                    paint.FilterQuality = SKFilterQuality.High;
-                    canvas.DrawSurface(surface, new SKPoint(0, 0), paint);
-                    writer.EndPage();
-                }
+                using var canvas = writer.BeginPage(width, height);
+                paint.FilterQuality = SKFilterQuality.High;
+                canvas.DrawSurface(surface, new SKPoint(0, 0), paint);
+                writer.EndPage();
             }
             output.Seek(0, SeekOrigin.Begin);
             return output;

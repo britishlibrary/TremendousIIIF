@@ -26,10 +26,10 @@ namespace TremendousIIIF.Benchmark.JPEG2000
         }
 
         [Benchmark(Baseline =true)]
-        public Task<(ProcessState, SKImage)> RegionCompositor() => J2KExpander.ExpandRegionCompositor(null, Logger, FileUri, Request, false, Quality);
+        public (ProcessState, SKImage) RegionCompositor() => J2KExpander.ExpandRegion(null, Logger, FileUri, Request, false, Quality);
 
-        [Benchmark]
-        public Task<(ProcessState, SKImage)> RegionDecompressor() => J2KExpander.ExpandRegionDecompressor(null, Logger, FileUri, Request, false, Quality);
+        //[Benchmark]
+        //public Task<(ProcessState, SKImage)> RegionDecompressor() => J2KExpander.ExpandRegionDecompressor(null, Logger, FileUri, Request, false, Quality);
 
         public C.ImageQuality Quality = new C.ImageQuality();
         [ParamsAllValues]

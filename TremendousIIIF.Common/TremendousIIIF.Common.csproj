@@ -2,16 +2,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <TargetFrameworks>net48;netcoreapp2.2</TargetFrameworks>
     <ProjectGuid>{AEDB7099-8BF0-4CAE-A531-048188297A4E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>TremendousIIIF.Common</RootNamespace>
     <AssemblyName>TremendousIIIF.Common</AssemblyName>
-    <TargetFrameworks>netstandard2.0;netcoreapp2.2</TargetFrameworks>
+    <Platform>AnyCPU</Platform>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+
+
     <FileAlignment>512</FileAlignment>
-    <Title>TremendousIIIF.COmmon</Title>
+    <Title>TremendousIIIF.Common</Title>
     <Version>1.0.0.0</Version>
     <Copyright>Copyright © The British Library 2017</Copyright>
     <Company>The British Library</Company>
@@ -42,7 +47,7 @@
 
   <ItemGroup>
     <PackageReference Include="Serilog">
-      <Version>2.8.0</Version>
+      <Version>2.9.0</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

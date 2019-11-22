@@ -14,12 +14,12 @@ namespace Image.Tiff
     /// </summary>
     public class TiffHttpSource : TiffStream
     {
-        private HttpClient httpClient;
+        private readonly HttpClient httpClient;
         private long _size = 0;
         private MemoryStream _data;
-        private Uri _imageUri;
+        private readonly Uri _imageUri;
         private long _offset = 0;
-        private ILogger Log;
+        private readonly ILogger Log;
 
         public TiffHttpSource(HttpClient httpClient, ILogger log, Uri imageUri)
         {
@@ -67,44 +67,42 @@ namespace Image.Tiff
 
         private async Task GetData()
         {
-            using (var request = new HttpRequestMessage(HttpMethod.Get, _imageUri))
+            using var request = new HttpRequestMessage(HttpMethod.Get, _imageUri);
+            try
             {
-                 try
+                var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                 {
-                    var response = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK || response.StatusCode == System.Net.HttpStatusCode.PartialContent)
                     {
-                        if (response.StatusCode == System.Net.HttpStatusCode.OK || response.StatusCode == System.Net.HttpStatusCode.PartialContent)
-                        {
-                            _size = response.Content.Headers.ContentLength.GetValueOrDefault();
-                            _data = new MemoryStream((int)_size);
-                            var data = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                            await data.CopyToAsync(_data).ConfigureAwait(false);
-                            await data.FlushAsync();
-                            response.Dispose();
-                            return;
-                        }
-                        switch (response.StatusCode)
-                        {
-                            case System.Net.HttpStatusCode.NotFound:
-                                throw new FileNotFoundException("Unable to load source image", _imageUri.ToString());
-                            default:
-                            case System.Net.HttpStatusCode.InternalServerError:
-                                throw new IOException("Unable to load source image");
-                        }
+                        _size = response.Content.Headers.ContentLength.GetValueOrDefault();
+                        _data = new MemoryStream((int)_size);
+                        var data = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                        await data.CopyToAsync(_data).ConfigureAwait(false);
+                        await data.FlushAsync();
+                        response.Dispose();
+                        return;
+                    }
+                    switch (response.StatusCode)
+                    {
+                        case System.Net.HttpStatusCode.NotFound:
+                            throw new FileNotFoundException("Unable to load source image", _imageUri.ToString());
+                        default:
+                        case System.Net.HttpStatusCode.InternalServerError:
+                            throw new IOException("Unable to load source image");
                     }
                 }
-                catch (TaskCanceledException e)
+            }
+            catch (TaskCanceledException e)
+            {
+                if (e.CancellationToken.IsCancellationRequested)
                 {
-                    if (e.CancellationToken.IsCancellationRequested)
-                    {
-                        Log.LogError(e, "HTTP Request Cancelled");
-                        throw;
-                    }
-                    else
-                    {
-                        Log.LogError(e, "HTTP Request Failed");
-                        throw e.InnerException;
-                    }
+                    Log.LogError(e, "HTTP Request Cancelled");
+                    throw;
+                }
+                else
+                {
+                    Log.LogError(e, "HTTP Request Failed");
+                    throw e.InnerException;
                 }
             }
         }

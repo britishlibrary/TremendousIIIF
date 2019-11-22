@@ -19,7 +19,7 @@ namespace TremendousIIIF.Types.v3_0
             ExtraFeatures = new List<string> { "rotationArbitrary", "mirroring", "profileLinkHeader" };
             // bitonal now optional level 2
             // see https://github.com/IIIF/api/pull/1809
-            ExtraQualities = new List<string> { "gray" };
+            ExtraQualities = new List<string> { "color", "gray" };
             ID = id;
             Context = ApiVersion.v3_0.GetAttribute<ContextUriAttribute>().ContextUri;
             Height = metadata.Height;
@@ -41,10 +41,7 @@ namespace TremendousIIIF.Types.v3_0
                 ExtraFeatures.Add("sizeUpscaling");
             if (metadata.HasGeoData && enableGeoService)
                 ExtraFeatures.Add("GeoJSON");
-            if (metadata.Qualities == 3)
-            {
-                ExtraQualities.Add("color");
-            }
+
             if (conf.AllowBitonal)
             {
                 ExtraQualities.Add("bitonal");

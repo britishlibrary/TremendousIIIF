@@ -28,7 +28,7 @@ namespace TremendousIIIF.Benchmark
         {
             var plog = new LoggerFactory().CreateLogger<ImageProcessing.ImageProcessing>();
             var llog = new LoggerFactory().CreateLogger<ImageProcessing.ImageLoader>();
-            IP = new ImageProcessing.ImageProcessing( plog, new ImageProcessing.ImageLoader(llog, null));
+            IP = new ImageProcessing.ImageProcessing( plog, new ImageProcessing.ImageLoader(llog, null, null));
             ImageUri = new Uri("file:///C:/Source/TremendousIIIF/TremendousIIIF.Benchmark/TestData/RoyalMS.jp2");
             Quality = new Common.Configuration.ImageQuality();
             Request = new ImageRequest(new ImageRegion(ImageRegionMode.Full), new ImageSize(ImageSizeMode.Max, 1), new ImageRotation(0, false), ImageQuality.gray, ImageFormat.jpg);

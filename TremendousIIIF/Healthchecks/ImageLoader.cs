@@ -30,7 +30,7 @@ namespace TremendousIIIF.Healthchecks
             try
             {
                 var loader = new ImageProcessing.ImageLoader(_logger, _cache, _httpClientFactory);
-                await loader.LoadHttp(testImage, cancellationToken);
+                await loader.GetMetadata(testImage, _conf.DefaultTileWidth, cancellationToken);
                 return HealthCheckResult.Healthy();
             }
             catch (Exception e)

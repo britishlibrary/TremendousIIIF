@@ -31,7 +31,7 @@ namespace Jpeg2000
             IntPtr tgt_handle = tgt.get_buf(ref tgt_row_gap, true);
             for (var buf = bufferList.First; buf != null; buf = buf.Next)
             {
-                if (buf.Value.buffer_handle == tgt_handle)
+                if (buf.Value.BufferHandle == tgt_handle)
                 {
                     return buf;
                 }
@@ -61,7 +61,6 @@ namespace Jpeg2000
         /// </summary>
         public override void delete_buffer(Ckdu_compositor_buf buf)
         {
-            BitmapBuffer equiv = null;
             if (bufferList.Count > 0)
             {
                 var buffer = Find(buf);
@@ -69,7 +68,7 @@ namespace Jpeg2000
                 {
                     return;
                 }
-                equiv = buffer.Value;
+                BitmapBuffer equiv = buffer.Value;
                 bufferList.Remove(buffer);
                 equiv.Dispose();
             }

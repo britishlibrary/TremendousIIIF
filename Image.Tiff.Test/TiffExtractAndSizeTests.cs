@@ -24,7 +24,7 @@ namespace Image.Tiff.Test
 
         #region Test regions and colours
 
-        static RGB[,] TestColours = {
+        static readonly RGB[,] TestColours = {
             { (61, 170, 126), (61, 107, 178), (82, 85, 234), (164, 122, 110), (129, 226, 88), (91, 37, 121), (138, 128, 42), (6, 85, 234), (121, 109, 204), (65, 246, 84) },
             { (195, 133, 120), (171, 43, 102), (118, 45, 130), (242, 105, 171), (5, 85, 105), (113, 58, 41), (223, 69, 3), (45, 79, 140), (35, 117, 248), (121, 156, 184) },
             { (168, 92, 163), (28, 91, 143), (86, 41, 173), (111, 230, 29), (174, 189, 7), (18, 139, 88), (93, 168, 128), (35, 2, 14), (204, 105, 137), (18, 86, 128) },
@@ -72,7 +72,7 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (var state, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (var _, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
 
             Assert.IsNotNull(img, "Image is null");
             Assert.AreEqual(1000, img.Width, "Image width does not match expected width");

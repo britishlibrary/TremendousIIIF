@@ -1,26 +1,25 @@
 # TremendousIIIF
 
-A bigly good IIIF image server.
+A bigly good IIIF image server. What's IIIF? Why, it's the International Image Interoperability Framework! https://iiif.io/
 
 ## Features
 
 (or, why another image server)
 
 - Complies with IIIF Image API 2.1, level 2
-- Complies with IIIF Image API 3.0 (RC2), level 2
-- Supports additional features from IIIF Image API 2.1 above level 2, such as `square` region, `sizeAboveFull`, `arbitrary` rotation, `mirroring`
-- Supports JPG, PNG or WEBP output encoding
+- Complies with IIIF Image API 3.0 (beta), level 2
+- Supports additional features from IIIF Image API above level 2, such as `square` region, `sizeAboveFull`, `arbitrary` rotation, `mirroring`
 - Supports JPEG2000 source (and output), using the commercial Kakadu library 
 - Supports TIFF source as a last resort (not recomended)
 - Access source images directly over HTTP (with built in retries), or via file system
 - Uses the Skia library for image manipulation (as used in Chrome, and is very fast)
 - Configuration lets you control things like `sizeAboveFull`, `maxArea`, `maxWidth` or `maxHeight`
 - supports JPG, PNG, WEBP, PDF output natively, experimental TIFF and JP2 output (everything above JPG & PNG configurable)
-- Supports reading Geo data from GeoTIFF and JPEG2000 images (if data is stored using the "GeoJP2" method)
+- Supports reading Geo data from GeoTIFF and JPEG2000 images (if data is stored using the "GeoJP2" method). *Experimental!*
 
 ## Dependencies
 
-.NET 4.7.2 (and therefore Windows, although see the the Future section below for plans)
+.NET 4.8 (and therefore Windows, although see the the Future section below for plans)
 
 Kakadu 7.10.7, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the *runtime* directory (this is a change in dotnet core 2).
 
@@ -115,4 +114,4 @@ TremendousIIIF is written from scratch, but based on the accumulated knowledge o
 
 ## Future
 
-Currently builds net472/netstandard2.0/netcoreapp2.2, but not all dependecies are fully compatable (yet). Kakadu is the blocker, as managed C++ (sometimes referred to a C++/CLI) is not supported in dotnet core. It's quite a large undertaking to generate the Kakadu bindings through P/Invoke as Kakadu uses it's own "hyperdock" system to generate them. 
+Currently builds net48/netcoreapp2.2, but not all dependecies are fully compatable (yet). Kakadu is the blocker, as managed C++ (sometimes referred to a C++/CLI) is not supported in dotnet core. It's quite a large undertaking to generate the Kakadu bindings through P/Invoke as Kakadu uses it's own "hyperdock" system to generate them. 

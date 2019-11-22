@@ -10,8 +10,8 @@ using Microsoft.Extensions.Logging;
 using LazyCache;
 using System.Threading.Tasks;
 using System.Threading;
-using Microsoft.Extensions.Logging.Internal;
 using TremendousIIIF.ImageProcessing;
+using System.Collections.Generic;
 
 namespace TremendousIIIF.Test.ImageProcessing
 {
@@ -150,7 +150,7 @@ namespace TremendousIIIF.Test.ImageProcessing
             catch (AggregateException e)
             {
                 handler.Verify(v => v.Send(It.IsAny<HttpRequestMessage>()), Times.Once);
-                mockLogger.Verify(v => v.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Once);
+                mockLogger.Verify(v => v.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<IReadOnlyList<KeyValuePair<string, object>>>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Once);
                 throw e.InnerException;
             }
         }

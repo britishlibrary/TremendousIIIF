@@ -1,15 +1,12 @@
-﻿using System;
+﻿using Image.Common;
 using kdu_mni;
-using SkiaSharp;
-using Image.Common;
-using System.Net.Http;
 using Microsoft.Extensions.Logging;
-using System.IO;
-using C = TremendousIIIF.Common.Configuration;
-using System.Threading.Tasks;
+using SkiaSharp;
+using System;
 using System.Buffers;
+using System.IO;
 using System.Threading;
-using System.Runtime.InteropServices;
+using C = TremendousIIIF.Common.Configuration;
 
 namespace Jpeg2000
 {
@@ -76,27 +73,25 @@ namespace Jpeg2000
                 // if this wasn't encoded with Stiles={X,Y}, then the tile size will be image size
                 if (tileSize == imageSize)
                 {
-                    using (var param = codestream.access_siz().access_cluster(Ckdu_global.COD_params))
+                    using var param = codestream.access_siz().access_cluster(Ckdu_global.COD_params);
+                    bool usePrecincts = false;
+                    param.get(Ckdu_global.Cuse_precincts, 0, 0, ref usePrecincts);
+                    if (usePrecincts && tileSize == imageSize)
                     {
-                        bool usePrecincts = false;
-                        param.get(Ckdu_global.Cuse_precincts, 0, 0, ref usePrecincts);
-                        if (usePrecincts && tileSize == imageSize)
+                        int[] precincts = new int[levels];
+                        for (int i = 0; i < levels; i++)
                         {
-                            int[] precincts = new int[levels];
-                            for (int i = 0; i < levels; i++)
-                            {
-                                param.get(Ckdu_global.Cprecincts, i, 0, ref precincts[i]);
-                            }
-
-                            tileSize = new SKPoint(precincts[0], precincts[0]);
+                            param.get(Ckdu_global.Cprecincts, i, 0, ref precincts[i]);
                         }
 
-                        // if no precincts defined, we should fall back on default size if it reports
-                        // tile size as being image size
-                        else
-                        {
-                            tileSize = new SKPoint(defaultTileWidth, defaultTileWidth);
-                        }
+                        tileSize = new SKPoint(precincts[0], precincts[0]);
+                    }
+
+                    // if no precincts defined, we should fall back on default size if it reports
+                    // tile size as being image size
+                    else
+                    {
+                        tileSize = new SKPoint(defaultTileWidth, defaultTileWidth);
                     }
                 }
 
@@ -142,7 +137,7 @@ namespace Jpeg2000
                         throw new IOException("Could not be read as JPEG2000");
                     }
                     log.LogDebug("Opened {@ImageURI}", imageUri);
-                    
+
                     //int ref_component = 0;
 
                     //codestream.create(wrapped_src.access_codestream(ref_component).open_stream());
@@ -254,128 +249,120 @@ namespace Jpeg2000
                     compositor.set_max_quality_layers(layers);
                     Log.LogDebug("Set max quality layers: {@Layers}", layers);
 
-                    using (var imageSize = srcRegionDimensions.access_size())
-                    using (var imagePosition = srcRegionDimensions.access_pos())
+                    using var imageSize = srcRegionDimensions.access_size();
+                    using var imagePosition = srcRegionDimensions.access_pos();
+                    Log.LogDebug("Access size {@AccessSize}", imageSize);
+                    Log.LogDebug("Access Position {@AccessPosition}", imagePosition);
+
+                    float imageScale = 1;
+
+                    var scale = state.OutputScale;
+                    var scaleDiff = 0f;
+                    imageScale = state.ImageScale;
+
+                    // needs to be able to handle regions 
+                    imageSize.x = Convert.ToInt32(Math.Round(state.RegionWidth / scale));
+                    imageSize.y = Convert.ToInt32(Math.Round(state.RegionHeight / scale));
+
+                    imagePosition.x = state.StartX;
+                    imagePosition.y = state.StartY;
+
+                    using var extracted_dims = new Ckdu_dims();
+                    using var dstImageDimensions = new Ckdu_dims();
+                    //dstImageDimensions.assign(srcImageDimensions);
+                    extracted_dims.assign(srcImageDimensions);
+                    extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
+                    extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
+
+                    //extracted_dims.access_pos().assign(imagePosition);
+                    //extracted_dims.access_pos().x = state.StartX;
+                    //extracted_dims.access_pos().y = state.StartY;
+                    dstImageDimensions.access_pos().x = 0;
+                    dstImageDimensions.access_pos().y = 0;
+                    dstImageDimensions.access_size().x = state.OutputWidth;
+                    dstImageDimensions.access_size().x = state.OutputHeight;
+
+                    var viewSize = extracted_dims.access_size();
+                    Log.LogDebug("add_ilayer extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}",
+                        extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
+
+                    compositor.add_ilayer(0, extracted_dims, dstImageDimensions);
+                    compositor.set_scale(false, false, false, scale);
+
+                    // check_invalid_scale_code() resets to 0 after each call to set_scale(). must call get_total_composition_dims() before calling.
+                    compositor.get_total_composition_dims(extracted_dims);
+                    var checkScale = compositor.check_invalid_scale_code();
+                    if (0 != checkScale)
                     {
-                        Log.LogDebug("Access size {@AccessSize}", imageSize);
-                        Log.LogDebug("Access Position {@AccessPosition}", imagePosition);
+                        Log.LogDebug("Scaling error: CheckScale {@CheckScale} Requested {@Scale} Dims {@Dims}", checkScale, scale, viewSize);
+                        // we've come up with a scale factor which is (probably) way too small
+                        // ask Kakadu to come up with a valid one that's close
+                        var minScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? scale : 0;
+                        var maxScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_LARGE == checkScale ? scale : 1;
 
-                        float imageScale = 1;
-
-                        var scale = state.OutputScale;
-                        var scaleDiff = 0f;
-                        imageScale = state.ImageScale;
-
-                        // needs to be able to handle regions 
-                        imageSize.x = Convert.ToInt32(Math.Round(state.RegionWidth / scale));
-                        imageSize.y = Convert.ToInt32(Math.Round(state.RegionHeight / scale));
-
-                        imagePosition.x = state.StartX;
-                        imagePosition.y = state.StartY;
-
-                        using (var extracted_dims = new Ckdu_dims())
-                        using (var dstImageDimensions = new Ckdu_dims())
-                        {
-                            //dstImageDimensions.assign(srcImageDimensions);
-                            extracted_dims.assign(srcImageDimensions);
-                            extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
-                            extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
-
-                            //extracted_dims.access_pos().assign(imagePosition);
-                            //extracted_dims.access_pos().x = state.StartX;
-                            //extracted_dims.access_pos().y = state.StartY;
-                            dstImageDimensions.access_pos().x = 0;
-                            dstImageDimensions.access_pos().y = 0;
-                            dstImageDimensions.access_size().x = state.OutputWidth;
-                            dstImageDimensions.access_size().x = state.OutputHeight;
-
-                            var viewSize = extracted_dims.access_size();
-                            Log.LogDebug("add_ilayer extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}",
-                                extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
-
-                            compositor.add_ilayer(0, extracted_dims, dstImageDimensions);
-                            compositor.set_scale(false, false, false, scale);
-
-                            // check_invalid_scale_code() resets to 0 after each call to set_scale(). must call get_total_composition_dims() before calling.
-                            compositor.get_total_composition_dims(extracted_dims);
-                            var checkScale = compositor.check_invalid_scale_code();
-                            if (0 != checkScale)
-                            {
-                                Log.LogDebug("Scaling error: CheckScale {@CheckScale} Requested {@Scale} Dims {@Dims}", checkScale, scale, viewSize);
-                                // we've come up with a scale factor which is (probably) way too small
-                                // ask Kakadu to come up with a valid one that's close
-                                var minScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? scale : 0;
-                                var maxScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_LARGE == checkScale ? scale : 1;
-
-                                var optimal_scale = compositor.find_optimal_scale(extracted_dims, 0, minScale, maxScale);
-                                scaleDiff = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? optimal_scale - scale : scale - optimal_scale;
-                                scale = optimal_scale;
-                                compositor.set_scale(false, false, false, scale, scaleDiff);
-                                compositor.get_total_composition_dims(extracted_dims);
-                            }
-
-                            compositor.get_total_composition_dims(extracted_dims);
-                            Log.LogDebug("get_total_composition_dims extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}",
-                                extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
-                            // check if the access size is the expected size as floating point rounding errors 
-                            // might occur
-                            //const float roundingValue = 0.0001f;
-                            //if (((scale - roundingValue) * imageSize.x > 1 && (scale - roundingValue) * imageSize.y > 1) &&
-                            //    (scale * imageSize.x != viewSize.x ||
-                            //    scale * imageSize.y != viewSize.y))
-                            //{
-                            //    // attempt to correct by shifting rounding down
-                            //    compositor.set_scale(false, false, false, 1, scale - roundingValue);
-
-                            //    compositor.get_total_composition_dims(extracted_dims);
-                            //    extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
-                            //    extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
-                            //    viewSize.Dispose();
-                            //    viewSize = extracted_dims.access_size();
-                            //}
-
-                            checkScale = compositor.check_invalid_scale_code();
-                            if (0 != checkScale)
-                            {
-                                Log.LogDebug("Scaling error: CheckScale {@CheckScale} Requested {@Scale} Dims {@Dims}", checkScale, scale, viewSize);
-                                // we've come up with a scale factor which is (probably) way too small
-                                // ask Kakadu to come up with a valid one that's close
-                                var minScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? scale : 0;
-                                var maxScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_LARGE == checkScale ? scale : 1;
-
-                                var optimal_scale = compositor.find_optimal_scale(extracted_dims, scale, scale, scale);
-                                scaleDiff = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? optimal_scale - scale : scale - optimal_scale;
-                                scale = optimal_scale;
-                                compositor.set_scale(false, false, false, scale);
-                                compositor.get_total_composition_dims(extracted_dims);
-                            }
-
-                            compositor.set_buffer_surface(extracted_dims);
-                            compositor.set_quality_limiting(limiter, quality.OutputDpi, quality.OutputDpi);
-                            Log.LogDebug("Set quality limiting: {@Limiter}, {@HorizontalPPI}, {@VerticalPPI}",
-                                limiter, quality.OutputDpi, quality.OutputDpi);
-
-                            using (Ckdu_dims newRegion = new Ckdu_dims())
-                            {
-                                // we're only interested in the final composited image
-                                while (compositor.process(0, newRegion, Ckdu_global.KDU_COMPOSIT_DEFER_REGION))
-                                {
-                                }
-                                Log.LogDebug("compositor.is_processing_complete: {@prccomp}", compositor.is_processing_complete());
-
-                                var compositorBuffer = compositor.GetCompositionBitmap(extracted_dims);
-                                if (null == compositorBuffer)
-                                {
-                                    Log.LogError("Unable to composite region");
-                                    throw new IOException("Unable to composite region of JPEG2000");
-                                }
-                                using (var bmp = compositorBuffer.AcquireBitmap())
-                                {
-                                    return (state, SKImage.FromBitmap(bmp));
-                                }
-                            }
-                        }
+                        var optimal_scale = compositor.find_optimal_scale(extracted_dims, 0, minScale, maxScale);
+                        scaleDiff = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? optimal_scale - scale : scale - optimal_scale;
+                        scale = optimal_scale;
+                        compositor.set_scale(false, false, false, scale, scaleDiff);
+                        compositor.get_total_composition_dims(extracted_dims);
                     }
+
+                    compositor.get_total_composition_dims(extracted_dims);
+                    Log.LogDebug("get_total_composition_dims extracted dimension: {@AccessPos}, {@AccessSize}, {@IsEmpty}, {@Scale}",
+                        extracted_dims.access_pos(), extracted_dims.access_size(), extracted_dims.is_empty(), scale);
+                    // check if the access size is the expected size as floating point rounding errors 
+                    // might occur
+                    //const float roundingValue = 0.0001f;
+                    //if (((scale - roundingValue) * imageSize.x > 1 && (scale - roundingValue) * imageSize.y > 1) &&
+                    //    (scale * imageSize.x != viewSize.x ||
+                    //    scale * imageSize.y != viewSize.y))
+                    //{
+                    //    // attempt to correct by shifting rounding down
+                    //    compositor.set_scale(false, false, false, 1, scale - roundingValue);
+
+                    //    compositor.get_total_composition_dims(extracted_dims);
+                    //    extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
+                    //    extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
+                    //    viewSize.Dispose();
+                    //    viewSize = extracted_dims.access_size();
+                    //}
+
+                    checkScale = compositor.check_invalid_scale_code();
+                    if (0 != checkScale)
+                    {
+                        Log.LogDebug("Scaling error: CheckScale {@CheckScale} Requested {@Scale} Dims {@Dims}", checkScale, scale, viewSize);
+                        // we've come up with a scale factor which is (probably) way too small
+                        // ask Kakadu to come up with a valid one that's close
+                        var minScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? scale : 0;
+                        var maxScale = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_LARGE == checkScale ? scale : 1;
+
+                        var optimal_scale = compositor.find_optimal_scale(extracted_dims, scale, scale, scale);
+                        scaleDiff = Ckdu_global.KDU_COMPOSITOR_SCALE_TOO_SMALL == checkScale ? optimal_scale - scale : scale - optimal_scale;
+                        scale = optimal_scale;
+                        compositor.set_scale(false, false, false, scale);
+                        compositor.get_total_composition_dims(extracted_dims);
+                    }
+
+                    compositor.set_buffer_surface(extracted_dims);
+                    compositor.set_quality_limiting(limiter, quality.OutputDpi, quality.OutputDpi);
+                    Log.LogDebug("Set quality limiting: {@Limiter}, {@HorizontalPPI}, {@VerticalPPI}",
+                        limiter, quality.OutputDpi, quality.OutputDpi);
+
+                    using Ckdu_dims newRegion = new Ckdu_dims();
+                    // we're only interested in the final composited image
+                    while (compositor.process(0, newRegion, Ckdu_global.KDU_COMPOSIT_DEFER_REGION))
+                    {
+                    }
+                    Log.LogDebug("compositor.is_processing_complete: {@prccomp}", compositor.is_processing_complete());
+
+                    var compositorBuffer = compositor.GetCompositionBitmap(extracted_dims);
+                    if (null == compositorBuffer)
+                    {
+                        Log.LogError("Unable to composite region");
+                        throw new IOException("Unable to composite region of JPEG2000");
+                    }
+                    using var bmp = compositorBuffer.AcquireBitmap();
+                    return (state, SKImage.FromBitmap(bmp));
                 }
                 finally
                 {

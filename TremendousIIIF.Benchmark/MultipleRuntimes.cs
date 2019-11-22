@@ -10,7 +10,7 @@ namespace TremendousIIIF.Benchmark
         {
             Add(Job.Default.With(CsProjCoreToolchain.NetCoreApp22));
 
-            Add(Job.Default.With(CsProjClassicNetToolchain.Net471));
+            Add(Job.Default.With(CsProjClassicNetToolchain.Net472));
         }
     }
 }

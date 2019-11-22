@@ -9,7 +9,6 @@ namespace Jpeg2000
     public class BitmapBuffer : Ckdu_compositor_buf
     {
         private SKBitmap bitmap;
-        public IntPtr buffer_handle;
         private Ckdu_coords size;
 
         public BitmapBuffer(Ckdu_coords size)
@@ -23,10 +22,12 @@ namespace Jpeg2000
                               // `Ckdu_bitmap_compositor::allocate_buffer', which causes
                               // a new managed instance of the object to be instantiated.
             bitmap = new SKBitmap(size.x, size.y);
-            buffer_handle = bitmap.GetPixels();
-            init(buffer_handle, bitmap.RowBytes / 4);
+            BufferHandle = bitmap.GetPixels();
+            init(BufferHandle, bitmap.RowBytes / 4);
             set_read_accessibility(true);
         }
+
+        public IntPtr BufferHandle { get; set; }
 
         /// <summary>
         /// This function unlocks the internal `Bitmap' object and returns it
@@ -38,7 +39,7 @@ namespace Jpeg2000
         /// </summary>
         public SKBitmap AcquireBitmap()
         {
-            buffer_handle = IntPtr.Zero;
+            BufferHandle = IntPtr.Zero;
             init(IntPtr.Zero, 0);
             return bitmap;
         }
@@ -49,10 +50,10 @@ namespace Jpeg2000
         /// </summary>
         public void ReleaseBitmap()
         {
-            Debug.Assert(buffer_handle == IntPtr.Zero);
-            if (buffer_handle != IntPtr.Zero) return;
-            buffer_handle = bitmap.GetPixels();
-            init(buffer_handle, bitmap.RowBytes / 4);
+            Debug.Assert(BufferHandle == IntPtr.Zero);
+            if (BufferHandle != IntPtr.Zero) return;
+            BufferHandle = bitmap.GetPixels();
+            init(BufferHandle, bitmap.RowBytes / 4);
         }
 
 
@@ -74,7 +75,7 @@ namespace Jpeg2000
                     size.Dispose();
             }
             bitmap = null;
-            buffer_handle = IntPtr.Zero;
+            BufferHandle = IntPtr.Zero;
             size = null;
             init(IntPtr.Zero, 0); // Make sure no attempt is made by internal native
                                   // object to delete the buffer we gave it.

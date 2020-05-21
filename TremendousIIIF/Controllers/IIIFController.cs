@@ -103,17 +103,14 @@ namespace TremendousIIIF.Controllers
                 }
             }
 
-            switch (apiVersion)
+            return apiVersion switch
             {
-                case ApiVersion.v3_0:
-                    return new Types.v3_0.ImageInfo(idUri, metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, manifestId, licenceUri);
-                case ApiVersion.v2_1:
-                default:
-                    return new Types.v2_1.ImageInfo(metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, string.Format(conf.GeoDataBaseUri, id))
-                    {
-                        ID = idUri,
-                    };
-            }
+                ApiVersion.v3_0 => new Types.v3_0.ImageInfo(idUri, metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, manifestId, licenceUri),
+                _ => new Types.v2_1.ImageInfo(metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, string.Format(conf.GeoDataBaseUri, id))
+                {
+                    ID = idUri,
+                },
+            };
         }
 
         public static ApiVersion ParseAccept(in string accept, in ApiVersion defaultVersion)
@@ -201,7 +198,6 @@ namespace TremendousIIIF.Controllers
             }
             catch (ArgumentException e)
             {
-
                 _log.LogError(e, "Error parsing argument");
                 var errors = new Dictionary<string, string[]>() { { e.ParamName, new string[] { e.GetError() } } };
                 var detail = e.GetError() + GetSpecLink(Conf.DefaultAPIVersion);

@@ -444,17 +444,13 @@ namespace TremendousIIIF.ImageProcessing
                 return EncodingStrategy.Skia;
             }
 
-            switch (format)
+            return format switch
             {
-                case ImageFormat.pdf:
-                    return EncodingStrategy.PDF;
-                case ImageFormat.jp2:
-                    return EncodingStrategy.JPEG2000;
-                case ImageFormat.tif:
-                    return EncodingStrategy.Tifflib;
-                default:
-                    return EncodingStrategy.Unknown;
-            }
+                ImageFormat.pdf => EncodingStrategy.PDF,
+                ImageFormat.jp2 => EncodingStrategy.JPEG2000,
+                ImageFormat.tif => EncodingStrategy.Tifflib,
+                _ => EncodingStrategy.Unknown,
+            };
         }
 
         private enum EncodingStrategy

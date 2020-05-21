@@ -19,17 +19,13 @@ namespace Image.Tiff
             T.Tiff.SetErrorHandler(_errorHandler);
             if (imageUri.IsFile)
             {
-                using (var tiff = T.Tiff.Open(imageUri.LocalPath, "r"))
-                {
-                    return ReadFullImage(log, tiff, request, allowSizeAboveFull);
-                }
+                using var tiff = T.Tiff.Open(imageUri.LocalPath, "r");
+                return ReadFullImage(log, tiff, request, allowSizeAboveFull);
             }
             else
             {
-                using (var tiff = T.Tiff.ClientOpen("custom", "r", stream, new T.TiffStream()))
-                {
-                    return ReadFullImage(log, tiff, request, allowSizeAboveFull);
-                }
+                using var tiff = T.Tiff.ClientOpen("custom", "r", stream, new T.TiffStream());
+                return ReadFullImage(log, tiff, request, allowSizeAboveFull);
             }
         }
 
@@ -38,21 +34,17 @@ namespace Image.Tiff
             T.Tiff.SetErrorHandler(_errorHandler);
             if (imageUri.IsFile)
             {
-                using (var tiff = T.Tiff.Open(imageUri.LocalPath, "r"))
-                {
-                    return ReadMetadata(tiff, defaultTileWidth);
-                }
+                using var tiff = T.Tiff.Open(imageUri.LocalPath, "r");
+                return ReadMetadata(tiff, defaultTileWidth, log);
             }
             else
             {
-                using (var tiff = T.Tiff.ClientOpen("custom", "r", stream, new T.TiffStream()))
-                {
-                    return ReadMetadata(tiff, defaultTileWidth);
-                }
+                using var tiff = T.Tiff.ClientOpen("custom", "r", stream, new T.TiffStream());
+                return ReadMetadata(tiff, defaultTileWidth, log);
             }
         }
 
-        private static Metadata ReadMetadata(T.Tiff tiff, int defaultTileWidth)
+        private static Metadata ReadMetadata(T.Tiff tiff, int defaultTileWidth, ILogger log)
         {
             int width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
             int height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
@@ -72,6 +64,7 @@ namespace Image.Tiff
                     int sub_width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
                     int sub_height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
                     sub_wh.Add((sub_width, sub_height));
+                    log.LogDebug("Available TIFF Directory {@Dir}, Dims {@X}, {@Y}", tiff.CurrentDirectory(), sub_width, sub_height);
                 }
             }
 
@@ -184,18 +177,16 @@ namespace Image.Tiff
                     throw new IOException("Unable to decode TIFF file");
                 }
 
-                using (var bmp = CreateBitmapFromPixels(raster, width, height))
-                {
-                    var desiredWidth = Math.Max(1, (int)Math.Round(state.RegionWidth * state.ImageScale));
-                    var desiredHeight = Math.Max(1, (int)Math.Round(state.RegionHeight * state.ImageScale));
-                    log.LogDebug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
+                using var bmp = CreateBitmapFromPixels(raster, width, height);
+                var desiredWidth = Math.Max(1, (int)Math.Round(state.RegionWidth * state.ImageScale));
+                var desiredHeight = Math.Max(1, (int)Math.Round(state.RegionHeight * state.ImageScale));
+                log.LogDebug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
 
-                    var regionWidth = state.RegionWidth;
-                    var regionHeight = state.RegionHeight;
+                var regionWidth = state.RegionWidth;
+                var regionHeight = state.RegionHeight;
 
-                    var srcRegion = SKRectI.Create(state.StartX, state.StartY, regionWidth, regionHeight);
-                    return (state, CopyBitmapRegion(bmp, desiredWidth, desiredHeight, srcRegion));
-                }
+                var srcRegion = SKRectI.Create(state.StartX, state.StartY, regionWidth, regionHeight);
+                return (state, CopyBitmapRegion(bmp, desiredWidth, desiredHeight, srcRegion));
             }
             // try and composit from tiles
             else
@@ -255,36 +246,34 @@ namespace Image.Tiff
                     }
                 }
 
-                using (var tiled_surface = SKSurface.Create(new SKImageInfo(width: needed_tiles_x * tw, height: needed_tiles_y * th, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul)))
-                using (var canvas = tiled_surface.Canvas)
-                using (var region = new SKRegion())
-                using (var paint = new SKPaint() { FilterQuality = SKFilterQuality.High})
+                using var tiled_surface = SKSurface.Create(new SKImageInfo(width: needed_tiles_x * tw, height: needed_tiles_y * th, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul));
+                using var canvas = tiled_surface.Canvas;
+                using var region = new SKRegion();
+                using var paint = new SKPaint() { FilterQuality = SKFilterQuality.High };
+                // draw each tile into the surface at the right place
+                for (var y = 0; y <= needed_tiles_y; y++)
                 {
-                    // draw each tile into the surface at the right place
-                    for (var y = 0; y <= needed_tiles_y; y++)
+                    // flip over y axis
+                    canvas.Translate(0, y * th);
+                    canvas.Scale(1, -1, 0, 0);
+
+                    for (var x = 0; x <= needed_tiles_x; x++)
                     {
-                        // flip over y axis
-                        canvas.Translate(0, y * th);
-                        canvas.Scale(1, -1, 0, 0);
-
-                        for (var x = 0; x <= needed_tiles_x; x++)
-                        {
-                            var bmp = CreateBitmapFromPixels(raster[x, y], tw, th);
-                            // y axis is flipped and translated so 0 should be tile hight * row.
-                            // so we can just draw to 0 on the y axis
-                            var point = new SKPoint(x * tw, 0);
-                            canvas.DrawBitmap(bmp, point, paint);
-                        }
-                        // translate calls are cumulative
-                        // should benchmark to see if it's worth doing the mental arithmatic or just callin greset for every row
-                        canvas.ResetMatrix();
+                        var bmp = CreateBitmapFromPixels(raster[x, y], tw, th);
+                        // y axis is flipped and translated so 0 should be tile hight * row.
+                        // so we can just draw to 0 on the y axis
+                        var point = new SKPoint(x * tw, 0);
+                        canvas.DrawBitmap(bmp, point, paint);
                     }
-
-                    // set the clip region, because we might not be on tile boundaries
-                    // if start == tw, don't add it
-                    var rect = new SKRectI((tiles_needed_start_x * tw) + state.StartX == tw? 0: state.StartX, (tiles_needed_start_y * th) + state.StartY == th? 0 : state.StartY, state.RegionWidth + (state.StartX == tw ? 0 : state.StartX), state.RegionHeight + (state.StartY == th ? 0 : state.StartY));
-                    return (state, tiled_surface.Snapshot().Subset(rect));
+                    // translate calls are cumulative
+                    // should benchmark to see if it's worth doing the mental arithmatic or just callin greset for every row
+                    canvas.ResetMatrix();
                 }
+
+                // set the clip region, because we might not be on tile boundaries
+                // if start == tw, don't add it
+                var rect = new SKRectI((tiles_needed_start_x * tw) + state.StartX == tw ? 0 : state.StartX, (tiles_needed_start_y * th) + state.StartY == th ? 0 : state.StartY, state.RegionWidth + (state.StartX == tw ? 0 : state.StartX), state.RegionHeight + (state.StartY == th ? 0 : state.StartY));
+                return (state, tiled_surface.Snapshot().Subset(rect));
             }
 
 
@@ -303,48 +292,42 @@ namespace Image.Tiff
         // Current benchmark winner
         public static SKImage CopyBitmapRegion(SKBitmap bmp, int width, int height, SKRectI srcRegion)
         {
-            using (var output = new SKBitmap(width, height))
-            {
-                bmp.ExtractSubset(output, srcRegion);
-                return SKImage.FromBitmap(output);
-            }
+            using var output = new SKBitmap(width, height);
+            bmp.ExtractSubset(output, srcRegion);
+            return SKImage.FromBitmap(output);
         }
 
 
         // Benchmarking indicates using SKBitmap.ExtractSubset() -> SKImage -> SKBitmap -> SKImage (basically a copy) is faster
         public static SKImage CopyImageRegion(SKImage srcImage, int width, int height, SKRectI srcRegion)
         {
-            using (var surface = SKSurface.Create(new SKImageInfo(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul)))
-            using (var paint = new SKPaint())
-            {
-                var canvas = surface.Canvas;
-                paint.FilterQuality = SKFilterQuality.High;
-                canvas.DrawImage(srcImage, srcRegion, new SKRect(0, 0, width, height), paint);
-                return surface.Snapshot();
-            }
+            using var surface = SKSurface.Create(new SKImageInfo(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul));
+            using var paint = new SKPaint();
+            var canvas = surface.Canvas;
+            paint.FilterQuality = SKFilterQuality.High;
+            canvas.DrawImage(srcImage, srcRegion, new SKRect(0, 0, width, height), paint);
+            return surface.Snapshot();
         }
 
         public static SKImage CopyImageRegion2(SKBitmap srcImage, int width, int height, SKRectI srcRegion)
         {
-            using (var surface = SKSurface.Create(new SKImageInfo(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul)))
-            using (var output = new SKBitmap(width, height))
-            using (var paint = new SKPaint())
+            using var surface = SKSurface.Create(new SKImageInfo(width: width, height: height, colorType: SKImageInfo.PlatformColorType, alphaType: SKAlphaType.Premul));
+            using var output = new SKBitmap(width, height);
+            using var paint = new SKPaint
             {
-                paint.FilterQuality = SKFilterQuality.High;
-                var canvas = surface.Canvas;
-                srcImage.ExtractSubset(output, srcRegion);
-                canvas.DrawBitmap(output, new SKRect(0, 0, output.Width, output.Height), new SKRect(0, 0, width, height), paint);
-                return surface.Snapshot();
-            }
+                FilterQuality = SKFilterQuality.High
+            };
+            var canvas = surface.Canvas;
+            srcImage.ExtractSubset(output, srcRegion);
+            canvas.DrawBitmap(output, new SKRect(0, 0, output.Width, output.Height), new SKRect(0, 0, width, height), paint);
+            return surface.Snapshot();
         }
 
         public static SKImage CopyImageRegion3(SKBitmap srcImage, int width, int height, SKRectI srcRegion)
         {
-            using (var output = new SKBitmap(width, height))
-            {
-                srcImage.ScalePixels(output, SKFilterQuality.High);
-                return SKImage.FromBitmap(output);
-            }
+            using var output = new SKBitmap(width, height);
+            srcImage.ScalePixels(output, SKFilterQuality.High);
+            return SKImage.FromBitmap(output);
 
         }
 

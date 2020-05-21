@@ -39,7 +39,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="1.68.1" />
+    <PackageReference Include="SkiaSharp" Version="1.68.3" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TremendousIIIF.Common\TremendousIIIF.Common.csproj" />

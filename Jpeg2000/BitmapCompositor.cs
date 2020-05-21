@@ -1,6 +1,7 @@
 ﻿using kdu_mni;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Jpeg2000
 {
@@ -49,6 +50,7 @@ namespace Jpeg2000
           allocate_buffer(Ckdu_coords min_size, Ckdu_coords actual_size,
                           bool read_access_required)
         {
+            Debug.Assert(null != actual_size);
             BitmapBuffer result = new BitmapBuffer(min_size);
             actual_size.assign(min_size);
             bufferList.AddFirst(result);
@@ -63,6 +65,7 @@ namespace Jpeg2000
         {
             if (bufferList.Count > 0)
             {
+                Debug.Assert(null != buf);
                 var buffer = Find(buf);
                 if(buffer == null)
                 {

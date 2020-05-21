@@ -33,7 +33,6 @@ namespace Jpeg2000
             }
             catch (Exception e)
             {
-                var x = e;
                 return 0;
             }
             finally

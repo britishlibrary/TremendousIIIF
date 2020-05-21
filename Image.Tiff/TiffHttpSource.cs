@@ -82,14 +82,11 @@ namespace Image.Tiff
                         response.Dispose();
                         return;
                     }
-                    switch (response.StatusCode)
+                    throw response.StatusCode switch
                     {
-                        case System.Net.HttpStatusCode.NotFound:
-                            throw new FileNotFoundException("Unable to load source image", _imageUri.ToString());
-                        default:
-                        case System.Net.HttpStatusCode.InternalServerError:
-                            throw new IOException("Unable to load source image");
-                    }
+                        System.Net.HttpStatusCode.NotFound => new FileNotFoundException("Unable to load source image", _imageUri.ToString()),
+                        _ => new IOException("Unable to load source image"),
+                    };
                 }
             }
             catch (TaskCanceledException e)

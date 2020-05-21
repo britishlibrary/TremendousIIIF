@@ -153,51 +153,49 @@ namespace TremendousIIIF.ImageProcessing
 
         public static Feature TransformGeoData(string fileName, int width = 0, int height = 0)
         {
-            using (var src_ds = Gdal.Open(fileName, Access.GA_ReadOnly))
-            using (var srs = new SpatialReference(src_ds.GetProjection()))
-            using (var dst_proj = new SpatialReference(Osr.SRS_WKT_WGS84))
-            using (var coords = Osr.CreateCoordinateTransformation(srs, dst_proj))
+            using var src_ds = Gdal.Open(fileName, Access.GA_ReadOnly);
+            using var srs = new SpatialReference(src_ds.GetProjection());
+            using var dst_proj = new SpatialReference(Osr.SRS_WKT_WGS84);
+            using var coords = Osr.CreateCoordinateTransformation(srs, dst_proj);
+            var transform = ArrayPool<double>.Shared.Rent(6);
+            try
             {
-                var transform = ArrayPool<double>.Shared.Rent(6);
-                try
+                src_ds.GetGeoTransform(transform);
+
+                var gpcCount = src_ds.GetGCPCount();
+                var gcp_proj = src_ds.GetGCPProjection();
+                var gpcs = src_ds.GetGCPs();
+
+                width = Math.Max(width, src_ds.RasterXSize);
+                height = Math.Max(height, src_ds.RasterYSize);
+
+                (var minX, var minY, var maxX, var maxY) = GetImageBorders(transform, src_ds.RasterXSize, src_ds.RasterYSize);
+                var points = new List<Point>();
+                foreach ((var lat, var lon) in GetCornerPoints(transform, width, height))
                 {
-                    src_ds.GetGeoTransform(transform);
-
-                    var gpcCount = src_ds.GetGCPCount();
-                    var gcp_proj = src_ds.GetGCPProjection();
-                    var gpcs = src_ds.GetGCPs();
-
-                    width = Math.Max(width, src_ds.RasterXSize);
-                    height = Math.Max(height, src_ds.RasterYSize);
-
-                    (var minX, var minY, var maxX, var maxY) = GetImageBorders(transform, src_ds.RasterXSize, src_ds.RasterYSize);
-                    var points = new List<Point>();
-                    foreach ((var lat, var lon) in GetCornerPoints(transform, width, height))
-                    {
-                        var ll = new double[3];
-                        coords.TransformPoint(ll, lat, lon, 1);
-                        points.Add(new Point(new Position(ll[0], ll[1])));
-                    }
-
-
-                    var mp = new MultiPoint(points);
-
-                    var blah = new GeometryCollection(new[] { mp })
-                    {
-
-                    };
-
-                    srs.ExportToProj4(out var src_proj_string);
-                    var properties = new Dictionary<string, object>() { { "x:type", "CornerPoints" }, { "sourceProjection", src_proj_string } };
-                    var feature = new GeoJSON.Net.Feature.Feature(blah, properties);
-
-
-                    return feature;
+                    var ll = new double[3];
+                    coords.TransformPoint(ll, lat, lon, 1);
+                    points.Add(new Point(new Position(ll[0], ll[1])));
                 }
-                finally
+
+
+                var mp = new MultiPoint(points);
+
+                var blah = new GeometryCollection(new[] { mp })
                 {
-                    ArrayPool<double>.Shared.Return(transform);
-                }
+
+                };
+
+                srs.ExportToProj4(out var src_proj_string);
+                var properties = new Dictionary<string, object>() { { "x:type", "CornerPoints" }, { "sourceProjection", src_proj_string } };
+                var feature = new GeoJSON.Net.Feature.Feature(blah, properties);
+
+
+                return feature;
+            }
+            finally
+            {
+                ArrayPool<double>.Shared.Return(transform);
             }
         }
         public static Matrix<double> FromGdal(double[] gt)
@@ -284,45 +282,44 @@ namespace TremendousIIIF.ImageProcessing
         /// <returns></returns>
         public async Task<(ImageFormat, Stream)> LoadHttp(Uri imageUri, CancellationToken token = default)
         {
-            using (var request = new HttpRequestMessage(HttpMethod.Get, imageUri))
+            using var request = new HttpRequestMessage(HttpMethod.Get, imageUri);
+            var response = await _httpClientFactory.CreateClient("default").SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
+            // Some failures we want to handle differently
+            switch (response.StatusCode)
             {
-                var response = await _httpClientFactory.CreateClient("default").SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
-                // Some failures we want to handle differently
-                switch (response.StatusCode)
-                {
-                    case System.Net.HttpStatusCode.NotFound:
-                        throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
-                }
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    _log.LogError("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
-                    throw new IOException("Unable to load source image");
-                }
-                var mimeType = string.Empty;
-
-                //if (response.Content.Headers.TryGetValues("Content-Type", out IEnumerable<string> values))
-                if (!string.IsNullOrEmpty(response.Content.Headers.ContentType?.MediaType))
-                {
-                    mimeType = response.Content.Headers.ContentType.MediaType;
-                }
-
-                ImageFormat imageFormat = ImageFormat.jp2;
-                var resStream = await response.Content.ReadAsStreamAsync();
-
-                if (mimeType == "text/plain" || mimeType == "application/octet-stream" || mimeType == string.Empty)
-                {
-                    // badly configured source server, read first x bytes to compare
-                    // but the response from the HttpClient is a read-only, forward-only stream.
-                    // so we need to copy them all back into a new stream :(
-                    return await PeekMagicBytes(resStream, LongestBytes, token);
-                }
-                else
-                {
-                    imageFormat = GetFormatFromMimeType(mimeType);
-                }
-                return (imageFormat, resStream);
+                case System.Net.HttpStatusCode.NotFound:
+                    throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
             }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _log.LogError("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
+                throw new IOException("Unable to load source image");
+            }
+            var mimeType = string.Empty;
+
+            //if (response.Content.Headers.TryGetValues("Content-Type", out IEnumerable<string> values))
+            if (!string.IsNullOrEmpty(response.Content.Headers.ContentType?.MediaType))
+            {
+                mimeType = response.Content.Headers.ContentType.MediaType;
+            }
+
+            var resStream = await response.Content.ReadAsStreamAsync();
+
+
+            ImageFormat imageFormat;
+            if (mimeType == "text/plain" || mimeType == "application/octet-stream" || mimeType == string.Empty)
+            {
+                // badly configured source server, read first x bytes to compare
+                // but the response from the HttpClient is a read-only, forward-only stream.
+                // so we need to copy them all back into a new stream :(
+                return await PeekMagicBytes(resStream, LongestBytes, token);
+            }
+            else
+            {
+                imageFormat = GetFormatFromMimeType(mimeType);
+            }
+            return (imageFormat, resStream);
 
         }
         private async ValueTask<Metadata> GetMetadata(Stream stream, ImageFormat imageFormat, Uri imageUri, int defaultTileWidth)

@@ -1,5 +1,4 @@
 ﻿using SkiaSharp;
-using System.Threading.Tasks;
 using kdu_mni;
 using System.IO;
 

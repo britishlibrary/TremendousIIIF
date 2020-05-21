@@ -5,7 +5,6 @@ using SkiaSharp;
 using System;
 using System.Buffers;
 using System.IO;
-using System.Threading;
 using C = TremendousIIIF.Common.Configuration;
 
 namespace Jpeg2000
@@ -65,8 +64,8 @@ namespace Jpeg2000
                 int levels = codestream.get_min_dwt_levels();
 
                 var imageSize = new SKPoint(image_size.x, image_size.y);
-
-                codestream.get_tile_dims(new Ckdu_coords(0, 0), 0, tile_dims);
+                using var tmpcoords = new Ckdu_coords(0, 0);
+                codestream.get_tile_dims(tmpcoords, 0, tile_dims);
 
                 var tileSize = new SKPoint(tile_dims.access_size().x, tile_dims.access_size().y);
 
@@ -116,7 +115,7 @@ namespace Jpeg2000
             }
         }
 
-        public static (int, int, byte[]) GetGeoData(Stream stream, ILogger log, Uri imageUri, CancellationToken token = default)
+        public static (int, int, byte[]) GetGeoData(Stream stream, ILogger log, Uri imageUri)
         {
 
             //Ckdu_codestream codestream = new Ckdu_codestream();
@@ -214,16 +213,16 @@ namespace Jpeg2000
                     var quality_layers = 0;
 
                     // must set whole region and default scale before asking compositor to calculate dimensions
-                    using (var initialLayer = compositor.add_ilayer(0, new Ckdu_dims(), new Ckdu_dims()))
-                    {
-                        compositor.set_scale(false, false, false, 1.0f);
-                        compositor.get_total_composition_dims(srcImageDimensions);
-                        srcRegionDimensions.assign(srcImageDimensions);
+                    using var full_dims = new Ckdu_dims();
+                    using var target_dims = new Ckdu_dims();
+                    using var initialLayer = compositor.add_ilayer(0, full_dims, target_dims);
+                    compositor.set_scale(false, false, false, 1.0f);
+                    compositor.get_total_composition_dims(srcImageDimensions);
+                    srcRegionDimensions.assign(srcImageDimensions);
 
-                        quality_layers = compositor.get_max_available_quality_layers();
-                        // must remove it to properly target ROI
-                        compositor.remove_ilayer(initialLayer, false);
-                    }
+                    quality_layers = compositor.get_max_available_quality_layers();
+                    // must remove it to properly target ROI
+                    compositor.remove_ilayer(initialLayer, false);
 
                     var originalWidth = srcImageDimensions.access_size().x;
                     var originalHeight = srcImageDimensions.access_size().y;

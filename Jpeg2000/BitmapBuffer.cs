@@ -13,6 +13,7 @@ namespace Jpeg2000
 
         public BitmapBuffer(Ckdu_coords size)
         {
+            Debug.Assert(null != size);
             size.y = (size.y < 1) ? 1 : size.y;
             size.x = (size.x < 1) ? 1 : size.x;
             this.size = size; // Note: this does not copy dimensions; it just

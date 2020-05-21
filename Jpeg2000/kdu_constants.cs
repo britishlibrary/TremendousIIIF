@@ -2,8 +2,12 @@
 // Do not edit manually.
 // Copyright 2001, David Taubman, The University of New South Wales (UNSW)
 
+#pragma warning disable CA1707 // Identifiers should not contain underscores
 namespace kdu_mni {
-  public class Ckdu_global : Ckdu_global_funcs {
+#pragma warning restore CA1707 // Identifiers should not contain underscores
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1707:Identifiers should not contain underscores", Justification = "<Pending>")]
+    public class Ckdu_global : Ckdu_global_funcs {
+        
     public const short KDU_INT16_MAX = unchecked((short) 0x7FFF);
     public const short KDU_INT16_MIN = unchecked((short) 0x8000);
     public const int KDU_INT32_MAX = unchecked((int) 0x7FFFFFFF);

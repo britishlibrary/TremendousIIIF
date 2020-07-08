@@ -87,7 +87,7 @@ namespace TremendousIIIF.ImageProcessing
             switch (imageUri.Scheme)
             {
                 case "http":
-                case "https:":
+                case "https":
                     (var format, var stream) = await LoadHttp(imageUri, token);
                     using (stream)
                         return await GetMetadata(stream, format, imageUri, defaultTileWidth);
@@ -280,21 +280,21 @@ namespace TremendousIIIF.ImageProcessing
         /// <param name="defaultTileWidth"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        public async Task<(ImageFormat, Stream)> LoadHttp(Uri imageUri, CancellationToken token = default)
+        public async ValueTask<(ImageFormat, Stream)> LoadHttp(Uri imageUri, CancellationToken token = default)
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, imageUri);
             var response = await _httpClientFactory.CreateClient("default").SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
             // Some failures we want to handle differently
-            switch (response.StatusCode)
+            if (System.Net.HttpStatusCode.NotFound == response.StatusCode)
             {
-                case System.Net.HttpStatusCode.NotFound:
-                    throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
+                FileNotFound(imageUri);
             }
 
             if (!response.IsSuccessStatusCode)
             {
                 _log.LogError("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
-                throw new IOException("Unable to load source image");
+                ErrorLoading("Unable to load source image");
+                
             }
             var mimeType = string.Empty;
 
@@ -369,7 +369,8 @@ namespace TremendousIIIF.ImageProcessing
                         return TiffExpander.ExpandRegion(ms, _log, imageUri, request, allowUpscaling);
                     }
                 default:
-                    throw new IOException("Unsupported source format");
+                    ErrorLoading("Unsupported source format");
+                    return (null,null);
             }
         }
 
@@ -400,7 +401,7 @@ namespace TremendousIIIF.ImageProcessing
             }
         }
 
-        private async Task<(ImageFormat, Stream)> PeekMagicBytes(Stream stream, int maxBytes, CancellationToken token = default)
+        private async ValueTask<(ImageFormat, Stream)> PeekMagicBytes(Stream stream, int maxBytes, CancellationToken token = default)
         {
             var buffer = ArrayPool<byte>.Shared.Rent(maxBytes);
 
@@ -421,6 +422,15 @@ namespace TremendousIIIF.ImageProcessing
             }
         }
 
+        private static void FileNotFound(Uri imageUri)
+        {
+            throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
+        }
+
+        private static void ErrorLoading(string message)
+        {
+            throw new IOException(message);
+        }
 
         /// <summary>
         /// Map mimetypes to <see cref="ImageFormat"/>

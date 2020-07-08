@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using TremendousIIIF.Common.Configuration;
-using TremendousIIIF.Types;
+using System.Linq;
 
 namespace TremendousIIIF.Types.v2_1
 {
@@ -21,6 +21,8 @@ namespace TremendousIIIF.Types.v2_1
         {
             Height = metadata.Height;
             Width = metadata.Width;
+
+            Sizes = null != metadata.Sizes && metadata.Sizes.Any() ? metadata.Sizes.Select(wh => new Size(wh.Item1, wh.Item2)) : null;
 
             var tile = new Tile()
             {
@@ -65,13 +67,16 @@ namespace TremendousIIIF.Types.v2_1
         [JsonProperty("height", Order = 5, Required = Required.Always)]
         public int Height { get; set; }
 
-        [JsonProperty("profile", Order = 7, Required = Required.Always)]
+        [JsonProperty("sizes", Order = 6, DefaultValueHandling = DefaultValueHandling.Ignore, NullValueHandling = NullValueHandling.Ignore)]
+        public IEnumerable<Size> Sizes { get; }
+
+        [JsonProperty("profile", Order = 8, Required = Required.Always)]
         public List<object> Profile { get; set; }
 
-        [JsonProperty("tiles", Order = 6, NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("tiles", Order = 7, NullValueHandling = NullValueHandling.Ignore)]
         public List<Tile> Tiles { get; set; }
 
-        [JsonProperty("service", Order = 8, NullValueHandling = NullValueHandling.Ignore)]
+        [JsonProperty("service", Order = 9, NullValueHandling = NullValueHandling.Ignore)]
         public List<Service> Services { get; set; }
     }
 
@@ -125,5 +130,20 @@ namespace TremendousIIIF.Types.v2_1
 
         [JsonProperty("profile", Order = 3, Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
         public string Profile { get; set; }
+    }
+
+    public readonly struct Size
+    {
+        [JsonProperty("width")]
+        public int Width { get; }
+
+        [JsonProperty("height")]
+        public int Height { get; }
+
+        public Size(int width, int height)
+        {
+            Width = width;
+            Height = height;
+        }
     }
 }

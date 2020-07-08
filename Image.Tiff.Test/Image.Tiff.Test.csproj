@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Image.Tiff.Test</RootNamespace>
     <AssemblyName>Image.Tiff.Test</AssemblyName>
-    <TargetFrameworks>net48;netcoreapp2.2</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">15.0</VisualStudioVersion>
@@ -16,7 +16,7 @@
     <ReferencePath>$(ProgramFiles)\Common Files\microsoft shared\VSTT\$(VisualStudioVersion)\UITestExtensionPackages</ReferencePath>
     <IsCodedUITest>False</IsCodedUITest>
     <TestProjectType>UnitTest</TestProjectType>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -50,6 +50,7 @@
     <ProjectReference Include="..\Image.Common\Image.Common.csproj" />
     <ProjectReference Include="..\Image.Tiff\Image.Tiff.csproj" />
     <ProjectReference Include="..\TremendousIIIF.Common\TremendousIIIF.Common.csproj" />
+    <ProjectReference Include="..\TremendousIIIF\TremendousIIIF.csproj" />
   </ItemGroup>
   <ItemGroup>
     <None Update="test_image.tif">

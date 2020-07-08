@@ -10,6 +10,9 @@ using System.Linq;
 using RGB = System.ValueTuple<byte, byte, byte>;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using TremendousIIIF.ImageProcessing;
+using C = TremendousIIIF.Common.Configuration;
+using LazyCache;
 
 namespace Image.Tiff.Test
 {
@@ -18,7 +21,7 @@ namespace Image.Tiff.Test
     [ExcludeFromCodeCoverage]
     public class TiffExtractAndSizeTests
     {
-        private ILogger Log;
+        private ILogger<ImageProcessing> Log;
 
         public TestContext TestContext { get; set; }
 
@@ -55,7 +58,7 @@ namespace Image.Tiff.Test
         [TestInitialize]
         public void Setup()
         {
-            Log = new LoggerFactory().CreateLogger("test");
+            Log = new LoggerFactory().CreateLogger<ImageProcessing>();
         }
 
         [TestMethod]
@@ -150,7 +153,7 @@ namespace Image.Tiff.Test
         [TestMethod]
         [Description("/test_image.tif/x,y,w,h/1000,1000/0/default.jpg")]
         [DynamicData("TestRegions", DynamicDataSourceType.Method)]
-        public void ExtractRegionScaleUp(int x, int y, int width, int height)
+        public async Task ExtractRegionScaleUp(int x, int y, int width, int height)
         {
             var filename = Path.GetFullPath(@"test_image.tif");
             var request = new ImageRequest
@@ -162,23 +165,27 @@ namespace Image.Tiff.Test
                 ImageFormat.jpg
             );
 
-            (_, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
-            using (img)
-            {
-                Assert.IsNotNull(img, "Image is null");
-                Assert.AreEqual(200, img.Width, "Image width does not match expected width");
-                Assert.AreEqual(200, img.Height, "Image height does not match expected height");
+            //(_, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
+            var loader = new ImageLoader(new LoggerFactory().CreateLogger<ImageLoader>(), new CachingService(), null);
+            var im = new ImageProcessing(Log, loader);
+            var q = new C.ImageQuality { DefaultEncodingQuality = 100, MaxQualityLayers = -1, OutputDpi = 600, WeightedRMSE = 1.0f };
+            using var imgstream = await im.ProcessImage(new Uri(filename), request, q, true, null);
+            using var img = SKImage.FromEncodedData(imgstream);
 
-                using (var bmp = SKBitmap.FromImage(img))
+            Assert.IsNotNull(img, "Image is null");
+            Assert.AreEqual(200, img.Width, "Image width does not match expected width");
+            Assert.AreEqual(200, img.Height, "Image height does not match expected height");
+
+            using (var bmp = SKBitmap.FromImage(img))
+            {
+                (var coli, var colj) = (x / 100, y / 100);
+                var colour = TestColours[coli, colj];
+                foreach (var c in bmp.Pixels.Distinct())
                 {
-                    (var coli, var colj) = (x / 100, y / 100);
-                    var colour = TestColours[coli, colj];
-                    foreach (var c in bmp.Pixels.Distinct())
-                    {
-                        Assert.AreEqual(new SKColor(colour.Item1, colour.Item2, colour.Item3), c, "Expected colour values do not match");
-                    }
+                    Assert.AreEqual(new SKColor(colour.Item1, colour.Item2, colour.Item3), c, "Expected colour values do not match");
                 }
             }
+
         }
 
         [TestMethod]
@@ -223,13 +230,13 @@ namespace Image.Tiff.Test
             var request = new ImageRequest
             (
                 new ImageRegion(ImageRegionMode.PercentageRegion, x, y, width, height),
-                new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 50, 50),
+                new ImageSize(ImageSizeMode.MaintainAspectRatio, 1, 50, 50, false),
                 new ImageRotation(0, false),
                 ImageQuality.@default,
                 ImageFormat.jpg
             );
 
-            (_, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, false);
+            (_, var img) = TiffExpander.ExpandRegion(null, Log, new Uri(filename), request, true);
             using (img)
             {
                 Assert.IsNotNull(img, "Image is null");

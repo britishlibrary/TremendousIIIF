@@ -2,42 +2,49 @@
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using TremendousIIIF.Common.Configuration;
 
 namespace TremendousIIIF.Healthchecks
 {
     public class ImageLoader : IHealthCheck
     {
         public string Name => nameof(ImageLoader);
-        private readonly ImageServer _conf;
+
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<ImageProcessing.ImageLoader> _logger;
         private readonly IAppCache _cache;
+        private Uri ImageUri { get; set; }
+        private int DefaultTileWidth { get; set; }
 
-        public ImageLoader(ImageServer conf, IHttpClientFactory httpClientFactory, ILogger<ImageProcessing.ImageLoader> logger, IAppCache cache)
+        public ImageLoader(IHttpClientFactory httpClientFactory, ILogger<ImageProcessing.ImageLoader> logger, IAppCache cache, Uri imageUri, int defaultTileWidth)
         {
-            _conf = conf;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
             _cache = cache;
+            ImageUri = imageUri;
+            DefaultTileWidth = defaultTileWidth;
         }
         public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
         {
-            var testImage = new Uri(new Uri(_conf.Location), _conf.HealthcheckIdentifier);
             try
             {
                 var loader = new ImageProcessing.ImageLoader(_logger, _cache, _httpClientFactory);
-                await loader.GetMetadata(testImage, _conf.DefaultTileWidth, cancellationToken);
-                return HealthCheckResult.Healthy();
+                await loader.GetMetadata(ImageUri, DefaultTileWidth, cancellationToken);
+                return HealthCheckResult.Healthy(data: new Dictionary<string, object>() { { "testImageUri", ImageUri } });
             }
-            catch (Exception e)
+            catch (Exception e) when (LogError(e))
             {
-                _logger.LogError(e, "Healthcheck failed");
-                return HealthCheckResult.Unhealthy();
+                return HealthCheckResult.Unhealthy(e.Message);
             }
+        }
+
+        bool LogError(Exception ex)
+        {
+            _logger.LogError(ex, "A Healthcheck failed");
+            return true;
         }
     }
 }

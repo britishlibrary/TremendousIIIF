@@ -31,7 +31,7 @@ namespace Jpeg2000
                 push_data(buffer, 0, bytesRead);
                 return bytesRead;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return 0;
             }

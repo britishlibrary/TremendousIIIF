@@ -7,11 +7,11 @@ A bigly good IIIF image server. What's IIIF? Why, it's the International Image I
 (or, why another image server)
 
 - Complies with IIIF Image API 2.1, level 2
-- Complies with IIIF Image API 3.0 (beta), level 2
+- Complies with IIIF Image API 3.0, level 2
 - Supports additional features from IIIF Image API above level 2, such as `square` region, `sizeAboveFull`, `arbitrary` rotation, `mirroring`
 - Supports JPEG2000 source (and output), using the commercial Kakadu library 
 - Supports TIFF source as a last resort (not recomended)
-- Access source images directly over HTTP (with built in retries), or via file system
+- Access source images directly over HTTP(s) (with built in retries), or via file system
 - Uses the Skia library for image manipulation (as used in Chrome, and is very fast)
 - Configuration lets you control things like `sizeAboveFull`, `maxArea`, `maxWidth` or `maxHeight`
 - supports JPG, PNG, WEBP, PDF output natively, experimental TIFF and JP2 output (everything above JPG & PNG configurable)
@@ -19,9 +19,9 @@ A bigly good IIIF image server. What's IIIF? Why, it's the International Image I
 
 ## Dependencies
 
-.NET 4.8 (and therefore Windows, although see the the Future section below for plans)
+dotnet core 3.1, Windows only, x64 only.
 
-Kakadu 7.10.7, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the *runtime* directory (this is a change in dotnet core 2).
+Kakadu 8.0.5, x64 release version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_v7AR.dll should be in the *runtime* directory. To run the JPEG2000 based unit tests, the same DLLs will need copying to the Jpeg2000.Test output directory, too.
 
 *If you do not have a Kakadu licence, this will not work*. You will only be able to use TIFF images.
 
@@ -29,17 +29,23 @@ Kakadu 7.10.7, x64 version built against MSVC2017 runtime. kdu_a7AR.dll and kdu_
 
 Most settings can be configured through the `appsettings.json` file.
 
-Support for the (still in beta) IIIF Image API 3.0 is enabled by default and can not be switched off. However, it will only be used for `info.json` requests when the `Accept` header includes the v3 profile, e.g. `application/ld+json;profile="http://iiif.io/api/image/3/context.json"`. The _default_ version in all other cases is controlled via configuration, specifically the `ImageServer` section `DefaultAPIVersion` property, which can accept `"v2_1"` or `"v3_0"`.
+Support for IIIF Image API 3.0 is enabled by default and can not be switched off. However, it will only be used for `info.json` requests when the `Accept` header includes the v3 profile, e.g. `application/ld+json;profile="http://iiif.io/api/image/3/context.json"`. The _default_ version in all other cases is controlled via configuration, specifically the `ImageServer` section `DefaultAPIVersion` property, which can accept `"v2_1"` or `"v3_0"`. If the `DefaultAPIVersion` is set to `v3_0`, then requests for `size` full will return a `400 Bad Request`, as `full` is no longer supported in 3.0 (replaced by `max`).
 
-To specify the location of your source images, use the `"Location"` property in the `ImageServer` section, which accepts file paths (e.g. `"/mnt/nfs/images"` or on windows `"C:\\jp2cache\\"`, note the need to espace slashes in the windows case) or HTTP(s) URI (e.g. `http://192.168.1.22/`)
+To specify the location of your source images, use the `"Location"` property in the `ImageServer` section, which accepts absolute file paths (e.g. `"/mnt/nfs/images"` or on windows `"C:\\jp2cache\\"`, note the need to escape slashes in the windows case, and the trailing slashes) or HTTP(s) URI (e.g. `http://192.168.1.22/`)
 
 If allowing upscaling (`sizeAboveFull` in 2.1), you must have either `maxWidth` and `maxHeight` specified, or `maxArea` as per the 3.0 spcification (which is just a sensible clarification). The resizing implementation is much slower when scaling above 1x the size, so it is not recomended to emable this in production at this time.
 
-A health checking interface is provided. Calling `/_monitor` will provide a shallow check that the service is running by returning `200 OK`. By setting an image identifier in `ImageServer.HealthcheckIdentifier`, you can call `/_monitor/deep` to verify the ability to load the source image, again by returning `200 OK` for success or `503 Service Unavailable` otherwise.
+A health checking interface is provided. Calling `/_monitor` will provide a shallow check that the service is running by returning `200 OK`. By setting an image identifier in `ImageServer.HealthcheckIdentifier`, you can call `/_monitor/deep` to verify the ability to load the source image, again by returning `200 OK` for success or `503 Service Unavailable` otherwise. `/_monitor/detail` will provide a `JSON` blob output with more detail, intended for troubleshooting.
 
-To enable Geodata support, you will need an install of the GDAL library (https://gdal.org/), and to set the `ImageServer.GeoDataPath` value in the `appsettings.json` file to the full path. You will also need to set `ImageServer.EnableGeodata` to `true`.
+To enable *experimental* Geodata support, you will need an install of the GDAL library (https://gdal.org/), and to set the `ImageServer.GeoDataPath` value in the `appsettings.json` file to the full path. You will also need to set `ImageServer.EnableGeodata` to `true`.
+
+When operating behind a proxy server (strongly recommended), you can set the `BaseUri` property to set the absolute path, which will be used in `info.json` responses, prepended to the `id` property. For example, to get an output of  `"id": "https://api.bl.uk/image/iiif/ark:/81055/blah.tif"`, set`"BaseUri": "https://api.bl.uk/image/iiif/ark:/81055/"` 
+
+The `OutputFormatQuality` allows you to set encoding quality independently for each output format. For lossy output formats such as `jpg`, you will need to asses the tradeoff between higher quality and longer encoding times. For lossless formats such as `png`, it's bewteen higher compression and longer encoding times.'
 
 ## Extra Information
+
+In release builds, the `Content-Disposition` header is sent with image data responses, triggering a download dialogue in most web browsers.
 
 Additional information can be passed from your proxy server to TremendousIIIF by using HTTP headers. 
 
@@ -56,7 +62,7 @@ If the hostname is not one of the allowed hosts, it is not reflected in the `inf
 
 An example below of a 3.0 `info.json` response with some of these headers submitted in the request
 
-```
+```json
 {
   "@context": "http://iiif.io/api/image/3/context.json",
   "id": "https://api.bl.uk/image/iiif/ark:/81055/vdc_100022588786.0x000003",
@@ -114,4 +120,4 @@ TremendousIIIF is written from scratch, but based on the accumulated knowledge o
 
 ## Future
 
-Currently builds net48/netcoreapp2.2, but not all dependecies are fully compatable (yet). Kakadu is the blocker, as managed C++ (sometimes referred to a C++/CLI) is not supported in dotnet core. It's quite a large undertaking to generate the Kakadu bindings through P/Invoke as Kakadu uses it's own "hyperdock" system to generate them. 
+Currently builds netcoreapp3.1 finally! Still Windows x64 only until a more comprehensive p/invoke wrapper of Kakadu is available, at which point we can finally go linux!

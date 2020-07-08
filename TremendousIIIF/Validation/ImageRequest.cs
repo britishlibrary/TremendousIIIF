@@ -11,12 +11,12 @@ namespace TremendousIIIF.Validation
     {
         static readonly char[] Delimiter = { ',' };
 
-        public static Either<ValidationError, ImageRequest> Validate(string region, string size, string rotation, string quality, string format, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats)
+        public static Either<ValidationError, ImageRequest> Validate(string region, string size, string rotation, string quality, string format, int maxWidth, int maxHeight, int maxArea, List<ImageFormat> supportedFormats, ApiVersion apiVersion = ApiVersion.v3_0)
         {
 
             return
                 from _region in CalculateRegion(region).ToEither(() => new ValidationError("Invalid region value", nameof(region)))
-                from _size in CalculateSize(size).ToEither(() => new ValidationError("Invalid size value", nameof(size)))
+                from _size in CalculateSize(size, apiVersion).ToEither(() => new ValidationError("Invalid size value", nameof(size)))
                 from _rotation in ParseRotation(rotation).ToEither(() => new ValidationError("Invalid rotation value", nameof(rotation)))
                 from _quality in ParseQuality(quality).ToEither(() => new ValidationError("Invalid quality value", nameof(quality)))
                 from _format in ParseFormat(format, supportedFormats)
@@ -107,7 +107,7 @@ namespace TremendousIIIF.Validation
             }
         }
 
-        public static Option<ImageSize> CalculateSize(string size_string)
+        public static Option<ImageSize> CalculateSize(string size_string, ApiVersion apiVersion = ApiVersion.v3_0)
         {
             ImageSizeMode sizeMode;
             var percentage = 1f;
@@ -129,6 +129,11 @@ namespace TremendousIIIF.Validation
                 // Ugh. feels like this should be a special case
                 // https://github.com/dotnet/csharplang/issues/1881
                 case var _ when mode.SequenceEqual("full".AsSpan()):
+                    if (ApiVersion.v3_0 == apiVersion)
+                        throw new ArgumentException("size full not supported in 3.0", "size");
+
+                    sizeMode = ImageSizeMode.Max;
+                    break;
                 case var _ when mode.SequenceEqual("max".AsSpan()):
                     //case "full":
                     //case "max":

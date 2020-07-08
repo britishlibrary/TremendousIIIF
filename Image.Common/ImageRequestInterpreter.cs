@@ -15,7 +15,7 @@ namespace Image.Common
         /// <returns></returns>
         static public ProcessState GetInterpretedValues(in ImageRequest request, int originalWidth, int originalHeight, bool allowUpscaling)
         {
-            request.CheckRequest(allowUpscaling);
+            request.CheckRequest(originalWidth, originalHeight, allowUpscaling);
             ProcessState state = new ProcessState();
 
             state.StartX = state.StartY = state.RegionHeight = state.RegionWidth = 0;
@@ -185,39 +185,44 @@ namespace Image.Common
             }
         }
 
-        private static void CheckRequest(in this ImageRequest req, bool allowUpscaling)
+        private static void CheckRequest(in this ImageRequest req, int originalWidth, int originalHeight, bool allowUpscaling)
         {
-            if(!allowUpscaling && req.Size.Upscale)
+            if (!allowUpscaling && req.Size.Upscale)
             {
                 throw new NotSupportedException("sizeUpscaling feature is not supported");
+            }
+
+            if (!req.Size.Upscale && (req.Size.Width > originalWidth || req.Size.Height > originalHeight || req.Size.Percent > 1.0))
+            {
+                throw new ArgumentException("Must specify ^ for upscaled requests", "size");
             }
 
             if (req.Region.Mode == ImageRegionMode.Region)
             {
                 if (req.Region.Width == 0 || req.Region.Height == 0)
                 {
-                    throw new ArgumentException("Width or Height can not be 0");
+                    throw new ArgumentException("Width or Height can not be 0", "size");
                 }
             }
-            
+
             switch (req.Size.Mode)
             {
                 case ImageSizeMode.Distort:
                     if (req.Size.Width == 0 || req.Size.Height == 0)
                     {
-                        throw new ArgumentException("Width or Height can not be 0");
+                        throw new ArgumentException("Width or Height can not be 0", "size");
                     }
                     break;
                 case ImageSizeMode.MaintainAspectRatio:
                     if (req.Size.Width == 0 && req.Size.Height == 0)
                     {
-                        throw new ArgumentException("Width and Height can not both be 0");
+                        throw new ArgumentException("Width and Height can not both be 0", "size");
                     }
                     break;
                 case ImageSizeMode.PercentageScaled:
                     if (req.Size.Percent > 100.0 && !req.Size.Upscale)
                     {
-                        throw new ArgumentException("The value of n must not be greater than 100. Use ^pct syntax if available.");
+                        throw new ArgumentException("The value of n must not be greater than 100. Use ^pct syntax if available.", "size");
                     }
                     break;
                 default:

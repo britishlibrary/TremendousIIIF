@@ -4,6 +4,7 @@ using Serilog;
 using System;
 using Microsoft.Extensions.Configuration;
 using System.IO;
+using Microsoft.Extensions.Hosting;
 
 namespace TremendousIIIF
 {
@@ -27,7 +28,7 @@ namespace TremendousIIIF
             try
             {
                 Log.Information("Starting web host");
-                CreateWebHostBuilder(args).Build().Run();
+                CreateHostBuilder(args).Build().Run();
                 return 0;
             }
             catch (Exception ex)
@@ -41,9 +42,13 @@ namespace TremendousIIIF
             }
         }
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .UseSerilog();
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                    {
+                        webBuilder.ConfigureKestrel(serverOptions => { })
+                                .UseStartup<Startup>()
+                                .UseSerilog();
+                    });
     }
 }

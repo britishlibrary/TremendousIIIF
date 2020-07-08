@@ -250,8 +250,7 @@ namespace Jpeg2000
 
                     using var imageSize = srcRegionDimensions.access_size();
                     using var imagePosition = srcRegionDimensions.access_pos();
-                    Log.LogDebug("Access size {@AccessSize}", imageSize);
-                    Log.LogDebug("Access Position {@AccessPosition}", imagePosition);
+                    
 
                     float imageScale = 1;
 
@@ -266,6 +265,9 @@ namespace Jpeg2000
                     imagePosition.x = state.StartX;
                     imagePosition.y = state.StartY;
 
+                    Log.LogDebug("Access size {@AccessSize}", imageSize);
+                    Log.LogDebug("Access Position {@AccessPosition}", imagePosition);
+
                     using var extracted_dims = new Ckdu_dims();
                     using var dstImageDimensions = new Ckdu_dims();
                     //dstImageDimensions.assign(srcImageDimensions);
@@ -273,9 +275,9 @@ namespace Jpeg2000
                     extracted_dims.access_size().x = Convert.ToInt32(Math.Round(imageSize.x * imageScale));
                     extracted_dims.access_size().y = Convert.ToInt32(Math.Round(imageSize.y * imageScale));
 
-                    //extracted_dims.access_pos().assign(imagePosition);
-                    //extracted_dims.access_pos().x = state.StartX;
-                    //extracted_dims.access_pos().y = state.StartY;
+                    extracted_dims.access_pos().assign(imagePosition);
+                    extracted_dims.access_pos().x = state.StartX;
+                    extracted_dims.access_pos().y = state.StartY;
                     dstImageDimensions.access_pos().x = 0;
                     dstImageDimensions.access_pos().y = 0;
                     dstImageDimensions.access_size().x = state.OutputWidth;

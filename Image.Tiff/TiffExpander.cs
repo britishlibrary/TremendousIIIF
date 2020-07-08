@@ -20,7 +20,9 @@ namespace Image.Tiff
             if (imageUri.IsFile)
             {
                 using var tiff = T.Tiff.Open(imageUri.LocalPath, "r");
-                return ReadFullImage(log, tiff, request, allowSizeAboveFull);
+                if (tiff is object)
+                    return ReadFullImage(log, tiff, request, allowSizeAboveFull);
+                throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
             }
             else
             {
@@ -35,7 +37,9 @@ namespace Image.Tiff
             if (imageUri.IsFile)
             {
                 using var tiff = T.Tiff.Open(imageUri.LocalPath, "r");
-                return ReadMetadata(tiff, defaultTileWidth, log);
+                if (tiff is object)
+                    return ReadMetadata(tiff, defaultTileWidth, log);
+                throw new FileNotFoundException("Unable to load source image", imageUri.ToString());
             }
             else
             {
@@ -55,29 +59,35 @@ namespace Image.Tiff
             var tileHeight = tltag == null ? defaultTileWidth : tltag[0].ToInt();
             var GeoKeyDirectoryTag = tiff.GetField((T.TiffTag)34735);
 
-            var sub_wh = new List<(int, int)>();
+            var sub_wh = new Dictionary<short, (int, int)>();
 
             if (tiff.NumberOfDirectories() > 1)
             {
-                for (var count = 0; tiff.ReadDirectory(); count++)
+                void AddDirectoryToList()
                 {
                     int sub_width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
                     int sub_height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
-                    sub_wh.Add((sub_width, sub_height));
+                    sub_wh.Add(tiff.CurrentDirectory(), (sub_width, sub_height));
+
                     log.LogDebug("Available TIFF Directory {@Dir}, Dims {@X}, {@Y}", tiff.CurrentDirectory(), sub_width, sub_height);
+                }
+                AddDirectoryToList();
+                for (var count = 0; tiff.ReadDirectory(); count++)
+                {
+                    AddDirectoryToList();
                 }
             }
 
             return new Metadata
             (
-                width : width,
-                height : height,
-                tileWidth : tileWidth,
-                tileHeight : tileHeight,
-                scalingLevels : (int)(Math.Floor(Math.Log(Math.Max(width, height), 2)) - 3),
-                hasGeoData : GeoKeyDirectoryTag != null,
-                sizes : sub_wh,
-                qualities:0
+                width: width,
+                height: height,
+                tileWidth: tileWidth,
+                tileHeight: tileHeight,
+                scalingLevels: (int)(Math.Floor(Math.Log(Math.Max(width, height), 2)) - 3),
+                hasGeoData: GeoKeyDirectoryTag != null,
+                sizes: sub_wh.Values,
+                qualities: 0
             );
         }
 
@@ -103,71 +113,13 @@ namespace Image.Tiff
 
             var state = ImageRequestInterpreter.GetInterpretedValues(request, width, height, allowSizeAboveFull);
 
-            // TODO: find which sub image if available best satisfies the resolution request, because at the moment
-            // we're using the first one we find
-
-            if (tiff.NumberOfDirectories() > 1)
-            {
-                var sub_wh = new Dictionary<short, (int, int)>();
-                for (var count = 0; tiff.ReadDirectory(); count++)
-                {
-                    int sub_width = tiff.GetField(T.TiffTag.IMAGEWIDTH)[0].ToInt();
-                    int sub_height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
-                    sub_wh.Add(tiff.CurrentDirectory(), (sub_width, sub_height));
-
-                    log.LogDebug("Available TIFF Directory {@Dir}, Dims {@X}, {@Y}", tiff.CurrentDirectory(), sub_width, sub_height);
-                }
-
-                // TODO: would first directory ever not be the largest? check spec
-                var w = sub_wh.Max(k => k.Value.Item1);
-                var h = sub_wh.Max(k => k.Value.Item2);
-
-                if (w != width || h != height)
-                {
-                    width = w;
-                    height = h;
-                    state = ImageRequestInterpreter.GetInterpretedValues(request, width, height, allowSizeAboveFull);
-
-                }
-
-                foreach(var dir in sub_wh)
-                {
-                    (var sub_width, var sub_height) = dir.Value;
-                    float scalex = sub_width / (float)width;
-                    float scaley = sub_height / (float)height;
-
-                    var outputScale = scaley;
-                    if (scalex < scaley)
-                    {
-                        outputScale = scalex;
-                    }
-                    
-
-                    if(outputScale >= state.OutputScale)
-                    {
-                        // also need to scale down the region sizes to match!
-                        state.RegionWidth = Convert.ToInt32 (state.RegionWidth * scalex);
-                        state.RegionHeight = Convert.ToInt32(state.RegionHeight * scaley);
-                        state.StartX = Convert.ToInt32(state.StartX * outputScale);
-                        state.StartY = Convert.ToInt32(state.StartY * outputScale);
-                        tiff.SetDirectory(dir.Key);
-                        log.LogDebug("Set TIFF Directory {@Dir}", dir.Key);
-                    }
-                }
-                // tiff.SetDirectory()
-            }
-
-            log.LogDebug("Current TIFF Directory {@Dir}", tiff.CurrentDirectory());
-
-            
             state.HorizontalResolution = Convert.ToUInt16(xres);
             state.VerticalResolution = Convert.ToUInt16(yres);
 
             // TODO: if tiled/striped, calculate how many tiles needed to satisfy region request and convert that to RGB.
             // unless it's full region, in which case current method probably faster. benchmark!
-
-            
-
+            // ReadRGBAImageOriented uses tiles to derive this for the full image, but not the slice case (it always decodes
+            // the whole image and we then crop)
 
             if ((width == state.RegionWidth && height == state.RegionHeight) || !tiff.IsTiled())
             {
@@ -177,7 +129,7 @@ namespace Image.Tiff
                     throw new IOException("Unable to decode TIFF file");
                 }
 
-                using var bmp = CreateBitmapFromPixels(raster, width, height);
+                using var bmp = CreateBitmapFromPixels(ref raster, width, height);
                 var desiredWidth = Math.Max(1, (int)Math.Round(state.RegionWidth * state.ImageScale));
                 var desiredHeight = Math.Max(1, (int)Math.Round(state.RegionHeight * state.ImageScale));
                 log.LogDebug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
@@ -259,7 +211,7 @@ namespace Image.Tiff
 
                     for (var x = 0; x <= needed_tiles_x; x++)
                     {
-                        var bmp = CreateBitmapFromPixels(raster[x, y], tw, th);
+                        var bmp = CreateBitmapFromPixels(ref raster[x, y], tw, th);
                         // y axis is flipped and translated so 0 should be tile hight * row.
                         // so we can just draw to 0 on the y axis
                         var point = new SKPoint(x * tw, 0);
@@ -279,7 +231,7 @@ namespace Image.Tiff
 
         }
 
-        public static SKBitmap CreateBitmapFromPixels(int[] pixelData, int width, int height)
+        public static SKBitmap CreateBitmapFromPixels(ref int[] pixelData, int width, int height)
         {
             var bmp = new SKBitmap(width, height, SKColorType.Rgba8888, SKAlphaType.Premul);
             GCHandle pinnedArray = GCHandle.Alloc(pixelData, GCHandleType.Pinned);

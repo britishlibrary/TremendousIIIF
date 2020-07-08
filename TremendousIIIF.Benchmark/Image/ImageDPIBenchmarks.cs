@@ -17,8 +17,6 @@ namespace TremendousIIIF.Benchmark.Image
     {
         public static SKData Image { get; set; }
 
-
-
         [GlobalSetup]
         public static void SetUp()
         {
@@ -33,7 +31,7 @@ namespace TremendousIIIF.Benchmark.Image
                 {
                     throw new Exception("Unable to decode TIFF file");
                 }
-                var imageAsBmp = TiffExpander.CreateBitmapFromPixels(raster, width, height);
+                var imageAsBmp = TiffExpander.CreateBitmapFromPixels(ref raster, width, height);
                 var bmp = SKImage.FromBitmap(imageAsBmp);
                 Image = bmp.Encode(SKEncodedImageFormat.Jpeg, 100);
             }
@@ -42,7 +40,13 @@ namespace TremendousIIIF.Benchmark.Image
         }
 
         [Benchmark]
-        public void SetJpegDPI() => ImageProcessing.ImageProcessing.SetJpgDpi(Image.Handle, Image.Size, 300, 300);
+        public void SetJpegDPI()
+        {
+            unsafe
+            {
+                ImageProcessing.ImageProcessing.SetJpgDpi(new Span<byte>((void*)Image.Data, (int)Image.Size), 300, 300);
+            }
+        }
 
     }
 }

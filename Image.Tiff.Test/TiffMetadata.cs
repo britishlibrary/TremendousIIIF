@@ -37,7 +37,6 @@ namespace Image.Tiff.Test
 
             Assert.IsNotNull(result);
             Assert.AreEqual(defaultTileWidth, result.TileWidth, "Returned TileWidth does not match expected value");
-            Assert.AreEqual(0, result.TileHeight, "TileHeight should not be set");
             Assert.AreEqual(expectedWidth, result.Width, "Expected Width does not match returned value");
             Assert.AreEqual(expectedHeight, result.Height, "Expected Height does not match returned value");
             Assert.AreEqual(6, result.ScalingLevels, "Returned ScalingLevels does not match expected value");
@@ -51,7 +50,7 @@ namespace Image.Tiff.Test
             var filename = Path.GetFullPath(@"my_imaginary_file.tif");
             var defaultTileWidth = 512;
 
-            var result =  TiffExpander.GetMetadata(null, Log, new Uri(filename), defaultTileWidth);
+            TiffExpander.GetMetadata(null, Log, new Uri(filename), defaultTileWidth);
         }
                
     }

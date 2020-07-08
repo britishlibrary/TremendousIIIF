@@ -17,7 +17,18 @@ namespace TremendousIIIF.Common
         }
 
         public static string GetError(this ArgumentException ex)
-    => ex.ParamName == null ?
-        ex.Message : ex.Message.Remove(ex.Message.LastIndexOf(Environment.NewLine));
+        {
+            if (ex is null)
+            {
+                throw new ArgumentNullException(nameof(ex));
+            }
+
+            if (ex.ParamName == null)
+            {
+                return ex.Message;
+            }
+            var idx = ex.Message.LastIndexOf(Environment.NewLine);
+            return idx != -1 ? ex.Message.Remove(idx) : ex.Message;
+        }
     }
 }

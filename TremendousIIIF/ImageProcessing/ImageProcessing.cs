@@ -13,6 +13,9 @@ using Microsoft.Extensions.Logging;
 using System.Threading;
 using System.Text;
 using System.Runtime.CompilerServices;
+using LanguageExt;
+using System.Runtime.Intrinsics.X86;
+using System.Buffers;
 
 namespace TremendousIIIF.ImageProcessing
 {
@@ -33,6 +36,8 @@ namespace TremendousIIIF.ImageProcessing
             { ImageQuality.gray, SKColorFilter.CreateHighContrast(true, SKHighContrastConfigInvertStyle.NoInvert, 0.1f)},
             { ImageQuality.bitonal, SKColorFilter.CreateHighContrast(true, SKHighContrastConfigInvertStyle.NoInvert, 1.0f)}
         };
+
+        static ReadOnlySpan<byte> IDAT => new ReadOnlySpan<byte>(new byte[] { 0x49, 0x44, 0x41, 0x54 });
 
         public ImageProcessing(ILogger<ImageProcessing> log, ImageLoader loader)
         {
@@ -76,7 +81,7 @@ namespace TremendousIIIF.ImageProcessing
 
                 var (angle, originX, originY, newImgWidth, newImgHeight) = Rotate(expectedWidth, expectedHeight, request.Rotation.Degrees);
 
-                using var surface = SKSurface.Create(new SKImageInfo(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType));
+                using var surface = SKSurface.Create(new SKImageInfo(width: newImgWidth, height: newImgHeight, colorType: SKImageInfo.PlatformColorType, alphaType: alphaType, imageRegion.ColorSpace));
                 using var canvas = surface.Canvas;
                 using var region = new SKRegion();
                 // If the rotation parameter includes mirroring ("!"), the mirroring is applied before the rotation.
@@ -186,14 +191,21 @@ namespace TremendousIIIF.ImageProcessing
             var data = image.Encode(format, q);
             if (format == SKEncodedImageFormat.Jpeg)
             {
-                SetJpgDpi(data.Data, data.Size, horizontalResolution, verticalResolution);
+                unsafe {
+                    SetJpgDpi(new Span<byte>((void*)data.Data, (int)data.Size), horizontalResolution, verticalResolution);
+                }
             }
             if (format == SKEncodedImageFormat.Png)
             {
-                var newdata = SetPngDpi(data.Data, data.Size, horizontalResolution, verticalResolution);
+                var newdata = SetPngDpi(data.AsSpan(), (uint)Math.Round(horizontalResolution / 2.54 * 100), (uint)Math.Round(verticalResolution / 2.54 * 100));
 
                 data.Dispose();
-                //data = SKData.Create(newdata., newdata.Length);
+                unsafe
+                {
+                    fixed (byte* d = newdata)
+                        data = SKData.Create(new IntPtr(d), newdata.Length);
+                }
+
             }
 
             var ms = data.AsStream(false);
@@ -205,10 +217,10 @@ namespace TremendousIIIF.ImageProcessing
         /// The Skia JPEG encoder sets a default DPI of 96x96, whith no way to change it. 
         /// </summary>
         /// <param name="jpgData"><see cref="IntPtr"/> Pointer to the data</param>
-        /// <param name="size">Size of data, in bytes</param>
         /// <param name="horizontalResolution">Horizontal resolution, dots per inch</param>
         /// <param name="verticalResolution">Vertical resolution, dots per inch</param>
-        public static void SetJpgDpi(IntPtr jpgData, long size, ushort horizontalResolution, ushort verticalResolution)
+        /// 
+        public static void SetJpgDpi(in Span<byte> jpgData, ushort horizontalResolution, ushort verticalResolution)
         {
             // The Skia JPEG encoder sets a default 96x96 DPI, so reset to original DPI
 
@@ -224,25 +236,15 @@ namespace TremendousIIIF.ImageProcessing
             // 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17
             // FF D8 FF EO 00 10 4A 46 49 46 00 01 02 DD XX XX YY YY
             //...
-            // new Span<T> makes things much better, although need to be explicit about it being unsafe due to using pointer
-            unsafe
-            {
-                var header = new Span<byte>(jpgData.ToPointer(), (int)size);
-                // i must be missing something here, this is convoluted to say the least
-                var densityByteRef = MemoryMarshal.GetReference(header.Slice(13, 1));
-                Unsafe.Write(&densityByteRef, 0x01);
-                // JPEG is big endian
-                BinaryPrimitives.WriteUInt16BigEndian(header.Slice(14, 2), horizontalResolution);
-                BinaryPrimitives.WriteUInt16BigEndian(header.Slice(16, 2), verticalResolution);
-            }
+
+            jpgData[13] = 0x01;
+            // JPEG is big endian
+            BinaryPrimitives.WriteUInt16BigEndian(jpgData.Slice(14, 2), horizontalResolution);
+            BinaryPrimitives.WriteUInt16BigEndian(jpgData.Slice(16, 2), verticalResolution);
+
         }
-        public struct Chunk
-        {
-            public uint Ppx { get; set; }
-            public uint Ppy { get; set; }
-            public byte Spec { get; set; }
-        }
-        private static Span<byte> SetPngDpi(IntPtr pngData, long dataLength, ushort horizontalResolution, ushort verticalResolution)
+
+        private static Span<byte> SetPngDpi(in ReadOnlySpan<byte> pngData, uint horizontalResolution, uint verticalResolution)
         {
             // PNG
             // The pHYs chunk specifies the intended pixel size or aspect ratio for display of the image. It contains:
@@ -256,98 +258,38 @@ namespace TremendousIIIF.ImageProcessing
             // EXCEPT that the Skia PNG encoder doesn't set it at all.
             // pHYs must appear before first IDAT chunk
 
+            Span<byte> physSpan = stackalloc byte[21];
 
-            unsafe
-            {
-                var pngSpan = new ReadOnlySpan<byte>(pngData.ToPointer(), (int)dataLength);
-                var idat = Encoding.ASCII.GetBytes("IDAT").AsSpan();
+            var idat_pos = pngData.IndexOf(IDAT) - 4; // beginning of chunk
+            var preamble = pngData.Slice(0, idat_pos);
+            var rest = pngData.Slice(idat_pos);
 
-                var idat_pos = pngSpan.IndexOf(idat);
-                var preamble = pngSpan.Slice(0, idat_pos);
-                var rest = pngSpan.Slice(idat_pos);
 
-                var chunk = new Chunk() { Ppx = horizontalResolution, Ppy = verticalResolution, Spec = 0x01 };
+            BinaryPrimitives.WriteUInt32BigEndian(physSpan.Slice(0, 4), 9); // length of chunk data not including name or crc
+            BinaryPrimitives.WriteUInt32BigEndian(physSpan.Slice(4, 4), 0x70485973); // pHYs
+                                                                                     // chunk data
+            BinaryPrimitives.WriteUInt32BigEndian(physSpan.Slice(8, 4), horizontalResolution);
+            BinaryPrimitives.WriteUInt32BigEndian(physSpan.Slice(12, 4), verticalResolution);
+            physSpan[16] = 0x01;
+            // CRC32
+            var crc = Crc32(physSpan.Slice(4, 13), 0, 13, 0);
+            BinaryPrimitives.WriteUInt32BigEndian(physSpan.Slice(17, 4), crc);
 
-                void* valPtr = Unsafe.AsPointer(ref chunk);
-                var physSpan = new Span<byte>(valPtr, Marshal.SizeOf<Chunk>());
+            // can we just ref 
+            var outputSpan = new Span<byte>(new byte[preamble.Length + physSpan.Length + rest.Length]);
+            preamble.CopyTo(outputSpan);
+            var idx = preamble.Length;
+            physSpan.CopyTo(outputSpan.Slice(idx));
+            idx += physSpan.Length;
+            rest.CopyTo(outputSpan.Slice(idx));
 
-                // create pHYs
-                var outputSpan = new Span<byte>();
-                preamble.CopyTo(outputSpan);
-                physSpan.CopyTo(outputSpan);
-                rest.CopyTo(outputSpan);
-
-                return outputSpan;
-            }
-
-            var offset = 8; // skip header
-
-            var chunkHeader = new byte[8];
-
-            for (var i = 0L; i < dataLength; i++)
-            {
-                Marshal.Copy(IntPtr.Add(pngData, offset), chunkHeader, 0, 8);
-                //if (BitConverter.IsLittleEndian)
-                //{
-                //    Array.Reverse(chunkHeader);
-                //}
-                offset += 8;
-                var numBytes = SwapEndianness(BitConverter.ToInt32(chunkHeader, 0));
-                var ctype = System.Text.Encoding.ASCII.GetString(chunkHeader, 4, 4);
-
-                if ("IDAT" == ctype)
-                {
-                    // pHYs must appear before first IDAT
-                    break;
-                }
-
-                if ("pHYs" != ctype)
-                {
-                    // data[?] plus crc[4]
-                    offset += numBytes + 4;
-                    continue;
-                }
-                var chunkData = new byte[numBytes];
-                Marshal.Copy(IntPtr.Add(pngData, offset), chunkData, offset, numBytes);
-
-                // change the data
-                var type = new byte[] { 0x01 }; // pixels per metre!
-                var ppmh = horizontalResolution / 0.0254;
-                var ppmv = verticalResolution / 0.0254;
-                byte[] h_dpi = BitConverter.GetBytes(ppmh);
-                byte[] v_dpi = BitConverter.GetBytes(ppmv);
-                Buffer.BlockCopy(h_dpi, 0, chunkData, 0, 4);
-                Buffer.BlockCopy(v_dpi, 0, chunkData, 4, 4);
-                Buffer.BlockCopy(type, 0, chunkData, 8, 1);
-
-                var newcrc = Crc32(chunkData, 0, numBytes, idatCrc);
-
-                Marshal.Copy(chunkData, 0, pngData + offset, numBytes);
-                Marshal.Copy(BitConverter.GetBytes(newcrc), 0, pngData + offset + numBytes, 4);
-                break;
-            }
-
-        }
-
-        public static int SwapEndianness(int value)
-        {
-            var b1 = (value >> 0) & 0xff;
-            var b2 = (value >> 8) & 0xff;
-            var b3 = (value >> 16) & 0xff;
-            var b4 = (value >> 24) & 0xff;
-
-            return b1 << 24 | b2 << 16 | b3 << 8 | b4 << 0;
+            return outputSpan;
         }
 
         static uint[] crcTable;
 
-        // Stores a running CRC (initialized with the CRC of "IDAT" string). When
-        // you write this to the PNG, write as a big-endian value
-        static readonly uint idatCrc = Crc32(new byte[] { (byte)'I', (byte)'D', (byte)'A', (byte)'T' }, 0, 4, 0);
-
-        // Call this function with the compressed image bytes, 
-        // passing in idatCrc as the last parameter
-        private static uint Crc32(in byte[] stream, int offset, int length, uint crc)
+        // How is there not a framework method for this somewhere?!
+        private static uint Crc32(in ReadOnlySpan<byte> stream, int offset, int length, uint crc)
         {
             uint c;
             if (crcTable == null)
@@ -402,8 +344,7 @@ namespace TremendousIIIF.ImageProcessing
                 metadata.Producer = pdfMetadata.Author;
             }
 
-            using (var skstream = new SKManagedWStream(output))
-            using (var writer = SKDocument.CreatePdf(skstream, metadata))
+            using (var writer = SKDocument.CreatePdf(output, metadata))
             using (var paint = new SKPaint())
             {
                 using var canvas = writer.BeginPage(width, height);
@@ -439,13 +380,9 @@ namespace TremendousIIIF.ImageProcessing
         /// <returns><see cref="EncodingStrategy"/></returns>
         private static EncodingStrategy GetEncodingStrategy(in ImageFormat format)
         {
-            if (FormatLookup.ContainsKey(format))
-            {
-                return EncodingStrategy.Skia;
-            }
-
             return format switch
             {
+                _ when FormatLookup.ContainsKey(format) => EncodingStrategy.Skia,
                 ImageFormat.pdf => EncodingStrategy.PDF,
                 ImageFormat.jp2 => EncodingStrategy.JPEG2000,
                 ImageFormat.tif => EncodingStrategy.Tifflib,

@@ -6,17 +6,17 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Jpeg2000</RootNamespace>
     <AssemblyName>Jpeg2000</AssemblyName>
-    <TargetFrameworks>net48;netcoreapp2.2</TargetFrameworks>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -25,7 +25,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -36,7 +35,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -75,22 +73,15 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="lib\kdu_mni.dll" />
-  </ItemGroup>
+
+
+
   <ItemGroup>
     <ProjectReference Include="..\Image.Common\Image.Common.csproj">
     </ProjectReference>
     <ProjectReference Include="..\TremendousIIIF.Common\TremendousIIIF.Common.csproj">
     </ProjectReference>
   </ItemGroup>
-
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-    <Version>2.0.0</Version>
-  </PropertyGroup>
-
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.0.0">
@@ -110,11 +101,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Serilog.AspNetCore" Version="3.2.0" />
-    <PackageReference Include="SkiaSharp" Version="1.68.3" />
+    <PackageReference Include="SkiaSharp" Version="2.80.0-preview.33" />
     <PackageReference Include="Serilog" Version="2.9.0" />
-    <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.IO.Pipelines" Version="4.7.1" />
-    <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
   </ItemGroup>
 
@@ -124,6 +113,15 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Jpeg2000\lib\Ijwhost.dll">
+      <Link>Ijwhost.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Visible>True</Visible>
+    </None>
+  </ItemGroup>
+
+
 
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -132,4 +130,7 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="CopyCLRHostDLL" AfterTargets="Build">
+    <Copy SourceFiles="lib\Ijwhost.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

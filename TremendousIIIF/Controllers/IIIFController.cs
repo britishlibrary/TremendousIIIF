@@ -1,6 +1,7 @@
 ﻿using Image.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using System;
@@ -22,19 +23,23 @@ namespace TremendousIIIF.Controllers
         readonly ImageServer Conf;
         readonly ImageProcessing.ImageProcessing Processor;
         readonly ILogger<IIIFController> _log;
+        private readonly LinkGenerator _generator;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         readonly static List<string> _validRightsDomains = new List<string> { "creativecommons.org", "rightsstatements.org" };
 
-        public IIIFController(ILogger<IIIFController> log, ImageServer conf, ImageProcessing.ImageProcessing processor)
+        public IIIFController(ILogger<IIIFController> log, ImageServer conf, ImageProcessing.ImageProcessing processor, LinkGenerator generator, IHttpContextAccessor httpContextAccessor)
         {
             Conf = conf;
             Processor = processor;
             _log = log;
+            _generator = generator;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         [HttpGet("/{id}/info.json", Name = "info.json")]
 
-        [Produces("application/json")]
+        [Produces("application/json", "application/ld+json;profile=\"http://iiif.io/api/image/2/context.json\"", "application/ld+json;profile=\"http://iiif.io/api/image/3/context.json\"")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
@@ -51,7 +56,7 @@ namespace TremendousIIIF.Controllers
                 var metadata = await Processor.GetImageInfo(imageUri, Conf.DefaultTileWidth, cancellationToken);
 
                 var host = new UriBuilder(Request.Host.ToString());
-                var requestUrl = new Uri(host.Uri, Request.Path.ToUriComponent()).ToString();
+                var requestUrl = _generator.GetUriByName(_httpContextAccessor.HttpContext, "base", new { id });
 
                 Response.Headers
                         .Add("Link",
@@ -89,7 +94,7 @@ namespace TremendousIIIF.Controllers
         private static object MakeInfo(ApiVersion apiVersion, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, string id, string requestUri, string manifestId, string licence)
         {
             var idUri = conf.BaseUri == null ?
-                requestUri.Replace("/info.json", "") :
+                requestUri :
                 new Uri(conf.BaseUri, id).ToString();
 
             if (Uri.TryCreate(licence, UriKind.Absolute, out var licenceUri))
@@ -121,20 +126,22 @@ namespace TremendousIIIF.Controllers
                 var types = accept.Split(',');
                 foreach (var type in types)
                 {
-                    var mediaType = MediaTypeHeaderValue.Parse(type);
-                    var profile = mediaType.Parameters.SingleOrDefault(p => p.Name == "profile");
-
-                    // look up by custom attribute on the enum
-                    FieldInfo[] fields = typeof(ApiVersion).GetFields();
-                    var field = fields
-                                    .SelectMany(f => f.GetCustomAttributes(
-                                        typeof(ContextUriAttribute), false), (
-                                            f, a) => new { Field = f, Att = a })
-                                    .Where(a => ((ContextUriAttribute)a.Att)
-                                        .ContextUri == profile?.GetUnescapedValue().Value).SingleOrDefault();
-                    if (null != field)
+                    if (MediaTypeHeaderValue.TryParse(type, out var mediaType))
                     {
-                        return (ApiVersion)field.Field.GetRawConstantValue();
+                        var profile = mediaType.Parameters.SingleOrDefault(p => p.Name == "profile");
+
+                        // look up by custom attribute on the enum
+                        FieldInfo[] fields = typeof(ApiVersion).GetFields();
+                        var field = fields
+                                        .SelectMany(f => f.GetCustomAttributes(
+                                            typeof(ContextUriAttribute), false), (
+                                                f, a) => new { Field = f, Att = a })
+                                        .Where(a => ((ContextUriAttribute)a.Att)
+                                            .ContextUri == profile?.GetUnescapedValue().Value).SingleOrDefault();
+                        if (null != field)
+                        {
+                            return (ApiVersion)field.Field.GetRawConstantValue();
+                        }
                     }
                 }
             }
@@ -161,7 +168,8 @@ namespace TremendousIIIF.Controllers
                                                                 maxWidth,
                                                                 maxHeight,
                                                                 maxArea,
-                                                                Conf.SupportedFormats());
+                                                                Conf.SupportedFormats(),
+                                                                Conf.DefaultAPIVersion);
                 return await request.Match<Task<ActionResult>>(
                     Right: async (r) =>
                     {
@@ -216,10 +224,10 @@ namespace TremendousIIIF.Controllers
             }
         }
 
-        [HttpGet("/{id}")]
+        [HttpGet("/{id}", Name ="base")]
         public IActionResult BaseRedirect(string id)
         {
-            return SeeOther("info.json", id);
+            return SeeOther("info.json", new { id = id });
         }
 
         [HttpGet("/favicon.ico")]
@@ -233,7 +241,8 @@ namespace TremendousIIIF.Controllers
         [NonAction]
         protected IActionResult SeeOther(string routeName, object values)
         {
-            var location = Url.Link(routeName, values);
+            var location = _generator.GetUriByName(_httpContextAccessor.HttpContext, routeName, values);
+            //var location = Url.Link(routeName, values);
             HttpContext.Response.GetTypedHeaders().Location = new Uri(location);
             return StatusCode(StatusCodes.Status303SeeOther);
         }

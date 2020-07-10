@@ -77,7 +77,7 @@
       <Version>2.1.2</Version>
     </PackageReference>
     <PackageReference Include="SkiaSharp">
-      <Version>2.80.0-preview.33</Version>
+      <Version>2.80.0</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

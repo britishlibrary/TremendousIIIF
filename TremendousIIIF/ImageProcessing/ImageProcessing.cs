@@ -7,15 +7,9 @@ using Image.Common;
 using TremendousIIIF.Common;
 using Conf = TremendousIIIF.Common.Configuration;
 using RotationCoords = System.ValueTuple<float, float, float, int, int>;
-using System.Runtime.InteropServices;
 using System.Buffers.Binary;
 using Microsoft.Extensions.Logging;
 using System.Threading;
-using System.Text;
-using System.Runtime.CompilerServices;
-using LanguageExt;
-using System.Runtime.Intrinsics.X86;
-using System.Buffers;
 
 namespace TremendousIIIF.ImageProcessing
 {
@@ -27,9 +21,7 @@ namespace TremendousIIIF.ImageProcessing
         private static readonly Dictionary<ImageFormat, SKEncodedImageFormat> FormatLookup = new Dictionary<ImageFormat, SKEncodedImageFormat> {
             { ImageFormat.jpg, SKEncodedImageFormat.Jpeg },
             { ImageFormat.png, SKEncodedImageFormat.Png },
-            { ImageFormat.webp, SKEncodedImageFormat.Webp },
-            // GIF appears to be unsupported on Windows in Skia currently
-            // { ImageFormat.gif, SKEncodedImageFormat.Gif }
+            { ImageFormat.webp, SKEncodedImageFormat.Webp }
         };
 
         private static readonly Dictionary<ImageQuality, SKColorFilter> ColourFilters = new Dictionary<ImageQuality, SKColorFilter> {
@@ -132,6 +124,8 @@ namespace TremendousIIIF.ImageProcessing
                     return Jpeg2000.Compressor.Compress(surface.Snapshot());
                 case EncodingStrategy.Tifflib:
                     return Image.Tiff.TiffEncoder.Encode(surface.Snapshot());
+                case EncodingStrategy.Gif:
+                    return GifEncoder.Encode(surface.Snapshot());
                 default:
                     throw new ArgumentException("Unsupported format", "format");
             }
@@ -386,6 +380,7 @@ namespace TremendousIIIF.ImageProcessing
                 ImageFormat.pdf => EncodingStrategy.PDF,
                 ImageFormat.jp2 => EncodingStrategy.JPEG2000,
                 ImageFormat.tif => EncodingStrategy.Tifflib,
+                ImageFormat.gif => EncodingStrategy.Gif,
                 _ => EncodingStrategy.Unknown,
             };
         }
@@ -396,7 +391,8 @@ namespace TremendousIIIF.ImageProcessing
             Skia,
             PDF,
             JPEG2000,
-            Tifflib
+            Tifflib,
+            Gif
         }
     }
 }

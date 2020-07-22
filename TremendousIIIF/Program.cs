@@ -46,8 +46,7 @@ namespace TremendousIIIF
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
                     {
-                        webBuilder.ConfigureKestrel(serverOptions => { })
-                                .UseStartup<Startup>()
+                        webBuilder.UseStartup<Startup>()
                                 .UseSerilog();
                     });
     }

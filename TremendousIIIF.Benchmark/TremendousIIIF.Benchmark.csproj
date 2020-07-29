@@ -7,7 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>TremendousIIIF.Benchmark</RootNamespace>
     <AssemblyName>TremendousIIIF.Benchmark</AssemblyName>
-    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <TargetFrameworkProfile />

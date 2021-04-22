@@ -12,6 +12,7 @@ using Polly;
 using Polly.Contrib.WaitAndRetry;
 using Microsoft.Extensions.Hosting;
 using HealthChecks.UI.Client;
+using Microsoft.OpenApi.Models;
 
 namespace TremendousIIIF
 {
@@ -41,6 +42,11 @@ namespace TremendousIIIF
                 .AddMvcOptions(o => o.RespectBrowserAcceptHeader = true)
                 .AddFormatterMappings(m => m.SetMediaTypeMappingForFormat("json", "application/ld+json"));
 
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "TremendousIIIF", Version = "v1" });
+            });
+
             services.AddSingleton(Configuration);
             var imageServerConf = new ImageServer();
             ConfigurationBinder.Bind(Configuration.GetSection("ImageServer"), imageServerConf);
@@ -64,6 +70,16 @@ namespace TremendousIIIF
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            // Enable middleware to serve generated Swagger as a JSON endpoint.
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.),
+            // specifying the Swagger JSON endpoint.
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("./v1/swagger.json", "TremendousIIIF");
+            });
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>TremendousIIIF</name>
+    </assembly>
+    <members>
+        <member name="M:TremendousIIIF.Controllers.GeoController.GetGeoJson(System.String,System.String)">
+            <summary>
+            Gets the image Geo Data. Uses the "GeoDataPath" defined in config
+            </summary>
+            <param name="naan">not used</param>
+            <param name="id">Concatenated with "Location" defined in config to form a Uri</param>
+            <returns>"application/geo+json-seq" or "application/json"</returns>
+        </member>
+        <member name="M:TremendousIIIF.Controllers.IIIFController.Info(System.String,System.String,System.String,System.String)">
+            <summary>
+            The method that gets all the relevant info for an image and gives us the parameters and boundaries required to perform the ImageRequest (I presume)
+            </summary>
+            <param name="id">the id/name of the image appended to "Location" in the appsettings.json to form a Uri</param>
+            <param name="Accept">The api version can be passed as a custom mediaType property in the header to the API from which defines the api Version and resolves to one of two different "ImageInfo" formats for the returned json info. Else the default defined in config is used.</param>
+            <param name="manifestId">The IIIF manifest id of the image I presume</param>
+            <param name="licence">FromHeader(Name = "X-LicenceUri") from the code comments: The value of this property MUST be a string drawn from the set of Creative Commons license URIs, the RightsStatements.org rights statement URIs, or those added via the Registry of Known Extensions mechanism we assume the upstream system is setting the correct URI and just validate the domain</param>
+            <returns>application/json</returns>
+        </member>
+        <member name="M:TremendousIIIF.Controllers.IIIFController.ImageRequest(System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Returns a FileStreamResult of the image requested by id from the configured image location, processed using the supplied params  
+            </summary>
+            <param name="id">the id/name of the image appended to "Location" in the appsettings.json to form a Uri</param>
+            <param name="region">the region of the image requested defined as either "full", "squa", "pct:" </param>
+            <param name="size">Can be defined several ways as a percentage e.g. "pct:50" of as width and height e.g. "156,256" and with two predicates: ^ meaning upscale and ! meaning best? (not sure what that means yet). Using the upscale predicate and just supplying the width like so: "^100," would increase the width of the defined selection to 100 pixels(?I assume) whilst leaving the height unaltered.</param>
+            <param name="rotation">defined as a number between 0 and 360 with the predicate of an exclamation mark e.g. "!270"</param>
+            <param name="quality">Defined as either: @default, color, gray or bitonal.</param>
+            <param name="format">Defined as either: jpg, tif, png, gif, jp2, pdf or webp</param>
+            <returns>FileStreamResult</returns>
+        </member>
+        <member name="M:TremendousIIIF.Controllers.IIIFController.BaseRedirect(System.String)">
+            <summary>
+            Points the user calling this API with just the image id to the info.json method
+            </summary>
+            <param name="id"></param>
+            <returns>Status 303 See Other response</returns>
+        </member>
+        <member name="M:TremendousIIIF.Controllers.IIIFController.Favicon">
+            <summary>
+            Weirdly seems to simply return a 404 Status Not Found code, perhaps there was some intended future use for this?
+            </summary>
+            <returns>Status: Not Found 404</returns>
+        </member>
+        <member name="F:TremendousIIIF.ImageProcessing.ImageLoader.MagicBytes">
+            <summary>
+            MagicBytes used to identify JPEG2000 or TIFF files (big or little endian) if unsuitable mimetype supplied
+            </summary>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageLoader.ExtractRegion(System.Uri,Image.Common.ImageRequest,System.Boolean,TremendousIIIF.Common.Configuration.ImageQuality,System.Threading.CancellationToken)">
+            <summary>
+            Extract region from source image
+            </summary>
+            <param name="imageUri">The <see cref="T:System.Uri"/> of the source image</param>
+            <param name="request">The <see cref="T:Image.Common.ImageRequest"/></param>
+            <param name="allowUpscaling">Allow the output size to exceed the original dimensions of the image</param>
+            <param name="quality">The <see cref="T:Image.Common.ImageQuality"/> settings for encoding</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageLoader.GetMetadata(System.Uri,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Get Metadata from the source image, for info.json requests
+            </summary>
+            <param name="imageUri">The <see cref="T:System.Uri"/> of the source image</param>
+            <param name="defaultTileWidth">The default tile width (pixels) if the source image is not natively tiled</param>
+            <param name="requestId">The correlation ID to include on any subsequent HTTP requests</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageLoader.GetSourceFormat(System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Determine the image format of the source image, using mimetpye if available, otherwise using <see cref="F:TremendousIIIF.ImageProcessing.ImageLoader.MagicBytes"/>
+            </summary>
+            <param name="imageUri">The <see cref="T:System.Uri"/> of the source image</param>
+            <param name="requestId">The correlation ID to include on any subsequent HTTP requests</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageLoader.LoadHttp(System.Uri,System.Threading.CancellationToken)">
+            <summary>
+            make a GET request and get on with it
+            </summary>
+            <param name="imageUri"></param>
+            <param name="defaultTileWidth"></param>
+            <param name="token"></param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageLoader.GetFormatFromMimeType(System.String@)">
+            <summary>
+            Map mimetypes to <see cref="T:TremendousIIIF.Common.ImageFormat"/>
+            </summary>
+            <param name="mimeType">The mimetype to compare</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageProcessing.ProcessImage(System.Uri,Image.Common.ImageRequest,TremendousIIIF.Common.Configuration.ImageQuality,System.Boolean,TremendousIIIF.Common.Configuration.PdfMetadata)">
+            <summary>
+            Process image pipeline
+            <para>Region THEN Size THEN Rotation THEN Quality THEN Format</para>
+            </summary>
+            <param name="imageUri">The <see cref="T:System.Uri"/> of the source image</param>
+            <param name="request">The parsed and validated IIIF Image API request</param>
+            <param name="quality">Image output encoding quality settings</param>
+            <param name="allowSizeAboveFull">Allow output image dimensions to exceed that of the source image</param>
+            <param name="pdfMetadata">Optional PDF metadata fields</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageProcessing.Rotate(System.Int32,System.Int32,System.Single)">
+            <summary>
+            Rotate an image by arbitary degrees, to fit within supplied bounding box.
+            </summary>
+            <param name="width">Target width (pixels) of output image</param>
+            <param name="height">Target height (pixels) of output image</param>
+            <param name="degrees">arbitary precision degrees of rotation</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageProcessing.SetJpgDpi(System.Span{System.Byte}@,System.UInt16,System.UInt16)">
+            <summary>
+            Overwrite the DPI of a JPEG
+            The Skia JPEG encoder sets a default DPI of 96x96, whith no way to change it. 
+            </summary>
+            <param name="jpgData"><see cref="T:System.IntPtr"/> Pointer to the data</param>
+            <param name="horizontalResolution">Horizontal resolution, dots per inch</param>
+            <param name="verticalResolution">Vertical resolution, dots per inch</param>
+            
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageProcessing.EncodePdf(SkiaSharp.SKSurface@,System.Int32,System.Int32,System.Int32,TremendousIIIF.Common.Configuration.PdfMetadata@,System.UInt16)">
+            <summary>
+            Encode output image as PDF
+            </summary>
+            <param name="surface"></param>
+            <param name="width">Requested output width (pixels), because you can't get a surface's dimensions once created(?)</param>
+            <param name="height">Requested output height (pixels)</param>
+            <param name="q">Image quality (percentage)</param>
+            <param name="pdfMetadata">Optional metadata to include in the PDF</param>
+            <param name="dpi">The pixels per inch resolution that images will be rasterised at in the PDF</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageProcessing.GetImageInfo(System.Uri,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Load source image and extract enough Metadata to create an info.json
+            </summary>
+            <param name="imageUri">The <see cref="T:System.Uri"/> of the source image</param>
+            <param name="defaultTileWidth">The default tile width (pixels) to use for the source image, if source is not natively tiled</param>
+            <param name="requestId">The <code>X-RequestId</code> value to include on any subsequent HTTP calls</param>
+            <returns></returns>
+        </member>
+        <member name="M:TremendousIIIF.ImageProcessing.ImageProcessing.GetEncodingStrategy(TremendousIIIF.Common.ImageFormat@)">
+            <summary>
+            Determines output encoding strategy based on supplied <paramref name="format"/>
+            </summary>
+            <param name="format">Requested output format type</param>
+            <returns><see cref="T:TremendousIIIF.ImageProcessing.ImageProcessing.EncodingStrategy"/></returns>
+        </member>
+        <member name="T:TremendousIIIF.Middleware.SizeConstraints">
+            <summary>
+            If rights proxy includes size constraints, these override the configured values
+            Note it is up to the user to ensure these can not be spoofed
+            </summary>
+        </member>
+        <member name="M:TremendousIIIF.Validation.ImageRequestValidator.ParseFormat(System.String@,System.Collections.Generic.List{TremendousIIIF.Common.ImageFormat})">
+            <summary>
+            Validates requested format first against those supported by IIIF Image API 2.1, then against those <paramref name="supportedFormats"/> enabled in configuration
+            </summary>
+            <param name="formatString">The raw format string (jpg,png,webm,etc)</param>
+            <param name="supportedFormats"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Extensions.ArrayDeconstructionExtensions">
+            <summary>
+            Allow the up to the first eight elements of an array to take part in C# 7's destructuring syntax.
+            </summary>
+            <example>
+            (int first, _, int middle, _, int[] rest) = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            var (first, second, rest) = new[] { 1, 2, 3, 4 };
+            </example>
+        </member>
+    </members>
+</doc>

@@ -20,6 +20,13 @@ namespace TremendousIIIF.Controllers
             _httpClientFactory = httpClientFactory;
             Conf = conf;
         }
+
+        /// <summary>
+        /// Gets the image Geo Data. Uses the "GeoDataPath" defined in config
+        /// </summary>
+        /// <param name="naan">not used</param>
+        /// <param name="id">Concatenated with "Location" defined in config to form a Uri</param>
+        /// <returns>"application/geo+json-seq" or "application/json"</returns>
         [Produces("application/geo+json-seq", "application/json")]
         [HttpGet("/{id}/geo.json", Name = "geo.json")]
         public async Task<ActionResult<GeoJSON.Net.Feature.Feature>> GetGeoJson(string naan, string id)

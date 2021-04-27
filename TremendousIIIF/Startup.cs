@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -45,6 +46,8 @@ namespace TremendousIIIF
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "TremendousIIIF", Version = "v1" });
+                var filePath = Path.Combine(AppContext.BaseDirectory, "TremendousIIIF.xml");
+                c.IncludeXmlComments(filePath);
             });
 
             services.AddSingleton(Configuration);

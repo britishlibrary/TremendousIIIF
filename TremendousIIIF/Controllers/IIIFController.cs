@@ -37,8 +37,15 @@ namespace TremendousIIIF.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
+        /// <summary>
+        /// The method that gets all the relevant info for an image and gives us the parameters and boundaries required to perform the ImageRequest (I presume)
+        /// </summary>
+        /// <param name="id">the id/name of the image appended to "Location" in the appsettings.json to form a Uri</param>
+        /// <param name="Accept">The api version can be passed as a custom mediaType property in the header to the API from which defines the api Version and resolves to one of two different "ImageInfo" formats for the returned json info. Else the default defined in config is used.</param>
+        /// <param name="manifestId">The IIIF manifest id of the image I presume</param>
+        /// <param name="licence">FromHeader(Name = "X-LicenceUri") from the code comments: The value of this property MUST be a string drawn from the set of Creative Commons license URIs, the RightsStatements.org rights statement URIs, or those added via the Registry of Known Extensions mechanism we assume the upstream system is setting the correct URI and just validate the domain</param>
+        /// <returns>application/json</returns>
         [HttpGet("/{id}/info.json", Name = "info.json")]
-
         [Produces("application/json", "application/ld+json;profile=\"http://iiif.io/api/image/2/context.json\"", "application/ld+json;profile=\"http://iiif.io/api/image/3/context.json\"")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -148,6 +155,16 @@ namespace TremendousIIIF.Controllers
             return defaultVersion;
         }
 
+        /// <summary>
+        /// Returns a FileStreamResult of the image requested by id from the configured image location, processed using the supplied params  
+        /// </summary>
+        /// <param name="id">the id/name of the image appended to "Location" in the appsettings.json to form a Uri</param>
+        /// <param name="region">the region of the image requested defined as either "full", "squa", "pct:" </param>
+        /// <param name="size">Can be defined several ways as a percentage e.g. "pct:50" of as width and height e.g. "156,256" and with two predicates: ^ meaning upscale and ! meaning best? (not sure what that means yet). Using the upscale predicate and just supplying the width like so: "^100," would increase the width of the defined selection to 100 pixels(?I assume) whilst leaving the height unaltered.</param>
+        /// <param name="rotation">defined as a number between 0 and 360 with the predicate of an exclamation mark e.g. "!270"</param>
+        /// <param name="quality">Defined as either: @default, color, gray or bitonal.</param>
+        /// <param name="format">Defined as either: jpg, tif, png, gif, jp2, pdf or webp</param>
+        /// <returns>FileStreamResult</returns>
         [HttpGet("/{id}/{region}/{size}/{rotation}/{quality}.{format}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
@@ -157,7 +174,7 @@ namespace TremendousIIIF.Controllers
         {
             try
             {
-                (var maxWidth, var maxHeight, var maxArea) = GetSizeConstraints(Conf);
+                var (maxWidth, maxHeight, maxArea) = GetSizeConstraints(Conf);
 
                 var request = ImageRequestValidator.Validate(
                                                                 region,
@@ -224,12 +241,21 @@ namespace TremendousIIIF.Controllers
             }
         }
 
+        /// <summary>
+        /// Points the user calling this API with just the image id to the info.json method
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns>Status 303 See Other response</returns>
         [HttpGet("/{id}", Name ="base")]
         public IActionResult BaseRedirect(string id)
         {
             return SeeOther("info.json", new { id = id });
         }
 
+        /// <summary>
+        /// Weirdly seems to simply return a 404 Status Not Found code, perhaps there was some intended future use for this?
+        /// </summary>
+        /// <returns>Status: Not Found 404</returns>
         [HttpGet("/favicon.ico")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]

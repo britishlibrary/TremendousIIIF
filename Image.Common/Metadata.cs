@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Image.Common
+﻿namespace Image.Common
 {
     public readonly struct Metadata
     {
@@ -15,14 +13,14 @@ namespace Image.Common
             Qualities = qualities;
             Sizes = sizes;
         }
-        public int Width { get;  }
-        public int Height { get;  }
-        public int TileWidth { get;  }
-        public int TileHeight { get;  }
-        public int ScalingLevels { get;  }
-        public bool HasGeoData { get;  }
-        public int Qualities { get;  }
+        public int Width { get; }
+        public int Height { get; }
+        public int TileWidth { get; }
+        public int TileHeight { get; }
+        public int ScalingLevels { get; }
+        public bool HasGeoData { get; }
+        public int Qualities { get; }
 
-        public IEnumerable<(int,int)> Sizes { get;  }
+        public IEnumerable<(int, int)> Sizes { get; }
     }
 }

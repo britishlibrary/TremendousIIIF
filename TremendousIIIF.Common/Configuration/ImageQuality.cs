@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace TremendousIIIF.Common.Configuration
 {
@@ -14,11 +15,6 @@ namespace TremendousIIIF.Common.Configuration
         public int DefaultEncodingQuality { get; set; }
         public int OutputDpi { get; set; }
         public float WeightedRMSE { get; set; }
-        /// <summary>
-        /// Maximum number of quality layers to use when decoding a JP2. 
-        /// If set to a negative number, it will be "Unlimited" and use all the layers available in the image. 
-        /// If it is set to 0, it will use half the number of layers in the image.
-        /// </summary>
         public int MaxQualityLayers { get; set; }
 
         public Dictionary<string, string> OutputFormatQuality { get; set; }
@@ -30,7 +26,7 @@ namespace TremendousIIIF.Common.Configuration
                 return DefaultEncodingQuality;
             }
             OutputFormatQuality.TryGetValue(format.ToString(), out string qualityString);
-            if (!int.TryParse(qualityString, out int quality))
+            if (!Int32.TryParse(qualityString, out int quality))
             {
                 return DefaultEncodingQuality;
             }

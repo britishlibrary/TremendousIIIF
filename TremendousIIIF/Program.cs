@@ -1,53 +1,119 @@
-﻿using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
+using Polly;
+using Polly.Contrib.WaitAndRetry;
 using Serilog;
-using System;
-using Microsoft.Extensions.Configuration;
-using System.IO;
-using Microsoft.Extensions.Hosting;
+using TremendousIIIF.Common.Configuration;
+using TremendousIIIF.ImageProcessing;
+using TremendousIIIF.Middleware;
 
-namespace TremendousIIIF
-{
-    public class Program
+var config = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json", optional: false)
+    .Build();
+
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(config)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .WriteTo.Console()
+    .CreateLogger();
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+
+builder.Services.AddCors(c => c.AddPolicy("AllowAnyOrigin", options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+builder.Services.AddHeaderPropagation(o => o.Headers.Add("X-Request-ID", c => new Guid().ToString()));
+builder.Services.AddControllers()
+    // until the new System.Text.Json allows ordering
+    .AddNewtonsoftJson()
+    .AddJsonOptions(o =>
     {
-        public static IConfiguration Configuration { get; } = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
-            .AddEnvironmentVariables()
-            .Build();
-        public static int Main(string[] args)
-        {
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(Configuration)
-                .Enrich.FromLogContext()
-                .Enrich.WithMachineName()
-                .WriteTo.Console()
-                .CreateLogger();
+        o.JsonSerializerOptions.WriteIndented = true;
+        o.JsonSerializerOptions.IgnoreNullValues = true;
+        o.JsonSerializerOptions.PropertyNamingPolicy = null;
+    })
+    .AddMvcOptions(o => o.RespectBrowserAcceptHeader = true)
+    .AddFormatterMappings(m => m.SetMediaTypeMappingForFormat("json", "application/ld+json"));
 
-            try
-            {
-                Log.Information("Starting web host");
-                CreateHostBuilder(args).Build().Run();
-                return 0;
-            }
-            catch (Exception ex)
-            {
-                Log.Fatal(ex, "Host terminated unexpectedly");
-                return 1;
-            }
-            finally
-            {
-                Log.CloseAndFlush();
-            }
-        }
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "TremendousIIIF", Version = "v1" });
+    var filePath = Path.Combine(AppContext.BaseDirectory, "TremendousIIIF.xml");
+    c.IncludeXmlComments(filePath);
+});
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                    {
-                        webBuilder.UseStartup<Startup>()
-                                .UseSerilog();
-                    });
-    }
+builder.Services.AddSingleton(config);
+var imageServerConf = new ImageServer();
+ConfigurationBinder.Bind(config.GetSection("ImageServer"), imageServerConf);
+
+builder.Services.AddSingleton(imageServerConf);
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+builder.Services.AddHttpClient("default")
+    .AddHeaderPropagation()
+    .AddTransientHttpErrorPolicy(b => b.WaitAndRetryAsync(Backoff.DecorrelatedJitterBackoffV2(TimeSpan.FromMilliseconds(10), 3))); ;
+
+
+builder.Services.AddSingleton<ImageLoader>();
+builder.Services.AddTransient<ImageProcessing>();
+
+builder.Services.AddSingleton(Log.Logger);
+
+builder.Host.UseSerilog();
+
+var testImage = new Uri(new Uri(imageServerConf.Location), imageServerConf.HealthcheckIdentifier);
+//TODO:HealthChecks
+//builder.Services.AddHealthChecks().AddTypeActivatedCheck<ImageLoader>("Image Loader", new object[] { testImage, imageServerConf.DefaultTileWidth });
+
+builder.Services.AddLazyCache();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("./v1/swagger.json", "TremendousIIIF");
+    });
+    app.UseDeveloperExceptionPage();
 }
+
+app.UseRouting();
+app.UseCors("AllowAnyOrigin");
+app.UseHeaderPropagation();
+
+app.UseMiddleware<SizeConstraints>();
+
+// shallow check
+//app.UseHealthChecks("/_monitor", new HealthCheckOptions
+//{
+//    Predicate = (check) => false
+//});
+
+//// deep check
+//app.UseHealthChecks("/_monitor/deep", new HealthCheckOptions
+//{
+//    Predicate = _ => true
+//});
+
+//// healthcheck UI
+//app.UseHealthChecks("/_monitor/detail", new HealthCheckOptions
+//{
+//    Predicate = _ => true,
+//    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+//});
+
+app.UseHttpsRedirection();
+
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapControllers();
+});
+
+app.Run();

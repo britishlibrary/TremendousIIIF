@@ -170,7 +170,7 @@ namespace TremendousIIIF.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> ImageRequest(string id, string region, string size, string rotation, string quality, string format)
+        public async Task<Microsoft.AspNetCore.Mvc.ActionResult> ImageRequest(string id, string region, string size, string rotation, string quality, string format)
         {
             try
             {
@@ -187,7 +187,7 @@ namespace TremendousIIIF.Controllers
                                                                 maxArea,
                                                                 Conf.SupportedFormats(),
                                                                 Conf.DefaultAPIVersion);
-                return await request.Match<Task<ActionResult>>(
+                return await request.Match<Task<Microsoft.AspNetCore.Mvc.ActionResult>>(
                     Right: async (r) =>
                     {
                         var imageUri = new Uri(new Uri(Conf.Location), id);
@@ -206,7 +206,7 @@ namespace TremendousIIIF.Controllers
 #endif
                         };
                     },
-                    Left: async l => await new ValueTask<ActionResult>(BadRequest(l.ToProblemDetail(Conf.DefaultAPIVersion)))
+                    Left: async l => await new ValueTask<Microsoft.AspNetCore.Mvc.ActionResult>(BadRequest(l.ToProblemDetail(Conf.DefaultAPIVersion)))
                     );
 
 

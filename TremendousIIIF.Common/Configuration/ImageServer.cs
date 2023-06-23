@@ -147,6 +147,5 @@ namespace TremendousIIIF.Common.Configuration
                 .Concat(AdditionalOutputFormats.Select(f => { Enum.TryParse(f, out ImageFormat result); return result; }))
                 .ToList();
         }
-
     }
 }

@@ -34,12 +34,12 @@
             Height = 0;
             Upscale = false;
         }
-        public ImageSizeMode Mode { get;  }
+        public ImageSizeMode Mode { get; }
 
-        public float? Percent { get;  }
+        public float? Percent { get; }
 
-        public int Width { get;   }
-        public int Height { get;   }
+        public int Width { get; }
+        public int Height { get; }
 
         public bool Upscale { get; }
 

@@ -4,9 +4,9 @@ using T = BitMiracle.LibTiff.Classic;
 using Image.Common;
 using System.Runtime.InteropServices;
 using System.IO;
-using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
+using Serilog;
 
 namespace Image.Tiff
 {
@@ -69,7 +69,7 @@ namespace Image.Tiff
                     int sub_height = tiff.GetField(T.TiffTag.IMAGELENGTH)[0].ToInt();
                     sub_wh.Add(tiff.CurrentDirectory(), (sub_width, sub_height));
 
-                    log.LogDebug("Available TIFF Directory {@Dir}, Dims {@X}, {@Y}", tiff.CurrentDirectory(), sub_width, sub_height);
+                    log.Debug("Available TIFF Directory {@Dir}, Dims {@X}, {@Y}", tiff.CurrentDirectory(), sub_width, sub_height);
                 }
                 AddDirectoryToList();
                 for (var count = 0; tiff.ReadDirectory(); count++)
@@ -132,7 +132,7 @@ namespace Image.Tiff
                 using var bmp = CreateBitmapFromPixels(ref raster, width, height);
                 var desiredWidth = Math.Max(1, (int)Math.Round(state.RegionWidth * state.ImageScale));
                 var desiredHeight = Math.Max(1, (int)Math.Round(state.RegionHeight * state.ImageScale));
-                log.LogDebug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
+                log.Debug("Desired size {@DesiredWidth}, {@DesiredHeight}", desiredWidth, desiredHeight);
 
                 var regionWidth = state.RegionWidth;
                 var regionHeight = state.RegionHeight;
@@ -175,7 +175,7 @@ namespace Image.Tiff
 
                 var needed_tiles_x = tiles_needed_end_x + (rem_x == 0 ? 0 : 1) - tiles_needed_start_x;
                 var needed_tiles_y = tiles_needed_end_y + (rem_y == 0 ? 0 : 1) - tiles_needed_start_y;
-                log.LogDebug("Requested TIFF Tiles {@StartX} {@EndX} {@StartY} {@EndY}", tiles_needed_start_x, tiles_needed_end_x, tiles_needed_start_y, tiles_needed_end_y);
+                log.Debug("Requested TIFF Tiles {@StartX} {@EndX} {@StartY} {@EndY}", tiles_needed_start_x, tiles_needed_end_x, tiles_needed_start_y, tiles_needed_end_y);
 
                 int[,][] raster = new int[needed_tiles_x + 1, needed_tiles_y + 1][];
 

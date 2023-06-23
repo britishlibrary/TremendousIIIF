@@ -20,16 +20,17 @@ using MathNet.Numerics.LinearAlgebra.Double;
 using MathNet.Numerics.LinearAlgebra;
 using OSGeo.OSR;
 using GeoJSON.Net.Feature;
+using ILogger = Serilog.ILogger;
 
 namespace TremendousIIIF.ImageProcessing
 {
     public class ImageLoader
     {
-        private readonly ILogger<ImageLoader> _log;
+        private readonly ILogger _log;
         private readonly IAppCache _cache;
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public ImageLoader(ILogger<ImageLoader> log, IAppCache cache, IHttpClientFactory httpClientFactory)
+        public ImageLoader(ILogger log, IAppCache cache, IHttpClientFactory httpClientFactory)
         {
             _log = log;
             _cache = cache;
@@ -292,9 +293,9 @@ namespace TremendousIIIF.ImageProcessing
 
             if (!response.IsSuccessStatusCode)
             {
-                _log.LogError("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
+                _log.Error("{@ImageUri} {@StatusCode} {@ReasonPhrase}", imageUri, response.StatusCode, response.ReasonPhrase);
                 ErrorLoading("Unable to load source image");
-                
+
             }
             var mimeType = string.Empty;
 
@@ -370,7 +371,7 @@ namespace TremendousIIIF.ImageProcessing
                     }
                 default:
                     ErrorLoading("Unsupported source format");
-                    return (null,null);
+                    return (null, null);
             }
         }
 

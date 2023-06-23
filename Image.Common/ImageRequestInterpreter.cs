@@ -11,11 +11,11 @@ namespace Image.Common
         /// <param name="request"></param>
         /// <param name="originalWidth">Original width (pixels) of the source image</param>
         /// <param name="originalHeight">Original height (pixels) of the source image</param>
-        /// <param name="allowUpscaling">Allow output image dimensions to exceed that of the source image, but constrained by <see cref="ImageRequest.MaxWidth"/>,<see cref="ImageRequest.MaxHeight"/>,<see cref="ImageRequest.MaxArea"/></param>
+        /// <param name="allowSizeAboveFull">Allow output image dimensions to exceed that of the source image, but constrained by <see cref="ImageRequest.MaxWidth"/>,<see cref="ImageRequest.MaxHeight"/>,<see cref="ImageRequest.MaxArea"/></param>
         /// <returns></returns>
-        static public ProcessState GetInterpretedValues(in ImageRequest request, int originalWidth, int originalHeight, bool allowUpscaling)
+        static public ProcessState GetInterpretedValues(ImageRequest request, int originalWidth, int originalHeight, bool allowSizeAboveFull)
         {
-            request.CheckRequest(originalWidth, originalHeight, allowUpscaling);
+            request.CheckRequest();
             ProcessState state = new ProcessState();
 
             state.StartX = state.StartY = state.RegionHeight = state.RegionWidth = 0;
@@ -31,11 +31,8 @@ namespace Image.Common
                 case ImageRegionMode.Region:
                     state.StartX = Convert.ToInt32(request.Region.X);
                     state.StartY = Convert.ToInt32(request.Region.Y);
-                    // If the request specifies a region which extends beyond the dimensions of the full image as reported in the image information document, 
-                    // then the service SHOULD return an image cropped at the image’s edge, rather than adding empty space.
-                    // https://preview.iiif.io/api/image-prezi-rc2/api/image/3.0/#41-region
-                    state.OutputWidth = state.RegionWidth = Math.Min(Convert.ToInt32(request.Region.Width), originalWidth);
-                    state.OutputHeight = state.RegionHeight = Math.Min(Convert.ToInt32(request.Region.Height), originalHeight);
+                    state.OutputWidth = state.RegionWidth = Convert.ToInt32(request.Region.Width);
+                    state.OutputHeight = state.RegionHeight = Convert.ToInt32(request.Region.Height);
                     break;
                 case ImageRegionMode.Square:
                     state.OutputWidth = state.OutputHeight = state.RegionHeight = state.RegionWidth = Math.Min(originalWidth, originalHeight);
@@ -121,7 +118,7 @@ namespace Image.Common
             // final bounds reduction
             float max_scale = 1f;
             (state.OutputWidth, state.OutputHeight, max_scale)
-                = ScaleOutput(request.MaxWidth, request.MaxHeight, state.OutputWidth, state.OutputHeight, request.Size.Upscale);
+                = ScaleOutput(request.MaxWidth, request.MaxHeight, state.OutputWidth, state.OutputHeight, allowSizeAboveFull);
             state.OutputScale = Math.Min(max_scale, state.ImageScale);
 
             state.CheckBounds();
@@ -136,9 +133,9 @@ namespace Image.Common
         /// <param name="maxHeight">Maximum height (pixels) of the output image</param>
         /// <param name="requestedWidth">Requested width (pixels) of the output image</param>
         /// <param name="requestedHeight">Requested height (pixels) of the output image</param>
-        /// <param name="allowUpscaling">Allow output image dimensions to exceed those of the source image</param>
+        /// <param name="allowSizeAboveFull">Allow output image dimensions to exceed those of the source image</param>
         /// <returns></returns>
-        private static Dimensions ScaleOutput(int maxWidth, int maxHeight, int requestedWidth, int requestedHeight, bool allowUpscaling)
+        private static Dimensions ScaleOutput(int maxWidth, int maxHeight, int requestedWidth, int requestedHeight, bool allowSizeAboveFull)
         {
 
             float maxWscale = maxWidth == int.MaxValue ? 1 : (float)maxWidth / requestedWidth;
@@ -156,7 +153,7 @@ namespace Image.Common
                 scale = maxHeight / (float)requestedHeight;
             }
 
-            if (!allowUpscaling)
+            if (!allowSizeAboveFull)
             {
                 scale = Math.Min(scale, 1);
             }
@@ -185,23 +182,13 @@ namespace Image.Common
             }
         }
 
-        private static void CheckRequest(in this ImageRequest req, int originalWidth, int originalHeight, bool allowUpscaling)
+        private static void CheckRequest(this ImageRequest req)
         {
-            if (!allowUpscaling && req.Size.Upscale)
-            {
-                throw new NotSupportedException("sizeUpscaling feature is not supported");
-            }
-
-            if (!req.Size.Upscale && (req.Size.Width > originalWidth || req.Size.Height > originalHeight || req.Size.Percent > 1.0))
-            {
-                throw new ArgumentException("Must specify ^ for upscaled requests", "size");
-            }
-
             if (req.Region.Mode == ImageRegionMode.Region)
             {
                 if (req.Region.Width == 0 || req.Region.Height == 0)
                 {
-                    throw new ArgumentException("Width or Height can not be 0", "size");
+                    throw new ArgumentException("Width or Height can not be 0");
                 }
             }
 
@@ -210,19 +197,13 @@ namespace Image.Common
                 case ImageSizeMode.Distort:
                     if (req.Size.Width == 0 || req.Size.Height == 0)
                     {
-                        throw new ArgumentException("Width or Height can not be 0", "size");
+                        throw new ArgumentException("Width or Height can not be 0");
                     }
                     break;
                 case ImageSizeMode.MaintainAspectRatio:
                     if (req.Size.Width == 0 && req.Size.Height == 0)
                     {
-                        throw new ArgumentException("Width and Height can not both be 0", "size");
-                    }
-                    break;
-                case ImageSizeMode.PercentageScaled:
-                    if (req.Size.Percent > 100.0 && !req.Size.Upscale)
-                    {
-                        throw new ArgumentException("The value of n must not be greater than 100. Use ^pct syntax if available.", "size");
+                        throw new ArgumentException("Width and Height can not both be 0");
                     }
                     break;
                 default:

@@ -1,11 +1,11 @@
 ﻿using LazyCache;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using ILogger = Serilog.ILogger;
 
 namespace TremendousIIIF.Healthchecks
 {
@@ -14,12 +14,12 @@ namespace TremendousIIIF.Healthchecks
         public string Name => nameof(ImageLoader);
 
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<ImageProcessing.ImageLoader> _logger;
+        private readonly ILogger _logger;
         private readonly IAppCache _cache;
         private Uri ImageUri { get; set; }
         private int DefaultTileWidth { get; set; }
 
-        public ImageLoader(IHttpClientFactory httpClientFactory, ILogger<ImageProcessing.ImageLoader> logger, IAppCache cache, Uri imageUri, int defaultTileWidth)
+        public ImageLoader(IHttpClientFactory httpClientFactory, ILogger logger, IAppCache cache, Uri imageUri, int defaultTileWidth)
         {
             _httpClientFactory = httpClientFactory;
             _logger = logger;
@@ -43,7 +43,7 @@ namespace TremendousIIIF.Healthchecks
 
         bool LogError(Exception ex)
         {
-            _logger.LogError(ex, "A Healthcheck failed");
+            _logger.Error(ex, "A Healthcheck failed");
             return true;
         }
     }

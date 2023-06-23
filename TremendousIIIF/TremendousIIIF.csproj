@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -10,7 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="3.1.1" />
-    <PackageReference Include="Gdal.Core" Version="1.0.0" />
+    <PackageReference Include="Gdal.Core" Version="2.3.0-beta-023" />
+    <PackageReference Include="Gdal.Core.WindowsRuntime" Version="2.3.0-beta-023" />
     <PackageReference Include="GeoJSON.Net" Version="1.2.19" />
     <PackageReference Include="LanguageExt.FSharp" Version="4.4.3" />
     <PackageReference Include="LazyCache.AspNetCore" Version="2.4.0" />

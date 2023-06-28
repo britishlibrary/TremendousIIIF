@@ -3,15 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.6.33801.468
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF", "TremendousIIIF\TremendousIIIF.csproj", "{580FBE00-5EC6-44E9-B5B5-4CB95C995D9B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TremendousIIIF", "TremendousIIIF\TremendousIIIF.csproj", "{580FBE00-5EC6-44E9-B5B5-4CB95C995D9B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image.Tiff", "Image.Tiff\Image.Tiff.csproj", "{C3939A45-FE50-4F16-AEE4-8DB343BE9A97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image.Tiff", "Image.Tiff\Image.Tiff.csproj", "{C3939A45-FE50-4F16-AEE4-8DB343BE9A97}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Image.Common", "Image.Common\Image.Common.csproj", "{479B2E83-597B-44DD-80F2-9D7E3524F7E4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Jpeg2000", "JPEG-2000\Jpeg2000.csproj", "{B91C0010-1D73-4CB7-9CE9-DC5EE4E58823}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TremendousIIIF.Common", "TremendousIIIF.Common\TremendousIIIF.Common.csproj", "{01D3D416-476A-49C4-A12F-FB2036C28438}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TremendousIIIF.Test", "TremendousIIIF.Test\TremendousIIIF.Test.csproj", "{24C5C603-1E5B-48BB-A2D1-535ABA9EB9BB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{01D3D416-476A-49C4-A12F-FB2036C28438}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01D3D416-476A-49C4-A12F-FB2036C28438}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01D3D416-476A-49C4-A12F-FB2036C28438}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24C5C603-1E5B-48BB-A2D1-535ABA9EB9BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24C5C603-1E5B-48BB-A2D1-535ABA9EB9BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24C5C603-1E5B-48BB-A2D1-535ABA9EB9BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24C5C603-1E5B-48BB-A2D1-535ABA9EB9BB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

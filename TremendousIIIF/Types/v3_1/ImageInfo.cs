@@ -1,17 +1,15 @@
 ﻿using Image.Common;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using TremendousIIIF.Common.Configuration;
+using Newtonsoft.Json.Linq;
 using TremendousIIIF.Common;
-using System.Linq;
+using TremendousIIIF.Common.Configuration;
 
 namespace TremendousIIIF.Types.v3_0
 {
     public readonly struct ImageInfo : IImageInfo
     {
         [JsonConstructor]
-        public ImageInfo(string id, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, bool enableGeoService, string manifestId, Uri licenceUri)
+        public ImageInfo(string id, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, bool enableGeoService, string manifestId, Uri licenceUri, bool includeLoginInfo)
         {
             Protocol = "http://iiif.io/api/image";
             Profile = "level2";
@@ -52,6 +50,13 @@ namespace TremendousIIIF.Types.v3_0
             }
 
             Rights = licenceUri;
+
+            Service = null;
+
+            if (includeLoginInfo)
+            {
+                if (conf.LoginDataString != null) Service = JObject.Parse(conf.LoginDataString);
+            }
         }
         [JsonProperty("@context", Order = 1, Required = Required.Always)]
         public string Context { get; }
@@ -101,6 +106,9 @@ namespace TremendousIIIF.Types.v3_0
 
         [JsonProperty("tiles", Order = 11, NullValueHandling = NullValueHandling.Ignore)]
         public List<Tile> Tiles { get; }
+
+        [JsonProperty("service", Order = 26, NullValueHandling = NullValueHandling.Ignore)]
+        public JObject Service { get; }
     }
 
     public readonly struct Size

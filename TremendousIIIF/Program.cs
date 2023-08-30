@@ -49,6 +49,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddSingleton(config);
 var imageServerConf = new ImageServer();
 ConfigurationBinder.Bind(config.GetSection("ImageServer"), imageServerConf);
+imageServerConf.LoginDataString = config["ImageServer:LoginService"];
 
 builder.Services.AddSingleton(imageServerConf);
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();

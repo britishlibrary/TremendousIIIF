@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using TremendousIIIF.Common.Configuration;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace TremendousIIIF.Types.v2_1
 {
@@ -17,7 +18,7 @@ namespace TremendousIIIF.Types.v2_1
             Profile = new List<object> { "http://iiif.io/api/image/2/level2.json" };
         }
 
-        public ImageInfo(Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, bool enableGeoService, string geodatauri) : this()
+        public ImageInfo(Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, bool enableGeoService, string geodatauri, bool includeLoginInfo) : this()
         {
             Height = metadata.Height;
             Width = metadata.Width;
@@ -44,12 +45,19 @@ namespace TremendousIIIF.Types.v2_1
                 Formats = conf.AdditionalOutputFormats.Count == 0 ? null : conf.AdditionalOutputFormats
             });
 
-            if (metadata.HasGeoData && enableGeoService)
+            if (includeLoginInfo)
             {
-                Services = new List<Service>
+                if (conf.LoginDataString != null) Services = JObject.Parse(conf.LoginDataString);
+            }
+            else
+            {
+                if (metadata.HasGeoData && enableGeoService)
                 {
-                    new Service() { Context = "http://geojson.org/geojson-ld/geojson-context.jsonld", ID = geodatauri}
-                };
+                    Services = new List<Service>
+                    {
+                        new Service() { Context = "http://geojson.org/geojson-ld/geojson-context.jsonld", ID = geodatauri}
+                    };
+                }
             }
         }
         [JsonProperty("@context", Order = 1, Required = Required.Always)]
@@ -77,7 +85,11 @@ namespace TremendousIIIF.Types.v2_1
         public List<Tile> Tiles { get; set; }
 
         [JsonProperty("service", Order = 9, NullValueHandling = NullValueHandling.Ignore)]
-        public List<Service> Services { get; set; }
+        public dynamic Services { get; set; }
+
+        //[JsonProperty("service", Order = 10, NullValueHandling = NullValueHandling.Ignore)]
+        //public string? Service { get; set; }
+
     }
 
     public class ServiceProfile

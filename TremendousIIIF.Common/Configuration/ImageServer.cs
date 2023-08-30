@@ -79,6 +79,7 @@ namespace TremendousIIIF.Common.Configuration
         }
         public Uri BaseUri { get; set; }
 
+        public string? LoginDataString { get; set; }
 
         private readonly List<ImageFormat> RequiredFormats = new List<ImageFormat> { ImageFormat.jpg, ImageFormat.png };
         /// <summary>

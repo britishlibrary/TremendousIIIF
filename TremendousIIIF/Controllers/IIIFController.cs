@@ -52,7 +52,7 @@ namespace TremendousIIIF.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<IImageInfo>> Info(string id, [FromHeader] string Accept, [FromHeader(Name = "X-PartOf-Manifest")] string manifestId, [FromHeader(Name = "X-LicenceUri")] string licence)
+        public async Task<ActionResult<IImageInfo>> Info(string id, [FromHeader] string Accept, [FromHeader(Name = "X-PartOf-Manifest")] string manifestId, [FromHeader(Name = "X-LicenceUri")] string licence, [FromHeader(Name = "X-LoginData")] bool incLoginData = false)
         {
             var cancellationToken = HttpContext.RequestAborted;
             var apiVersion = ParseAccept(Accept, Conf.DefaultAPIVersion);
@@ -74,7 +74,7 @@ namespace TremendousIIIF.Controllers
                 {
                     manifestId = string.Format(Conf.ManifestUriFormat, manifestId);
                 }
-                return Ok(MakeInfo(apiVersion, metadata, Conf, maxWidth, maxHeight, maxArea, id, requestUrl, manifestId, licence));
+                return Ok(MakeInfo(apiVersion, metadata, Conf, maxWidth, maxHeight, maxArea, id, requestUrl, manifestId, licence, incLoginData));
             }
             catch (FileNotFoundException e)
             {
@@ -98,7 +98,7 @@ namespace TremendousIIIF.Controllers
             }
         }
 
-        private static object MakeInfo(ApiVersion apiVersion, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, string id, string requestUri, string manifestId, string licence)
+        private static object MakeInfo(ApiVersion apiVersion, Metadata metadata, ImageServer conf, int maxWidth, int maxHeight, int maxArea, string id, string requestUri, string manifestId, string licence, bool incLogin)
         {
             var idUri = conf.BaseUri == null ?
                 requestUri :
@@ -117,8 +117,8 @@ namespace TremendousIIIF.Controllers
 
             return apiVersion switch
             {
-                ApiVersion.v3_0 => new Types.v3_0.ImageInfo(idUri, metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, manifestId, licenceUri),
-                _ => new Types.v2_1.ImageInfo(metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, string.Format(conf.GeoDataBaseUri, id))
+                ApiVersion.v3_0 => new Types.v3_0.ImageInfo(idUri, metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, manifestId, licenceUri, incLogin),
+                _ => new Types.v2_1.ImageInfo(metadata, conf, maxWidth, maxHeight, maxArea, conf.EnableGeoService, string.Format(conf.GeoDataBaseUri, id), incLogin)
                 {
                     ID = idUri,
                 },
